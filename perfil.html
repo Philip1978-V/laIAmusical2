@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Usuario</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* --- ESTILOS DE BARRA DE PROGRESO GENERAL --- */
+        #overallProgressBarContainer {
+            width: 100%;
+            height: 8px;
+            background-color: #374151; /* gray-700 */
+            border-radius: 9999px;
+            overflow: hidden;
+            margin-top: 1rem;
+            position: relative;
+        }
+
+        #overallProgressBar {
+            height: 100%;
+            width: 0%;
+            background-color: #22c55e; /* green-500 */
+            border-radius: 9999px;
+            transition: width 0.5s ease-out;
+        }
+
+        /* --- ESTILOS DE RANGOS (TARJETAS INDIVIDUALES) --- */
+        #rankCardsContainerWrapper {
+            overflow-x: scroll;
+            cursor: grab;
+            padding-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
+            /* Ocultar barra de desplazamiento */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+        }
+        #rankCardsContainerWrapper::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+        #rankCardsContainerWrapper.active {
+            cursor: grabbing;
+        }
+
+        /* --- NUEVOS ESTILOS PARA MARCADORES DE CANCIONES (DIAMANTES/ESTRELLAS) --- */
+        .diamond-badge, .star-badge {
+            position: absolute;
+            z-index: 10;
+            padding: 0.35rem 0.6rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            font-size: 0.875rem; /* text-sm */
+            line-height: 1; /* Para alinear el texto/icono */
+        }
+
+        .diamond-badge {
+            top: 10px;
+            left: 10px;
+            background-color: #0d9488; /* teal-600 */
+            color: #ccfbf1; /* teal-100 */
+            border: 1px solid #065f46; /* teal-800 */
+        }
+
+        .star-badge {
+            top: 10px;
+            right: 10px;
+            background-color: #f59e0b; /* amber-500 */
+            color: #1f2937; /* gray-800 */
+            border: 1px solid #b45309; /* amber-700 */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen font-sans">
+    
+    <header class="bg-purple-950 p-4 shadow-xl sticky top-0 z-10 border-b border-purple-800">
+        <div class="container mx-auto flex flex-col items-center">
+            
+            <h1 class="text-3xl md:text-4xl font-extrabold text-lime-400 flex items-center justify-center w-full mb-4">
+                <i class="fas fa-user-circle text-cyan-400 mr-3 text-4xl"></i>
+                Mi Perfil
+            </h1>
+            
+            <div class="w-full flex justify-end items-center mb-2 md:mb-4">
+                 <a href="temas.html" class="bg-yellow-500 text-gray-900 hover:bg-yellow-600 py-2 px-4 rounded-lg font-bold transition-all text-sm md:text-base hover:scale-105">Volver a Temas</a>
+            </div>
+            
+        </div>
+    </header>
+    
+    <main class="container mx-auto p-6 space-y-12">
+        
+        <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-purple-700">
+            <h2 class="text-2xl font-bold mb-4 text-teal-400 border-b border-purple-600 pb-2">Estadísticas Generales</h2>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div class="p-3 bg-purple-900 rounded-lg">
+                    <p class="text-lg text-gray-300">Estrellas Totales</p>
+                    <p id="userStarsDisplay" class="text-4xl font-extrabold text-yellow-400 flex items-center justify-center mt-1">0 <i class="fas fa-star text-2xl ml-2"></i></p>
+                </div>
+                <div class="p-3 bg-purple-900 rounded-lg">
+                    <p class="text-lg text-gray-300">Diamantes Ganados</p>
+                    <p id="totalDiamondsDisplay" class="text-4xl font-extrabold text-teal-400 flex items-center justify-center mt-1">0 <i class="fas fa-gem text-2xl ml-2"></i></p>
+                </div>
+                <div class="p-3 bg-purple-900 rounded-lg">
+                    <p class="text-lg text-gray-300">Votos Restantes</p>
+                    <p id="votesRemainingDisplay" class="text-4xl font-extrabold text-cyan-400 flex items-center justify-center mt-1">5 <i class="fas fa-hand-pointer text-2xl ml-2"></i></p>
+                </div>
+                 <div class="p-3 bg-purple-900 rounded-lg">
+                    <p class="text-lg text-gray-300">Canciones Elegidas</p>
+                    <p id="selectedSongsCount" class="text-4xl font-extrabold text-pink-400 flex items-center justify-center mt-1">0 / 5</p>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <h3 class="text-xl font-semibold mb-2 text-lime-400">Progreso para el Rango Actual</h3>
+                <div id="overallProgressBarContainer">
+                    <div id="overallProgressBar"></div>
+                </div>
+                <p id="overallProgressText" class="text-sm text-gray-400 mt-2 text-center">0 / 100 Estrellas para alcanzar el rango Aprendiz</p>
+            </div>
+        </section>
+        
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold text-center mb-6 text-yellow-400">Sistema de Rangos</h2>
+            <p class="text-center text-gray-400 mb-6">Arrastra las tarjetas para ver todos los rangos disponibles.</p>
+            
+            <div id="rankCardsContainerWrapper" class="flex flex-nowrap space-x-6 p-4 -mx-4">
+                </div>
+        </section>
+
+        <section>
+            <h2 class="text-3xl font-bold mb-6 text-pink-400 border-b border-purple-600 pb-2">Mis Canciones Elegidas (5 Máx.)</h2>
+            <div id="selectedSongsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+            <p id="noSongsMessage" class="text-center text-gray-400 text-xl py-10 hidden">
+                Aún no has elegido ninguna canción. ¡Ve a una sala y escucha para poder elegir!
+            </p>
+        </section>
+
+    </main>
+    
+    <div id="deleteModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-gradient-to-br from-red-900 to-purple-900 rounded-2xl max-w-sm w-full border-2 border-red-400 shadow-2xl p-6 text-center">
+            <h3 class="text-2xl font-bold text-red-400 mb-4">Confirmar Eliminación</h3>
+            <p class="text-white mb-6">¿Estás seguro de que deseas eliminar "<span id="songTitleToDelete" class="font-bold text-yellow-300"></span>" de tu perfil?</p>
+            <div class="flex justify-around">
+                <button onclick="closeDeleteModal()" class="bg-gray-500 hover:bg-gray-600 px-5 py-2 rounded-lg font-bold">Cancelar</button>
+                <button onclick="confirmDeleteSong()" class="bg-red-600 hover:bg-red-700 px-5 py-2 rounded-lg font-bold">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- CONSTANTES ---
+        const GLOBAL_SELECTED_SONGS_KEY = 'selectedSongsGlobal';
+        const MAX_SELECTED_SONGS = 5;
+        // Identificadores de sala (deben coincidir con los usados en los archivos de sala)
+        const ROOMS_DATA = {
+            'literatura': {
+                name: 'Literatura Musical',
+                starsKey: 'literaturamusical_userStars',
+                diamondsKey: 'literaturamusical_totalDiamonds',
+                votesKey: 'literaturamusical_votesRemaining'
+            },
+            'proximamente1': { name: 'Próximamente', starsKey: 'proximamente1_userStars', diamondsKey: 'proximamente1_totalDiamonds', votesKey: 'proximamente1_votesRemaining' },
+            'proximamente2': { name: 'Próximamente', starsKey: 'proximamente2_userStars', diamondsKey: 'proximamente2_totalDiamonds', votesKey: 'proximamente2_votesRemaining' }
+        };
+
+        // --- RANGOS ACTUALIZADOS (20 RANGOS EN TOTAL) ---
+        const RANKS = [
+            // Novato (3 niveles)
+            { name: "Novato I", minStars: 0, image: "rank_novato.png", color: "text-gray-400", bgColor: "bg-gray-700", nextRank: "Novato II" },
+            { name: "Novato II", minStars: 50, image: "rank_novato.png", color: "text-gray-400", bgColor: "bg-gray-700", nextRank: "Novato III" },
+            { name: "Novato III", minStars: 100, image: "rank_novato.png", color: "text-gray-400", bgColor: "bg-gray-700", nextRank: "Aprendiz I" },
+            // Aprendiz (3 niveles)
+            { name: "Aprendiz I", minStars: 200, image: "rank_aprendiz.png", color: "text-blue-400", bgColor: "bg-blue-900", nextRank: "Aprendiz II" },
+            { name: "Aprendiz II", minStars: 350, image: "rank_aprendiz.png", color: "text-blue-400", bgColor: "bg-blue-900", nextRank: "Aprendiz III" },
+            { name: "Aprendiz III", minStars: 550, image: "rank_aprendiz.png", color: "text-blue-400", bgColor: "bg-blue-900", nextRank: "Intermedio I" },
+            // Intermedio (3 niveles)
+            { name: "Intermedio I", minStars: 800, image: "rank_intermedio.png", color: "text-green-400", bgColor: "bg-green-900", nextRank: "Intermedio II" },
+            { name: "Intermedio II", minStars: 1100, image: "rank_intermedio.png", color: "text-green-400", bgColor: "bg-green-900", nextRank: "Intermedio III" },
+            { name: "Intermedio III", minStars: 1450, image: "rank_intermedio.png", color: "text-green-400", bgColor: "bg-green-900", nextRank: "Avanzado I" },
+            // Avanzado (3 niveles)
+            { name: "Avanzado I", minStars: 1850, image: "rank_avanzado.png", color: "text-yellow-400", bgColor: "bg-yellow-900", nextRank: "Avanzado II" },
+            { name: "Avanzado II", minStars: 2300, image: "rank_avanzado.png", color: "text-yellow-400", bgColor: "bg-yellow-900", nextRank: "Avanzado III" },
+            { name: "Avanzado III", minStars: 2800, image: "rank_avanzado.png", color: "text-yellow-400", bgColor: "bg-yellow-900", nextRank: "Experto I" },
+            // Experto (3 niveles)
+            { name: "Experto I", minStars: 3350, image: "rank_experto.png", color: "text-red-400", bgColor: "bg-red-900", nextRank: "Experto II" },
+            { name: "Experto II", minStars: 3950, image: "rank_experto.png", color: "text-red-400", bgColor: "bg-red-900", nextRank: "Experto III" },
+            { name: "Experto III", minStars: 4600, image: "rank_experto.png", color: "text-red-400", bgColor: "bg-red-900", nextRank: "Maestro I" },
+            // Maestro (3 niveles)
+            { name: "Maestro I", minStars: 5300, image: "rank_maestro.png", color: "text-purple-400", bgColor: "bg-purple-900", nextRank: "Maestro II" },
+            { name: "Maestro II", minStars: 6050, image: "rank_maestro.png", color: "text-purple-400", bgColor: "bg-purple-900", nextRank: "Maestro III" },
+            { name: "Maestro III", minStars: 6850, image: "rank_maestro.png", color: "text-purple-400", bgColor: "bg-purple-900", nextRank: "Gran Maestro" },
+            // Leyenda (2 niveles finales)
+            { name: "Gran Maestro", minStars: 7700, image: "rank_maestro.png", color: "text-pink-400", bgColor: "bg-pink-900", nextRank: "Leyenda Suprema" },
+            { name: "Leyenda Suprema", minStars: 8600, image: "rank_leyenda.png", color: "text-cyan-400", bgColor: "bg-cyan-900", nextRank: null }
+        ];
+        // -----------------------------------------------------
+
+        // --- ESTADO GLOBAL ---
+        let totalUserStars = 0;
+        let totalDiamonds = 0;
+        let totalVotesRemaining = 0;
+        let selectedSongToDelete = null; 
+
+        // --- MANEJO DE DATOS ---
+
+        function getGlobalSelectedSongs() {
+            return JSON.parse(localStorage.getItem(GLOBAL_SELECTED_SONGS_KEY) || '[]');
+        }
+
+        function saveGlobalSelectedSongs(songs) {
+            localStorage.setItem(GLOBAL_SELECTED_SONGS_KEY, JSON.stringify(songs));
+        }
+
+        function loadAppData() {
+            totalUserStars = 0;
+            totalDiamonds = 0;
+            totalVotesRemaining = 0;
+
+            // 1. Cargar y sumar estadísticas de todas las salas
+            Object.keys(ROOMS_DATA).forEach(key => {
+                const room = ROOMS_DATA[key];
+                
+                // Cargar Estrellas y sumar
+                const stars = parseInt(localStorage.getItem(room.starsKey) || '0');
+                totalUserStars += stars;
+
+                // Cargar Diamantes y sumar
+                const diamonds = parseInt(localStorage.getItem(room.diamondsKey) || '0');
+                totalDiamonds += diamonds;
+
+                // Cargar Votos restantes (solo necesitamos el de la última sala cargada, o una lógica de suma si fueran votos por sala, pero aquí se asume que 'votos restantes' es global o se toma el de la sala principal)
+                // Se mantendrá el de la sala 'literatura' como el principal para la visualización de votos restantes
+                if (key === 'literatura') {
+                    totalVotesRemaining = parseInt(localStorage.getItem(room.votesKey) || '5');
+                }
+            });
+            
+            // 2. Si las estrellas son 0, forzar los votos restantes a 5
+            if (totalUserStars === 0) {
+                 totalVotesRemaining = 5;
+            }
+
+            // Guardar el estado de los votos restantes de nuevo en el localStorage de la sala 'literatura'
+            localStorage.setItem(ROOMS_DATA['literatura'].votesKey, totalVotesRemaining);
+        }
+
+        // --- RENDERIZADO ---
+
+        function updateHeaderDisplays() {
+            document.getElementById('userStarsDisplay').textContent = totalUserStars;
+            document.getElementById('totalDiamondsDisplay').textContent = totalDiamonds;
+            document.getElementById('votesRemainingDisplay').textContent = totalVotesRemaining;
+            document.getElementById('selectedSongsCount').textContent = `${getGlobalSelectedSongs().length} / ${MAX_SELECTED_SONGS}`;
+        }
+
+        function getCurrentRank() {
+            let currentRank = RANKS[0];
+            for (const rank of RANKS) {
+                if (totalUserStars >= rank.minStars) {
+                    currentRank = rank;
+                } else {
+                    break;
+                }
+            }
+            return currentRank;
+        }
+
+        function getNextRank(currentRank) {
+            const currentIndex = RANKS.findIndex(r => r.name === currentRank.name);
+            // Comprueba que no sea el último rango antes de devolver el siguiente
+            if (currentIndex < RANKS.length - 1) {
+                return RANKS[currentIndex + 1];
+            }
+            return null; // Si es el último rango, devuelve null
+        }
+
+        function updateRankDisplay() {
+            const currentRank = getCurrentRank();
+            const nextRank = getNextRank(currentRank);
+            const progressBar = document.getElementById('overallProgressBar');
+            const progressText = document.getElementById('overallProgressText');
+            
+            // Renderizar tarjetas de rango
+            const rankCardsContainer = document.getElementById('rankCardsContainerWrapper');
+            rankCardsContainer.innerHTML = '';
+            RANKS.forEach(rank => {
+                const isActive = rank.name === currentRank.name;
+                const cardHtml = `
+                    <div class="flex-shrink-0 w-72 h-80 ${rank.bgColor} p-6 rounded-xl shadow-2xl border ${isActive ? 'border-lime-400 transform scale-105' : 'border-purple-700'} transition-all duration-300 relative text-center">
+                        ${isActive ? '<span class="absolute top-2 right-2 bg-lime-400 text-gray-900 text-sm font-black px-3 py-1 rounded-full animate-pulse-custom">ACTUAL</span>' : ''}
+                        <img src="imagenportada/${rank.image}" alt="${rank.name}" class="w-24 h-24 mx-auto mb-4 object-contain">
+                        <h3 class="text-3xl font-extrabold ${rank.color}">${rank.name}</h3>
+                        <p class="text-gray-300 mt-2">${rank.minStars} Estrellas</p>
+                        ${rank.nextRank ? `<p class="text-sm text-gray-400 mt-4">Siguiente: ${rank.nextRank}</p>` : '<p class="text-sm text-gray-400 mt-4">¡Rango Máximo!</p>'}
+                    </div>
+                `;
+                rankCardsContainer.innerHTML += cardHtml;
+            });
+
+            // Actualizar barra de progreso
+            if (nextRank) {
+                const starsInCurrentLevel = totalUserStars - currentRank.minStars;
+                const starsNeededForNext = nextRank.minStars - currentRank.minStars;
+                const progressPercentage = (starsInCurrentLevel / starsNeededForNext) * 100;
+
+                progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
+                progressText.innerHTML = `<span class="font-bold text-lg">${starsInCurrentLevel} / ${starsNeededForNext}</span> Estrellas para alcanzar el rango <span class="font-bold ${nextRank.color}">${nextRank.name}</span>`;
+            } else {
+                progressBar.style.width = '100%';
+                progressBar.style.backgroundColor = '#facc15'; /* yellow-400 */
+                progressText.textContent = `¡Felicidades! Has alcanzado el rango máximo: ${currentRank.name}.`;
+            }
+        }
+
+        /**
+         * Renders the selected song cards in the profile section.
+         * MODIFIED to include diamond and star badges in the corners.
+         */
+        function renderSelectedSongs() {
+            const container = document.getElementById('selectedSongsContainer');
+            const noSongsMessage = document.getElementById('noSongsMessage');
+            const selectedSongs = getGlobalSelectedSongs();
+            container.innerHTML = '';
+
+            if (selectedSongs.length === 0) {
+                noSongsMessage.classList.remove('hidden');
+                return;
+            }
+
+            noSongsMessage.classList.add('hidden');
+
+            selectedSongs.forEach(song => {
+                const roomInfo = ROOMS_DATA[song.room] || { name: 'Sala Desconocida' };
+                
+                // 1. Diamantes (Esquina superior izquierda)
+                // Asume que 'hasDiamond' es 1 o 0 (true/false) para el recuento.
+                // Se utiliza song.userDiamondCount si está disponible para el nuevo marcador
+                const diamondCount = song.userDiamondCount || (song.hasDiamond ? 1 : 0);
+                const diamondBadgeHtml = diamondCount > 0 ? `
+                    <div class="diamond-badge">
+                        ${diamondCount} <i class="fas fa-gem ml-1 text-teal-300"></i>
+                    </div>
+                ` : '';
+                
+                // 2. Estrellas (Esquina superior derecha)
+                // Se utiliza song.userStarScore si está disponible para el nuevo marcador
+                const starsCount = song.userStarScore || (song.quizStars > 0 ? song.quizStars : 0);
+                const starsBadgeHtml = starsCount > 0 ? `
+                    <div class="star-badge">
+                        ${starsCount} <i class="fas fa-star ml-1 text-yellow-800"></i>
+                    </div>
+                ` : '';
+                
+                const cardHtml = `
+                    <div class="bg-gray-800 border border-pink-700 rounded-xl overflow-hidden shadow-lg relative flex flex-col md:flex-row">
+                        
+                        ${diamondBadgeHtml}
+                        ${starsBadgeHtml}
+                        
+                        <div class="h-48 md:h-full md:w-48 flex-shrink-0 bg-cover bg-center" style="background-image: url('${song.image}')"></div>
+                        <div class="p-4 flex flex-col justify-between flex-grow">
+                            <div>
+                                <h3 class="text-xl font-bold mb-1 text-pink-400 flex items-center">${song.title}</h3>
+                                <p class="text-gray-400 mb-2">Autor: <span class="font-semibold text-lime-400">${song.author}</span></p>
+                                <p class="text-sm text-gray-300 mt-2">Sala de Origen: <span class="font-semibold text-cyan-400">${roomInfo.name}</span></p>
+                            </div>
+                            <button onclick="openDeleteModal(${song.id}, '${song.title}', '${song.room}')" class="mt-4 bg-red-600 hover:bg-red-700 py-2 rounded-lg font-bold transition-all">
+                                Eliminar de Perfil
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            });
+        }
+        
+        // --- LÓGICA DE ELIMINACIÓN ---
+
+        function openDeleteModal(songId, songTitle, roomIdentifier) {
+            selectedSongToDelete = { id: songId, room: roomIdentifier, title: songTitle };
+            document.getElementById('songTitleToDelete').textContent = songTitle;
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+            selectedSongToDelete = null;
+        }
+
+        function confirmDeleteSong() {
+            if (!selectedSongToDelete) return;
+
+            let globalSelectedSongs = getGlobalSelectedSongs();
+            
+            // Filtrar para eliminar la canción seleccionada de la sala específica
+            globalSelectedSongs = globalSelectedSongs.filter(s => 
+                !(s.id === selectedSongToDelete.id && s.room === selectedSongToDelete.room)
+            );
+
+            saveGlobalSelectedSongs(globalSelectedSongs);
+            alert(`"${selectedSongToDelete.title}" ha sido eliminada de tu perfil.`);
+            
+            closeDeleteModal();
+            renderSelectedSongs(); // Re-renderizar la lista de canciones
+            updateHeaderDisplays(); // Actualizar contador
+        }
+
+        // --- FUNCIÓN DE ARRASTRAR PARA DESLIZAR (PARA EL CARRUSEL DE RANGOS) ---
+        function enableDragScroll(element) {
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+
+            element.addEventListener('mousedown', (e) => {
+                isDown = true;
+                element.classList.add('active');
+                startX = e.pageX - element.offsetLeft;
+                scrollLeft = element.scrollLeft;
+            });
+
+            element.addEventListener('mouseleave', () => {
+                isDown = false;
+                element.classList.remove('active');
+            });
+
+            element.addEventListener('mouseup', () => {
+                isDown = false;
+                element.classList.remove('active');
+            });
+
+            element.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - element.offsetLeft;
+                const walk = (x - startX) * 2; 
+                element.scrollLeft = scrollLeft - walk;
+            });
+            
+            // Añadir soporte para eventos táctiles (móviles)
+            element.addEventListener('touchstart', (e) => {
+                isDown = true;
+                element.classList.add('active');
+                startX = e.touches[0].pageX - element.offsetLeft;
+                scrollLeft = element.scrollLeft;
+            }, { passive: true });
+
+            element.addEventListener('touchend', () => {
+                isDown = false;
+                element.classList.remove('active');
+            });
+
+            element.addEventListener('touchmove', (e) => {
+                if (!isDown) return;
+                const x = e.touches[0].pageX - element.offsetLeft;
+                const walk = (x - startX) * 2;
+                element.scrollLeft = scrollLeft - walk;
+            }, { passive: true });
+        }
+
+        // --- Inicialización ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAppData();
+            updateHeaderDisplays();
+            updateRankDisplay();
+            renderSelectedSongs();
+            
+            // Inicializar la funcionalidad de arrastrar para deslizar
+            const scrollWrapper = document.getElementById('rankCardsContainerWrapper');
+            enableDragScroll(scrollWrapper);
+        });
+    </script>
+</body>
+</html>
