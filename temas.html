@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salas de Temas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: url('images/fondo.png') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #2c7a7b;
+            min-height: 100vh;
+            background-repeat: no-repeat;
+            background-position: center top;
+        }
+        
+        /* --- CABECERA --- */
+        .header {
+            /* Mantiene el ancho completo */
+            padding: 0; 
+            text-align: center;
+            color: white;
+            position: relative;
+            width: 100%; 
+        }
+        
+        /* --- IMAGEN DE CABECERA CON TRANSPARENCIA Y RECTANGULAR --- */
+        .header-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('images/iafuturo.png') no-repeat center center; 
+            background-size: cover;
+            opacity: 0.2; 
+            z-index: -1; 
+        }
+
+        .header-content {
+            /* Añadimos el padding derecho y centramos el contenido del texto */
+            padding: 100px 20px;
+        }
+
+
+        .title { font-size: 3rem; margin-bottom: 5px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); font-weight: bold; }
+        .subtitle { font-size: 1.5rem; margin-bottom: 20px; text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); font-style: italic; }
+
+
+        /* --- BARRA DE NAVEGACIÓN LATERAL --- */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 250px;
+            background-color: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            color: #e2e8f0;
+            z-index: 10;
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+        }
+
+        .profile-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            /* AÑADE ESTA LÍNEA CON LA RUTA DE TU IMAGEN: */
+            background-image: url('images/suno.png'); 
+            /* Para la imagen "image_9a5aa0.png" si la guardaste: */
+            /* background-image: url('image_9a5aa0.png'); */ 
+            background-color: #4a5568;
+            margin-right: 15px;
+            background-size: cover;
+            background-position: center;
+        }
+
+
+        .profile-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4a5568;
+            margin-right: 15px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .profile-details h4 { font-weight: bold; font-size: 1.1rem; }
+        .profile-details p { font-size: 0.9rem; color: #a0aec0; }
+
+        .sidebar-nav { flex-grow: 1; display: flex; flex-direction: column; }
+        /* Modificado el a:focus para mejor accesibilidad */
+        .sidebar-nav a { color: #e2e8f0; text-decoration: none; font-size: 1.1rem; padding: 15px 10px; border-radius: 8px; display: flex; align-items: center; transition: background-color 0.3s, color 0.3s; }
+        .sidebar-nav a:hover, .sidebar-nav a:focus { background-color: rgba(255, 255, 255, 0.1); color: white; outline: none; }
+        .sidebar-nav a.active { font-weight: bold; background-color: rgba(255, 255, 255, 0.15); }
+        .sidebar-nav a svg { width: 24px; height: 24px; margin-right: 15px; }
+        .sidebar-nav .logout-button { margin-top: auto; }
+        .sidebar-nav .logout-button:hover { background-color: rgba(229, 62, 62, 0.5); color: white; }
+
+
+        /* --- CONTENIDO PRINCIPAL Y SALAS --- */
+        #mainContent {
+            margin-left: 250px;
+            padding: 0; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: calc(100% - 250px);
+            min-height: 100vh;
+        }
+        
+        .rooms-header {
+            font-size: 1.8rem;
+            color: #e2e8f0; 
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 300;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.2);
+            padding-bottom: 5px;
+            width: calc(100% - 40px);
+            max-width: 800px;
+            margin-top: 40px;
+        }
+
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+            max-width: 1100px;
+            width: 100%;
+            padding: 0 20px;
+            margin-bottom: 50px;
+        }
+
+        .room-card {
+            background-color: rgba(31, 41, 55, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+            transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .room-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            background-color: rgba(31, 41, 55, 1);
+            border-color: #48bb78;
+        }
+        
+        .room-image { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 2px solid #4a5568; }
+        .room-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 5px; }
+        .room-description { font-size: 0.9rem; color: #a0a0a0; }
+        .room-status { position: absolute; top: 10px; right: 10px; font-size: 0.8rem; font-weight: bold; padding: 5px 10px; border-radius: 5px; color: white; }
+        .status-open { background-color: #48bb78; }
+        .status-closed { background-color: #e53e3e; }
+        
+        .app-footer { 
+            margin-top: auto; 
+            padding: 30px 15px; 
+            width: 100%; 
+            background-color: rgba(0, 0, 0, 0.4); 
+            color: #a0a0a0; 
+            text-align: center; 
+            font-size: 0.85rem; 
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="profile-section" onclick="goToSection('perfil')">
+            <div class="profile-image"></div>
+            <div class="profile-details">
+                <h4 id="sidebarUsername">Cargando...</h4>
+                <p>Mi Perfil</p>
+            </div>
+        </div>
+        <div class="sidebar-nav">
+            <a href="#" onclick="showMissionModal()">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                Nuestra Misión
+            </a>
+            <a href="#" onclick="showGlobalInfoModal()">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M18 13a3 3 0 100-6 3 3 0 000 6z"></path></svg>
+                Reglas
+            </a>
+            <a href="archivos.html">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                Archivos
+            </a>
+            <a href="podcast.html">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0h6m-6 0H6"></path></svg>
+                Podcast IA
+            </a>
+            <a href="#" class="logout-button" onclick="logout()">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                Cerrar Sesión
+            </a>
+        </div>
+    </nav>
+    
+    <div id="mainContent">
+        
+        <header class="header">
+            <div class="header-background"></div>
+            <div class="header-content">
+                <h1 class="title">LA IA MUSICAL</h1>
+                <p class="subtitle">Un universo de posibilidades que se entremezclan para dar música</p>
+            </div>
+        </header>
+
+        <h2 class="rooms-header">Temas Disponibles</h2>
+
+        <div class="room-grid">
+            
+            <div class="room-card" onclick="goToSection('sala1')">
+                <img src="images/literatura.png" alt="Sala Clásica" class="room-image">
+                <div class="room-status status-open">Abierto</div>
+                <h3 class="room-title">Sala literaria</h3>
+                <p class="room-description">Descubre a los grandes autores del siglo pasado.</p>
+            </div>
+            
+            <div class="room-card" onclick="goToSection('sala2')">
+                <img src="images/cine.png" alt="Sala Vanguardista" class="room-image">
+                <div class="room-status status-open">Abierto</div>
+                <h3 class="room-title">Sala cinematográfica</h3>
+                <p class="room-description">Adéntrate en la épica del cine.</p>
+            </div>
+
+            <div class="room-card" onclick="goToSection('sala3')">
+                <img src="images/cuentosmusicales.png" alt="Generación del 27" class="room-image">
+                <div class="room-status status-closed">Cerrado</div>
+                <h3 class="room-title">Sala cuentos y dibujos animados</h3>
+                <p class="room-description">Todos los cuentos que nos han contado de pequeños.</p>
+            </div>
+
+            <div class="room-card" onclick="goToSection('sala4')">
+                <img src="images/cocacola.png" alt="Épica y Drama" class="room-image">
+                <div class="room-status status-closed">Cerrado</div>
+                <h3 class="room-title">Sala usuarios</h3>
+                <p class="room-description">Aquí también participas tú.</p>
+            </div>
+            
+        </div>
+
+        <div class="w-full max-w-4xl p-6 bg-gray-900/70 rounded-lg shadow-xl mb-10 border border-indigo-700">
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4 text-center">Comentarios Globales</h2>
+            
+            <div id="globalCommentsContainer" class="space-y-3 h-40 overflow-y-auto p-2 mb-4 bg-gray-800 rounded">
+                </div>
+            
+            <div class="flex space-x-2">
+                <input type="text" id="commentInput" placeholder="Escribe un comentario..." 
+                       class="flex-grow p-3 rounded-lg border border-gray-600 bg-gray-700 text-white focus:ring-green-500 focus:border-green-500">
+                <button onclick="submitGlobalComment()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Enviar</button>
+            </div>
+        </div>
+
+        <footer class="app-footer">
+            <div class="flex flex-col items-center space-y-3">
+                <a href="https://youtube.com/@laliteraturamusical?si=hHIjTjWCnq2Y3yyB" target="_blank" class="text-red-400 hover:text-red-500 font-semibold flex items-center gap-2 transition-all text-sm sm:text-base">
+                    <svg class="w-6 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M21.582,6.186c-0.23-0.814-0.814-1.398-1.628-1.628C18.309,4,12,4,12,4S5.691,4,4.046,4.558C3.232,4.788,2.648,5.372,2.418,6.186C1.86,7.831,1.86,12,1.86,12s0,4.169,0.558,5.814c0.23,0.814,0.814,1.398,1.628,1.628C5.691,20,12,20,12,20s6.309,0,7.954-0.558c0.814-0.23,1.398-0.814,1.628-1.628C22.14,16.169,22.14,12,22.14,12S22.14,7.831,21.582,6.186z M10,15.464V8.536L16,12L10,15.464z"></path>
+                    </svg>
+                    <span>Visita nuestro canal de youtube</span>
+                </a>
+                <div class="flex items-center gap-2 text-blue-400 font-semibold text-sm sm:text-base">
+                    <svg class="w-6 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z"></path>
+                    </svg>
+                    <span>Información de contacto: <a href="mailto:lalAmusical@hotmail.com" class="hover:underline text-cyan-300">lalAmusical@hotmail.com</a></span>
+                </div>
+                <p class="mt-4 text-xs sm:text-sm">© 2024 La IA Musical. Todos los derechos reservados.</p>
+            </div>
+        </footer>
+    </div>
+    
+    <div id="missionModal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-2xl max-w-xl w-full border-t-4 border-purple-500">
+            <h3 class="text-2xl font-bold text-purple-400 mb-4" id="missionTitle"></h3>
+            <div class="text-gray-300 mb-4 space-y-3" id="missionContent">
+                </div>
+            <button onclick="closeMissionModal()" class="mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="globalInfoModal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-2xl max-w-xl w-full border-t-4 border-yellow-500">
+            <h3 class="text-2xl font-bold text-yellow-400 mb-4">Reglas del juego</h3>
+            <div class="text-gray-300 space-y-4">
+                <p>¡Bienvenido! Aquí puedes elegir entre diferentes salas de temas. Completa los Quizzes de cada sala para obtener **Estrellas (⭐)** que aumentarán tu rango de perfil.</p>
+                <h4 class="text-xl font-semibold text-yellow-300 border-b border-yellow-300/50 pb-1">Sistema de Votos</h4>
+                
+                <div class="p-3 bg-gray-700 rounded-lg border border-gray-600">
+                    <p class="font-bold text-yellow-400 flex items-center mb-1">
+                        <span class="text-3xl mr-2">⭐</span> Estrellas
+                    </p>
+                    <p class="text-sm">Se consiguen por los votos que obtienes al **acertar las preguntas en los Quizzes de las Salas**.</p>
+                    <p class="text-sm">Las estrellas definen tu posición en el **Ranking de la Liga**.</p>
+                </div>
+
+                <div class="p-3 bg-gray-700 rounded-lg border border-gray-600">
+                    <p class="font-bold text-cyan-400 flex items-center mb-1">
+                        <span class="text-3xl mr-2">💎</span> Diamantes
+                    </p>
+                    <p class="text-sm">Se consiguen al **acertar las canciones más votadas de la semana** (Top 3 de Canciones Elegidas).</p>
+                    <p class="text-sm">Los diamantes definen tu posición en el **Ranking del Adivino**.</p>
+                </div>
+            </div>
+            <button onclick="closeGlobalInfoModal()" class="mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Entendido</button>
+        </div>
+    </div>
+
+
+    <script>
+        // --- CONSTANTES ---
+        const USERS_KEY = 'users';
+        const SESSION_KEY = 'sessionData';
+        const GLOBAL_COMMENTS_KEY = 'globalComments';
+
+        // Contenido de la misión (Modificable desde aquí)
+        const MISSION_DATA = {
+            title: "Nuestra Misión Principal",
+            paragraphs: [
+               "Buscamos crear una biblioteca musical con letras inspiradas en literatura, cine, arte, etc.",
+		"Animamos a recoger todas estas herramientas para que inspire y motive a cada persona a explorar este vasto universo que nos trae la IA",
+                "Utilizamos la música como puente para facilitar la memorización, la comprensión y, sobre todo, la apreciación de las obras clásicas y modernas.",
+		"Rejuvenecer la apreciación por los grandes autores y sus textos, el cine y arte creativo.",
+		"Ofrecer una experiencia sensorial única que complemente la lectura con la música gracias a que estamos a favor de que la IA lo lleve a buen término.",
+		"Crear una comunidad de votación donde los usuarios decidan qué adaptaciones merecen estar en la cima.",
+                "A través de Quizzes interactivos, un sistema de rangos y rankings competitivos, buscamos convertir el aprendizaje en una experiencia lúdica y profundamente gratificante, preparando a las personas para su desarrollo personal y cultural."
+
+            ]
+        };
+
+        // --- ESTADO ---
+        let currentUsername = null;
+        let globalComments = [];
+
+        // --- UTILIDADES ---
+        function getStoredData(key, isJson = false) {
+            const data = localStorage.getItem(key);
+            if (!data) return null;
+            try {
+                return isJson ? JSON.parse(data) : data;
+            } catch (e) {
+                console.error("Error al parsear JSON de localStorage para la clave:", key, e);
+                return null;
+            }
+        }
+        
+        function setStoredData(key, value, isJson = false) {
+            localStorage.setItem(key, isJson ? JSON.stringify(value) : value);
+        }
+
+        // --- NAVEGACIÓN Y PERFIL ---
+
+        function goToSection(section) {
+            // Se actualizan los enlaces de la Sala 1 y Sala 2
+            if (section === 'sala1') {
+                window.location.href = 'literaturamusical.html'; 
+            } else if (section === 'sala2') {
+                window.location.href = 'cine.html'; // Enlace para Sala 2
+            } else if (section === 'perfil') {
+                window.location.href = 'perfil.html';
+            } else {
+                // Para las salas cerradas (sala3, sala4)
+                const roomCard = event.currentTarget;
+                const statusElement = roomCard.querySelector('.room-status');
+                if (statusElement && statusElement.textContent.trim() === 'Cerrado') {
+                    alert('Esta sala aún no está disponible.');
+                }
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem(SESSION_KEY);
+            localStorage.removeItem('literatura_loggedInUser');
+            window.location.href = 'index.html';
+        }
+
+        // --- MODALES ---
+
+        // Modal "Reglas del juego" 
+        function showGlobalInfoModal() {
+            document.getElementById('globalInfoModal').classList.remove('hidden');
+            document.getElementById('globalInfoModal').classList.add('flex');
+        }
+
+        function closeGlobalInfoModal() {
+            document.getElementById('globalInfoModal').classList.add('hidden');
+            document.getElementById('globalInfoModal').classList.remove('flex');
+        }
+        
+        // Modal "Nuestra Misión" 
+        function showMissionModal() {
+            // Inyectar el contenido de la misión
+            document.getElementById('missionTitle').textContent = MISSION_DATA.title;
+            const contentHtml = MISSION_DATA.paragraphs.map(p => `<p>${p}</p>`).join('');
+            document.getElementById('missionContent').innerHTML = contentHtml;
+            
+            document.getElementById('missionModal').classList.remove('hidden');
+            document.getElementById('missionModal').classList.add('flex');
+        }
+
+        function closeMissionModal() {
+            document.getElementById('missionModal').classList.add('hidden');
+            document.getElementById('missionModal').classList.remove('flex');
+        }
+
+        // --- COMENTARIOS GLOBALES ---
+
+        function loadGlobalComments() {
+            const storedComments = getStoredData(GLOBAL_COMMENTS_KEY, true);
+            if (storedComments) {
+                globalComments = storedComments;
+            }
+            renderGlobalComments();
+        }
+
+        function saveGlobalComments() {
+            const limitedComments = globalComments.slice(-20);
+            setStoredData(GLOBAL_COMMENTS_KEY, limitedComments, true);
+        }
+
+        function submitGlobalComment() {
+            const input = document.getElementById('commentInput');
+            const commentText = input.value.trim();
+
+            if (!commentText) {
+                alert('El comentario no puede estar vacío.');
+                return;
+            }
+
+            const timestamp = new Date().toLocaleDateString('es-ES', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: '2-digit', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+
+            globalComments.push({ text: commentText, timestamp: timestamp, user: currentUsername || "Anónimo" });
+            input.value = '';
+            saveGlobalComments();
+            renderGlobalComments();
+        }
+
+        function renderGlobalComments() {
+            const container = document.getElementById('globalCommentsContainer');
+            if (!container) return;
+            if (globalComments.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 italic">No hay comentarios aún. ¡Sé el primero!</p>';
+                return;
+            }
+            container.innerHTML = globalComments.map(c => `<div class="bg-indigo-700/50 p-3 rounded-lg border border-indigo-500"><p class="text-xs font-semibold text-yellow-300">${c.user || 'Anónimo'} (${c.timestamp})</p><p class="text-base">${c.text}</p></div>`).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // --- INICIALIZACIÓN ---
+        function init() {
+            const sessionData = getStoredData(SESSION_KEY, true); 
+            if (sessionData && Date.now() < sessionData.expirationTime) {
+                currentUsername = sessionData.currentUser; 
+                document.getElementById('sidebarUsername').textContent = currentUsername;
+            } else {
+                logout();
+                return;
+            }
+            loadGlobalComments();
+            document.getElementById('globalInfoModal').addEventListener('click', function(e) { if (e.target === this) closeGlobalInfoModal(); });
+            document.getElementById('missionModal').addEventListener('click', function(e) { if (e.target === this) closeMissionModal(); });
+
+            // Mostrar el modal de reglas del juego la primera vez que entra un usuario
+            if (!localStorage.getItem('temasVisited')) {
+                showGlobalInfoModal();
+                localStorage.setItem('temasVisited', 'true');
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
