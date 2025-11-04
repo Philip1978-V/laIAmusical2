@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca de Cartas/Canciones 🎶</title>
+    <style>
+        /* Estilos CSS (Generales se mantienen) */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1 {
+            color: #0056b3;
+            text-align: center;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        /* La clase form-section se ha eliminado */
+        .search-section, .data-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: #f9f9ff;
+        }
+        
+        /* Estilos específicos para la Búsqueda */
+        #search-input {
+            width: 98%;
+            padding: 12px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        .search-results {
+            margin-top: 15px;
+        }
+        .result-item {
+            padding: 8px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .result-title {
+            font-weight: bold;
+            color: #0056b3;
+        }
+        .result-sala {
+            font-size: 0.9em;
+            color: #6a6a6a;
+        }
+
+        /* Estilos para la lista de Salas (Se mantienen) */
+        #salas-container ul {
+            list-style: none;
+            padding: 0;
+        }
+        #salas-container li {
+            margin: 10px 0;
+        }
+        #salas-container a {
+            display: block;
+            padding: 12px;
+            background-color: #e9ecef;
+            color: #0056b3;
+            text-decoration: none;
+            border-radius: 4px;
+            border-left: 5px solid #007bff;
+            transition: background-color 0.3s;
+            font-weight: bold;
+        }
+        #salas-container a:hover {
+            background-color: #d6e9f8;
+            border-left-color: #0056b3;
+        }
+        .count {
+            float: right;
+            background-color: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+
+        /* ESTILO AÑADIDO PARA EL BOTÓN DE MENÚ PRINCIPAL */
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px; /* Separación del título */
+            padding: 10px 15px;
+            background-color: #3498db; /* Azul */
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .back-button:hover {
+            background-color: #2980b9;
+        }
+        /* FIN ESTILO AÑADIDO */
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="temas.html" class="back-button">⬅️ Volver al Menú Principal</a>
+    <h1>Biblioteca de Cartas/Canciones 🎶</h1>
+
+    <div class="search-section">
+        <h2>🔍 Buscar Carta/Canción</h2>
+        <input 
+            type="text" 
+            id="search-input" 
+            placeholder="Escribe el título o autor para buscar en todas las salas..."
+            onkeyup="buscarEntradas()">
+        
+        <div id="search-results-container" class="search-results">
+            </div>
+    </div>
+    
+    <div class="data-section">
+        <h2>🗂️ Biblioteca Clasificada por Salas</h2>
+        <div id="salas-container">
+            </div>
+    </div>
+    
+</div>
+
+<script>
+    // Las salas ahora se definen con sus nombres amigables y sus archivos HTML
+    const salasConfig = [
+        { nombre: "Sala literaria", archivo: "Sala-literaria.html" },
+        { nombre: "Sala cine", archivo: "Sala-cine.html" },
+	{ nombre: "Sala cuentos", archivo: "Sala-cuentos.html" },
+        { nombre: "Sala dibujos animados", archivo: "Sala-dibujos-animados.html" },
+        { nombre: "Sala teatro y musicales", archivo: "Sala-teatro-y-musicales.html" },
+        { nombre: "Sala ópera y conciertos", archivo: "Sala-opera-y-conciertos.html" },
+        { nombre: "Sala series", archivo: "Sala-series.html" },
+        { nombre: "Sala anime", archivo: "Sala-anime.html" },
+        { nombre: "Sala amigos", archivo: "Sala-amigos.html" },
+        { nombre: "Sala extras", archivo: "Sala-extras.html" }
+    ];
+
+    // --- FUNCIONES DE ALMACENAMIENTO ---
+    function obtenerDatos() {
+        const data = localStorage.getItem('bibliotecaData');
+        return data ? JSON.parse(data) : [];
+    }
+
+    // Nota: La función guardarDatos y agregarEntrada original ya no son necesarias aquí, 
+    // pero la dejaremos en caso de que decidas reintroducir la funcionalidad.
+
+    // --- FUNCIÓN DE BÚSQUEDA (NUEVA) ---
+    function buscarEntradas() {
+        const query = document.getElementById('search-input').value.toLowerCase().trim();
+        const resultsContainer = document.getElementById('search-results-container');
+        resultsContainer.innerHTML = '';
+
+        if (query.length < 3) {
+            resultsContainer.innerHTML = '<p style="color: #999;">Escribe al menos 3 caracteres para iniciar la búsqueda.</p>';
+            return;
+        }
+
+        const datos = obtenerDatos();
+        
+        // 1. Filtrar los datos
+        const resultados = datos.filter(entrada => 
+            entrada.titulo.toLowerCase().includes(query) ||
+            entrada.autor.toLowerCase().includes(query)
+        );
+
+        if (resultados.length === 0) {
+            resultsContainer.innerHTML = '<p style="color: red;">❌ No se encontraron resultados que coincidan.</p>';
+            return;
+        }
+        
+        // 2. Mostrar los resultados
+        resultados.forEach(entrada => {
+            // Encontrar el nombre amigable de la sala
+            const salaInfo = salasConfig.find(s => s.archivo === entrada.sala);
+            const salaNombre = salaInfo ? salaInfo.nombre : 'Sin Sala';
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'result-item';
+            itemDiv.innerHTML = `
+                <div class="result-title">${entrada.titulo}</div>
+                <div class="result-sala">Autor: ${entrada.autor} | Clasificado en: ${salaNombre}</div>
+            `;
+            resultsContainer.appendChild(itemDiv);
+        });
+
+        resultsContainer.innerHTML += `<p style="font-size: 0.9em; margin-top: 10px;">Encontrados ${resultados.length} resultados.</p>`;
+    }
+
+
+    // --- FUNCIÓN PARA MOSTRAR LOS ENLACES (Se mantiene) ---
+    function mostrarSalas() {
+        const container = document.getElementById('salas-container');
+        container.innerHTML = '';
+        const datos = obtenerDatos();
+        
+        const ul = document.createElement('ul');
+
+        // Calcular cuántas entradas hay por cada archivo (sala)
+        const counts = datos.reduce((acc, entrada) => {
+            acc[entrada.sala] = (acc[entrada.sala] || 0) + 1;
+            return acc;
+        }, {});
+
+        // Generar los enlaces
+        salasConfig.forEach(sala => {
+            const count = counts[sala.archivo] || 0;
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <a href="${sala.archivo}">
+                    ${sala.nombre}
+                    <span class="count">${count}</span>
+                </a>
+            `;
+            ul.appendChild(li);
+        });
+
+        container.appendChild(ul);
+    }
+
+    // Cargar y mostrar los enlaces al cargar la página
+    window.onload = mostrarSalas;
+</script>
+
+</body>
+</html>
