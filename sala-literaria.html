@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sala Literaria 📚</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> 
+
+<style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f8f8f8;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #A0522D;
+            text-align: center;
+            border-bottom: 2px solid #A0522D;
+            padding-bottom: 10px;
+        }
+        
+        /* Contenedor para los enlaces de cabecera */
+        .header-links {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .back-link { 
+            display: inline-block; 
+            text-decoration: none; 
+            color: #007bff; 
+            font-weight: bold;
+        }
+
+        /* ESTILO DEL NUEVO BOTÓN A TEMAS.HTML */
+        .temas-btn {
+            background-color: #BEF264; /* Verde/amarillento */
+            color: #1a1a1a;
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            border: 1px solid #a7e555;
+            transition: background-color 0.2s;
+        }
+
+        .temas-btn:hover {
+            background-color: #d2f99a; 
+        }
+
+        /* --- Estilos para la Lista de Canciones/Cartas --- */
+        #lista-entradas {
+            padding: 1px 0; 
+        }
+
+        .entrada-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 10px;
+            margin: 5px 0;
+            border-bottom: 1px solid #eee; 
+            cursor: default; 
+            background-color: #fff;
+            transition: background-color 0.2s;
+        }
+        .entrada-item:hover {
+            background-color: #f7f7f7;
+        }
+        .titulo-autor {
+            flex-grow: 1;
+            margin-right: 15px; 
+            min-width: 250px;
+        }
+        .titulo {
+            font-weight: bold;
+            color: #333;
+        }
+        .autor {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        /* --- Controles de Audio y Compra --- */
+        .controles-audio {
+            display: flex;
+            gap: 10px;
+        }
+        audio { display: none; }
+        .control-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 1.2em;
+            color: #A0522D;
+            transition: color 0.2s;
+        }
+        .control-btn:hover {
+            color: #D2B48C;
+        }
+        
+        .controles-compra {
+            display: flex;
+            gap: 5px;
+            margin-left: 15px;
+        }
+        
+        .buy-btn, .lyrics-btn {
+            background: #D2B48C; 
+            color: #333;
+            border: none;
+            padding: 8px 10px;
+            font-size: 0.8em;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            white-space: nowrap; 
+            font-weight: bold;
+            display: flex; 
+            align-items: center; 
+            gap: 4px; 
+        }
+        .lyrics-btn {
+            background: #A0522D; 
+            color: white;
+        }
+        .buy-btn:hover:not(:disabled), .lyrics-btn:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+        .buy-btn:disabled, .lyrics-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            color: #666;
+        }
+        
+        .coin-icon {
+            color: #BEF264; 
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.5); 
+            font-size: 1em; 
+        }
+
+        /* Ajuste para móviles */
+        @media (max-width: 768px) {
+            .header-links {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .entrada-item {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            .titulo-autor {
+                width: 100%;
+                margin-right: 0;
+            }
+            .controles-compra {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-links">
+        <a href="biblioteca.html" class="back-link">← Volver a la Biblioteca Principal</a>
+        <a href="temas.html" class="temas-btn">Volver a Temas</a>
+    </div>
+
+    <h1>Sala Literaria 📚 (Orden Alfabético)</h1>
+    <p>La lista está ordenada alfabéticamente por título. Usa el ratón para desplazar la vista rápidamente a la deseada.</p>
+
+    <div id="lista-entradas">
+        </div>
+
+</div>
+
+<script>
+    // --- CONSTANTES ---
+    const ARCHIVO_SALA = "Sala-literaria.html";
+    const CLAVE_LOCAL = "bibliotecaData";
+    
+    // Claves globales de Perfil.html
+    const GLOBAL_COINS_KEY = 'totalCoins'; 
+    const GLOBAL_SELECTED_SONGS_KEY = 'selectedSongsGlobal';
+
+    // Costos de Compra (Actualizados)
+    const CARD_COST = 500; // Costo de compra de carta: 500
+    const LYRICS_COST = 50; 
+    
+    // --- Funciones de Almacenamiento Global (tomadas de perfil.html) ---
+    function getGlobalCoins() {
+        return parseInt(localStorage.getItem(GLOBAL_COINS_KEY) || '0');
+    }
+
+    function saveGlobalCoins(coins) {
+        localStorage.setItem(GLOBAL_COINS_KEY, coins.toString());
+    }
+
+    function getGlobalSelectedSongs() {
+        try {
+            return JSON.parse(localStorage.getItem(GLOBAL_SELECTED_SONGS_KEY) || '[]');
+        } catch (e) {
+            console.error("Error al parsear selectedSongsGlobal:", e);
+            return [];
+        }
+    }
+
+    function saveGlobalSelectedSongs(songs) {
+        localStorage.setItem(GLOBAL_SELECTED_SONGS_KEY, JSON.stringify(songs));
+    }
+    
+    // Función auxiliar para verificar si una carta ya ha sido comprada
+    function isCardOwned(titulo, autor, sala) {
+        const selectedSongs = getGlobalSelectedSongs();
+        return selectedSongs.some(s => 
+            s.title === titulo && s.author === autor && s.room === sala
+        );
+    }
+    
+    // --- Funciones de Compra ---
+    function buyCard(index, cost) {
+        let currentCoins = getGlobalCoins();
+        if (currentCoins < cost) {
+            alert(`Monedas insuficientes. Necesitas ${cost} monedas para comprar esta carta.`);
+            return;
+        }
+
+        const todosLosDatos = inicializarDatos(); 
+        const entradasDeSala = todosLosDatos.filter(d => d.sala === ARCHIVO_SALA).sort((a, b) => a.titulo.localeCompare(b.titulo));
+        const songToBuy = entradasDeSala[index];
+
+        if (!songToBuy) {
+            alert("Error: Carta no encontrada.");
+            return;
+        }
+        
+        if (isCardOwned(songToBuy.titulo, songToBuy.autor, songToBuy.sala)) {
+             alert(`Ya tienes la carta "${songToBuy.titulo}" en tu colección.`);
+             return;
+        }
+
+        let selectedSongs = getGlobalSelectedSongs();
+        
+        // 1. Restar monedas
+        const newCoins = currentCoins - cost;
+        saveGlobalCoins(newCoins);
+        
+        // 2. Preparar la nueva carta para la colección
+        const newCard = {
+            id: Date.now() + Math.floor(Math.random() * 1000), 
+            room: songToBuy.sala,
+            title: songToBuy.titulo,
+            author: songToBuy.autor,
+            image: (songToBuy.audioUrl ? songToBuy.audioUrl.replace('audio/', 'imagen/').replace('.mp3', '.png') : 'https://via.placeholder.com/150x150?text=LIT+CARD'),
+            quizStars: 50, 
+            hasDiamond: false 
+        };
+
+        // 3. Añadir a la colección global
+        selectedSongs.push(newCard);
+        saveGlobalSelectedSongs(selectedSongs);
+
+        alert(`¡Felicidades! Has comprado la carta "${songToBuy.titulo}" por ${cost} monedas. Se ha añadido a tu Perfil. ¡Ve a Perfil para gestionarla!`);
+        cargarEntradas(); 
+    }
+
+    function buyLyrics(index, cost) {
+        let currentCoins = getGlobalCoins();
+        if (currentCoins < cost) {
+            alert(`Monedas insuficientes. Necesitas ${cost} monedas para descargar las letras.`);
+            return;
+        }
+
+        const todosLosDatos = inicializarDatos();
+        const entradasDeSala = todosLosDatos.filter(d => d.sala === ARCHIVO_SALA).sort((a, b) => a.titulo.localeCompare(b.titulo));
+        const song = entradasDeSala[index];
+
+        if (!song) {
+            alert("Error: Carta no encontrada.");
+            return;
+        }
+        
+        // 1. Restar monedas
+        const newCoins = currentCoins - cost;
+        saveGlobalCoins(newCoins);
+        
+        // 2. Simular la acción/confirmar la compra
+        alert(`¡Compra de letras exitosa! Se han restado ${cost} monedas. Ahora tienes acceso a las letras de "${song.titulo}". (En un entorno real, aquí se iniciaría la descarga o se daría el link).`);
+        
+        cargarEntradas(); 
+    }
+
+
+    // --- LISTADO BASE Y LÓGICA DE CARGA ---
+
+    const entradasBase = [
+        { titulo: "A una rosa", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/a_una_rosa.mp3" },
+        { titulo: "Adolescencia", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/adolescencia.mp3" },
+        { titulo: "Aeroplanos", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/aeroplanos.mp3" },
+        { titulo: "Altazor(Canto IV)", autor: "Vicente Huidobro", sala: ARCHIVO_SALA, audioUrl: "audio/altazor_canto_iv.mp3" },
+        { titulo: "Amor constante más allá de la muerte", autor: "Francisco de Quevedo", sala: ARCHIVO_SALA, audioUrl: "audio/amor_constante.mp3" },
+        { titulo: "Arbolé arbolé", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/arbole_arbole.mp3" },
+        { titulo: "Baladas y canciones del Paraná", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/baladas_parana.mp3" },
+        { titulo: "Campos de Castilla(Retrato)", autor: "Antonio Machado", sala: ARCHIVO_SALA, audioUrl: "audio/campos_castilla_retrato.mp3" },
+        { titulo: "Canción para los ojos", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/cancion_ojos.mp3" },
+        { titulo: "Cancion del Pirata", autor: "José de Espronceda", sala: ARCHIVO_SALA, audioUrl: "audio/cancion_pirata.mp3" },
+        { titulo: "Cántico", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/cantico.mp3" },
+        { titulo: "Columpio", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/columpio.mp3" },
+        { titulo: "Contra molinos y gigantes", autor: "Cervantes", sala: ARCHIVO_SALA, audioUrl: "audio/molinos-gigantes.mp3" },
+        { titulo: "Corazón coraza", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/corazon_coraza.mp3" },
+        { titulo: "Don Quijote de la Mancha", autor: "Miguel de Cervantes", sala: ARCHIVO_SALA, audioUrl: "audio/lit_quijote.mp3" },
+        { titulo: "El burro flautista(Fábulas literarias)", autor: "Tomás de Iriarte", sala: ARCHIVO_SALA, audioUrl: "audio/burro_flautista.mp3" },
+        { titulo: "El ciclo de Macondo", autor: "García Márquez", sala: ARCHIVO_SALA, audioUrl: "audio/macondo.mp3" },
+        { titulo: "El lenguaje del mundo", autor: "Anónimo", sala: ARCHIVO_SALA, audioUrl: "audio/lenguaje-mundo.mp3" },
+        { titulo: "El matrimonio Bennet", autor: "Jane Austen", sala: ARCHIVO_SALA, audioUrl: "audio/bennet.mp3" },
+        { titulo: "El ojo que todo lo ve", autor: "George Orwell", sala: ARCHIVO_SALA, audioUrl: "audio/ojo-ve.mp3" },
+        { titulo: "El remordimiento", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/el_remordimiento.mp3" },
+        { titulo: "El sol, la playa y la sinceridad", autor: "Albert Camus", sala: ARCHIVO_SALA, audioUrl: "audio/sol-playa.mp3" },
+        { titulo: "Elegía", autor: "Miguel Hernandez", sala: ARCHIVO_SALA, audioUrl: "audio/elegia.mp3" },
+        { titulo: "Freija", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/freija.mp3" },
+        { titulo: "Hija del viento", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/hija_del_viento.mp3" },
+        { titulo: "Historia del caballo de ébano", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/caballo_ebano.mp3" },
+        { titulo: "Ir y quedarse", autor: "Lope de Vega", sala: ARCHIVO_SALA, audioUrl: "audio/ir_y_quedarse.mp3" },
+        { titulo: "La fiebre de San Persburgo", autor: "Dostoyevski", sala: ARCHIVO_SALA, audioUrl: "audio/san-persburgo.mp3" },
+        { titulo: "La hermanilla", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/la_hermanilla.mp3" },
+        { titulo: "La naturaleza", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/la_naturaleza.mp3" },
+        { titulo: "La patinadora", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/la_patinadora.mp3" },
+        { titulo: "La princesa esta triste", autor: "Rubén Darío", sala: ARCHIVO_SALA, audioUrl: "audio/princesa_triste.mp3" },
+        { titulo: "La travesía de Odiseo", autor: "Homero", sala: ARCHIVO_SALA, audioUrl: "audio/odiseo.mp3" },
+        { titulo: "La voz a tí debida", autor: "Pedro Salinas", sala: ARCHIVO_SALA, audioUrl: "audio/la_voz_a_ti_debida.mp3" },
+        { titulo: "Marinero en tierra", autor: "Rafael Alberti", sala: ARCHIVO_SALA, audioUrl: "audio/marinero_tierra.mp3" },
+        { titulo: "Marinero en tierra(Sueño del marinero)", autor: "Rafael Alberti", sala: ARCHIVO_SALA, audioUrl: "audio/marinero_tierra_sueno.mp3" },
+        { titulo: "Memorias de la melancolía", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/memorias_melancolia.mp3" },
+        { titulo: "País", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/pais.mp3" },
+        { titulo: "Piedra de Sol", autor: "Octavio Paz", sala: ARCHIVO_SALA, audioUrl: "audio/piedra_sol.mp3" },
+        { titulo: "Poeta en New York(La aurora)", autor: "Federico García Lorca", sala: ARCHIVO_SALA, audioUrl: "audio/poeta_new_york_la_aurora.mp3" },
+        { titulo: "Por una mirada un mundo", autor: "Gustavo Adolfo Bécquer", sala: ARCHIVO_SALA, audioUrl: "audio/por_una_mirada.mp3" },
+        { titulo: "Residencia en la tierra(Barcarola)", autor: "Pablo Neruda", sala: ARCHIVO_SALA, audioUrl: "audio/residencia_tierra_barcarola.mp3" },
+        { titulo: "Romance del Duero", autor: "Gerardo Diego", sala: ARCHIVO_SALA, audioUrl: "audio/romance_duero.mp3" },
+        { titulo: "Romancero gitano(Romance de la luna, luna)", autor: "Federico García Lorca", sala: ARCHIVO_SALA, audioUrl: "audio/romancero_gitano_luna.mp3" },
+        { titulo: "San Baudelio de Berlanga", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/san_baudelio.mp3" },
+        { titulo: "Se equivocó la paloma", autor: "Rafael Alberti", sala: ARCHIVO_SALA, audioUrl: "audio/se_equivoco_paloma.mp3" },
+        { titulo: "Si el hombre pudiera decir", autor: "Desconocido", sala: ARCHIVO_SALA, audioUrl: "audio/si_el_hombre.mp3" },
+        { titulo: "Trilce", autor: "César Vallejo", sala: ARCHIVO_SALA, audioUrl: "audio/trilce.mp3" },
+        { titulo: "Veinte poemas de amor", autor: "Pablo Neruda", sala: ARCHIVO_SALA, audioUrl: "audio/veinte_poemas_amor.mp3" },
+    ].sort((a, b) => a.titulo.localeCompare(b.titulo)); 
+
+    function obtenerDatos() {
+        const data = localStorage.getItem(CLAVE_LOCAL);
+        return data ? JSON.parse(data) : [];
+    }
+
+    function guardarDatos(data) {
+        localStorage.setItem(CLAVE_LOCAL, JSON.stringify(data));
+    }
+
+    function inicializarDatos() {
+        let datos = obtenerDatos();
+        let existeCambio = false;
+
+        datos = datos.filter(d => 
+            d.sala !== ARCHIVO_SALA || entradasBase.some(base => 
+                base.titulo === d.titulo && base.autor === d.autor
+            )
+        );
+
+        entradasBase.forEach(entradaBase => {
+            const yaExiste = datos.some(d => 
+                d.titulo === entradaBase.titulo && d.autor === entradaBase.autor && d.sala === entradaBase.sala
+            );
+            if (!yaExiste) {
+                datos.push(entradaBase);
+                existeCambio = true;
+            }
+            else {
+                 const index = datos.findIndex(d => d.titulo === entradaBase.titulo && d.autor === entradaBase.autor && d.sala === entradaBase.sala);
+                if (index !== -1 && !datos[index].audioUrl) {
+                    datos[index].audioUrl = entradaBase.audioUrl;
+                    existeCambio = true;
+                }
+            }
+        });
+
+        if (existeCambio) {
+            guardarDatos(datos);
+        }
+        return datos;
+    }
+
+    function cargarEntradas() {
+        const todosLosDatos = inicializarDatos();
+        
+        let entradasDeSala = todosLosDatos.filter(d => d.sala === ARCHIVO_SALA);
+        entradasDeSala.sort((a, b) => a.titulo.localeCompare(b.titulo));
+        
+        const contenedor = document.getElementById('lista-entradas');
+        contenedor.innerHTML = '';
+
+        if (entradasDeSala.length === 0) {
+            contenedor.innerHTML = '<p>No hay cartas/canciones introducidas en esta sala todavía.</p>';
+            return;
+        }
+        
+        const currentCoins = getGlobalCoins();
+
+        entradasDeSala.forEach((e, index) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.setAttribute('data-index-in-data', index); 
+            itemDiv.className = 'entrada-item';
+            
+            const cardOwned = isCardOwned(e.titulo, e.autor, e.sala);
+            const buyButtonDisabled = cardOwned || currentCoins < CARD_COST;
+            const buyButtonText = cardOwned ? 'Ya Adquirida' : `${CARD_COST} <i class="fas fa-coins coin-icon"></i> Comprar Carta`; 
+            
+            const lyricsButtonDisabled = currentCoins < LYRICS_COST;
+            const lyricsButtonText = `${LYRICS_COST} <i class="fas fa-coins coin-icon"></i> Descargar Lyrics`; 
+
+            itemDiv.innerHTML = `
+                <div class="titulo-autor">
+                    <div class="titulo">${e.titulo}</div>
+                    <div class="autor">${e.autor}</div>
+                </div>
+                
+                <div class="controles-audio">
+                    <audio id="audio-${index}" src="${e.audioUrl}" preload="auto"></audio>
+                    
+                    <button class="control-btn play-btn" onclick="controlarAudio(${index}, 'play')" title="Reproducir">
+                        ▶
+                    </button>
+                    <button class="control-btn stop-btn" onclick="controlarAudio(${index}, 'stop')" title="Detener">
+                        ■
+                    </button>
+                </div>
+                
+                <div class="controles-compra">
+                    <button 
+                        class="buy-btn" 
+                        onclick="buyCard(${index}, ${CARD_COST})"
+                        ${buyButtonDisabled ? 'disabled' : ''}
+                        title="${cardOwned ? 'Esta carta ya está en tu Perfil' : `Costo: ${CARD_COST} monedas. Tienes ${currentCoins}.`}"
+                    >
+                        ${buyButtonText}
+                    </button>
+                    <button 
+                        class="lyrics-btn" 
+                        onclick="buyLyrics(${index}, ${LYRICS_COST})"
+                        ${lyricsButtonDisabled ? 'disabled' : ''}
+                        title="Costo: ${LYRICS_COST} monedas. Tienes ${currentCoins}."
+                    >
+                        ${lyricsButtonText}
+                    </button>
+                </div>
+            `;
+            contenedor.appendChild(itemDiv);
+        });
+        
+        hacerListaArrastrable(); 
+    }
+
+    // --- Función para hacer la lista arrastrable (SIN REORDENAR) ---
+    function hacerListaArrastrable() {
+        const lista = document.getElementById('lista-entradas');
+        
+        new Sortable(lista, {
+            animation: 150,
+            disabled: true, 
+        });
+    }
+    
+    // --- Función de Control de Audio (Se mantiene) ---
+    function controlarAudio(index, accion) {
+        const audio = document.getElementById(`audio-${index}`);
+        
+        document.querySelectorAll('audio').forEach((a, i) => {
+            if (i !== index && !a.paused) {
+                a.pause();
+                a.currentTime = 0;
+            }
+        });
+
+        if (accion === 'play') {
+            if (audio.paused) {
+                audio.play().catch(error => {
+                    alert(`Error al reproducir el audio: Comprueba que la URL "${audio.src}" es correcta.`);
+                    console.error("Error de reproducción:", error);
+                });
+            }
+        } else if (accion === 'stop') {
+            audio.pause();
+            audio.currentTime = 0;
+        }
+    }
+
+    // Cargar los datos y la lista al iniciar la página
+    window.onload = cargarEntradas;
+</script>
+
+</body>
+</html>
