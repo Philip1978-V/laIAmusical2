@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Usuario</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* --- ESTILOS DE BARRA DE PROGRESO GENERAL --- */
+        #overallProgressBarContainer {
+            width: 100%;
+            height: 8px;
+            background-color: #374151; /* gray-700 */
+            border-radius: 9999px;
+            overflow: hidden;
+            margin-top: 1rem;
+            position: relative;
+        }
+
+        #overallProgressBar {
+            height: 100%;
+            width: 0%;
+            background-color: #22c55e; /* green-500 */
+            border-radius: 9999px;
+            transition: width 0.5s ease-out;
+        }
+
+        /* --- ESTILOS DE RANGOS (TARJETAS INDIVIDUALES) --- */
+        #rankCardsContainerWrapper {
+            overflow-x: scroll;
+            cursor: grab;
+            padding-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
+            /* Ocultar barra de desplazamiento */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+        }
+        #rankCardsContainerWrapper::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+        #rankCardsContainerWrapper.active {
+            cursor: grabbing;
+        }
+
+        /* --- NUEVOS ESTILOS PARA MARCADORES DE CANCIONES (DIAMANTES/ESTRELLAS) --- */
+        .diamond-badge, .star-badge {
+            position: absolute;
+            z-index: 10;
+            padding: 0.35rem 0.6rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            font-size: 0.875rem; /* text-sm */
+            line-height: 1; /* Para alinear el texto/icono */
+        }
+
+        .diamond-badge {
+            top: 10px;
+            left: 10px;
+            background-color: #0d9488; /* teal-600 */
+            color: #ccfbf1; /* teal-100 */
+            border: 1px solid #065f46; /* teal-800 */
+        }
+
+        .star-badge {
+            top: 10px;
+            right: 10px;
+            background-color: #f59e0b; /* amber-500 */
+            color: #1f2937; /* gray-800 */
+            border: 1px solid #b45309; /* amber-700 */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen font-sans">
+    
+    <header class="bg-purple-950 p-4 shadow-xl sticky top-0 z-10 border-b border-purple-800">
+        <div class="container mx-auto flex flex-col items-center">
+            
+            <h1 class="text-3xl md:text-4xl font-extrabold text-lime-400 flex items-center justify-center w-full mb-4">
+                <i class="fas fa-user-circle text-cyan-400 mr-3 text-4xl"></i>
+                Mi Perfil
+            </h1>
+            
+            <div class="w-full flex justify-end items-center mb-2 md:mb-4">
+                 <a href="temas.html" class="bg-yellow-500 text-gray-900 hover:bg-yellow-600 py-2 px-4 rounded-lg font-bold transition-all text-sm md:text-base hover:scale-105">Menú principal</a>
+            </div>
+            
+        </div>
+    </header>
+    
+    <main class="container mx-auto p-6 space-y-12">
+        
+        <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-purple-700">
+            <h2 class="text-2xl font-bold mb-4 text-teal-400 border-b border-purple-600 pb-2">Estadísticas Generales</h2>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div class="p-3 bg-purple-900 rounded-lg">
+                    <p class="text-lg text-gray-300">Estrellas Totales</p>
+                    <p id="userStarsDisplay" class="text-4xl font-extrabold text-yellow-400 flex items-center justify-center mt-1">0 <i class="fas fa-star text-2xl ml-2"></i></p>
+                </div>
+                <div class="p-3 bg-purple-900 rounded-lg">
+                    <p class="text-lg text-gray-300">Diamantes Ganados</p>
+                    <p id="totalDiamondsDisplay" class="text-4xl font-extrabold text-teal-400 flex items-center justify-center mt-1">0 <i class="fas fa-gem text-2xl ml-2"></i></p>
+                </div>
+                <div class="p-3 bg-purple-900 rounded-lg">
+                    <p class="text-lg text-gray-300">Monedas Acumuladas</p>
+                    <p id="totalCoinsDisplay" class="text-4xl font-extrabold text-lime-400 flex items-center justify-center mt-1">0 <i class="fas fa-coins text-2xl ml-2"></i></p>
+                </div>
+                <div class="p-3 bg-purple-900 rounded-lg">
+                    <p class="text-lg text-gray-300">Votos restantes en sala literaria:</p>
+                    <p id="votesRemainingLiteraturaDisplay" class="text-4xl font-extrabold text-cyan-400 flex items-center justify-center mt-1">5 <i class="fas fa-hand-pointer text-2xl ml-2"></i></p>
+                </div>
+                <div class="p-3 bg-purple-900 rounded-lg">
+                    <p class="text-lg text-gray-300">Votos restantes en sala cine:</p>
+                    <p id="votesRemainingCineDisplay" class="text-4xl font-extrabold text-cyan-400 flex items-center justify-center mt-1">5 <i class="fas fa-hand-pointer text-2xl ml-2"></i></p>
+                </div>
+                <div class="p-3 bg-purple-900 rounded-lg col-span-2 md:col-span-3">
+                    <p class="text-lg text-gray-300">Canciones Elegidas</p>
+                    <p id="selectedSongsCount" class="text-4xl font-extrabold text-pink-400 flex items-center justify-center mt-1">0 / 5</p>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <h3 class="text-xl font-semibold mb-2 text-lime-400">Progreso para el Rango Actual</h3>
+                <div id="overallProgressBarContainer">
+                    <div id="overallProgressBar"></div>
+                </div>
+                <p id="overallProgressText" class="text-sm text-gray-400 mt-2 text-center">0 / 100 Estrellas para alcanzar el rango Aprendiz</p>
+            </div>
+        </section>
+
+        <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-teal-700">
+            <h2 class="text-2xl font-bold mb-4 text-cyan-400 border-b border-teal-600 pb-2 flex justify-between items-center">
+                Clasificación General (Top 3)
+                <button onclick="openExchangeModal()" class="bg-indigo-600 text-white hover:bg-indigo-700 py-2 px-4 rounded-lg font-bold transition-all text-sm md:text-base hover:scale-105">
+                    Intercambiar Monedas
+                </button>
+            </h2>
+            
+            <div id="generalRankingContainer" class="space-y-3">
+                </div>
+            <p class="text-xs text-gray-400 mt-4 text-center">Tu posición actual se basa en el total de tus Estrellas.</p>
+        </section>
+        
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold text-center mb-6 text-yellow-400">Sistema de Rangos</h2>
+            <p class="text-center text-gray-400 mb-6">Arrastra las tarjetas para ver todos los rangos disponibles.</p>
+            
+            <div id="rankCardsContainerWrapper" class="flex flex-nowrap space-x-6 p-4 -mx-4">
+                </div>
+        </section>
+
+        <section>
+            <h2 class="text-3xl font-bold mb-6 text-pink-400 border-b border-purple-600 pb-2">Mis Cartas/Canciones Elegidas (<span id="maxSongsDisplay">5</span> Máx.)</h2>
+            <div id="selectedSongsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+            <p id="noSongsMessage" class="text-center text-gray-400 text-xl py-10 hidden">
+                Aún no has elegido ninguna canción. ¡Ve a una sala y escucha para poder elegir!
+            </p>
+        </section>
+
+        <section class="mt-12">
+            <h2 class="text-3xl font-bold mb-6 text-gray-500 border-b border-gray-700 pb-2">Cartas sin Valor (Agotadas)</h2>
+            <div id="noValueCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+            <p id="noValueCardsMessage" class="text-center text-gray-500 text-xl py-10 hidden">
+                No tienes cartas con valor agotado.
+            </p>
+        </section>
+
+
+        <div id="sellModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex justify-center z-50 p-4 overflow-y-auto items-start py-8">
+            <div class="bg-gradient-to-br from-teal-900 to-purple-900 rounded-2xl max-w-sm w-full border-2 border-teal-400 shadow-2xl p-6 text-center">
+                <h3 class="text-2xl font-bold text-teal-400 mb-4">Convertir Estrellas</h3>
+                <p class="text-white mb-4">Carta: "<span id="songTitleToSell" class="font-bold text-yellow-300"></span>"</p>
+                
+                <div class="bg-purple-900/50 p-4 rounded-lg mb-6">
+                    <p class="text-lg text-yellow-400 mb-4">Valor restante: <span id="currentCardStars" class="font-extrabold text-2xl">0</span> <i class="fas fa-star text-xl"></i></p>
+                    
+                    <label for="convertAmountInput" class="block text-white mb-2">¿Cuántas estrellas quieres convertir?</label>
+                    <input id="convertAmountInput" type="number" min="1" class="w-full p-2 rounded-lg bg-gray-800 text-white text-center text-xl font-bold border border-teal-400 focus:ring-2 focus:ring-teal-300 focus:outline-none" oninput="updateConversionPreview()">
+                
+                    <p class="text-lg text-lime-400 mt-4">Monedas a obtener: <span id="coinsToGainDisplay" class="font-extrabold text-2xl">0</span> <i class="fas fa-coins text-xl"></i></p>
+                </div>
+
+                <div class="flex justify-around">
+                    <button onclick="closeSellModal()" class="bg-gray-500 hover:bg-gray-600 px-5 py-2 rounded-lg font-bold">Cancelar</button>
+                    <button id="confirmConvertButton" onclick="confirmConversion()" class="bg-teal-600 hover:bg-teal-700 px-5 py-2 rounded-lg font-bold">Convertir</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="exchangeModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex justify-center z-50 p-4 overflow-y-auto items-start py-8">
+            <div class="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-2xl max-w-lg w-full border-2 border-indigo-400 shadow-2xl p-6 text-center">
+                <h3 class="text-2xl font-bold text-indigo-400 mb-4">Intercambio de Monedas</h3>
+                <p class="text-white mb-6">Monedas Disponibles: <span id="currentCoinsExchange" class="font-bold text-lime-400 text-xl">0</span> <i class="fas fa-coins text-sm"></i></p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    <div class="bg-purple-800 p-4 rounded-lg border border-purple-600">
+                        <h4 class="text-xl font-bold text-yellow-400 mb-2">Subir en Ranking (Estrellas)</h4>
+                        <p class="text-sm text-gray-300 mb-3">Gasta monedas para subir experiencia en el rango y en la clasificación general.</p> 
+                        <p class="text-lg font-bold text-lime-400 mb-3">Costo: 50 <i class="fas fa-coins text-base"></i></p>
+                        <button id="buyStarsButton" onclick="buyStarsForRank(50, 10)" class="w-full bg-yellow-600 hover:bg-yellow-700 py-2 rounded-lg font-bold transition-all disabled:opacity-50" disabled>
+                            Comprar 10 Estrellas 
+                        </button>
+                    </div>
+
+                    <div class="bg-purple-800 p-4 rounded-lg border border-purple-600">
+                        <h4 class="text-xl font-bold text-pink-400 mb-2">Comprar Slots de Canciones</h4>
+                        <p class="text-sm text-gray-300 mb-3">Aumenta tu capacidad máxima en 2 cartas/canciones. (Límite: 9 slots).</p>
+                        <p class="text-lg font-bold text-lime-400 mb-3">Costo: 100 <i class="fas fa-coins text-base"></i></p>
+                        <p class="text-sm text-cyan-400 mb-3">Slots Actuales: <span id="currentSlotsCount">5</span> / 9</p>
+                        <button id="buySlotsButton" onclick="buyExtraSongSlots(100, 2)" class="w-full bg-pink-600 hover:bg-pink-700 py-2 rounded-lg font-bold transition-all disabled:opacity-50" disabled>
+                            Comprar +2 Slots
+                        </button>
+                    </div>
+
+                    <div class="bg-purple-800 p-4 rounded-lg border border-purple-600">
+                        <h4 class="text-xl font-bold text-red-400 mb-2">Carta/Canción Adelantada</h4>
+                        <p class="text-sm text-gray-300 mb-3">Compra una carta/canción al azar y añádela directamente a tus elegidas.</p>
+                        <p class="text-lg font-bold text-lime-400 mb-3">Costo: 500 <i class="fas fa-coins text-base"></i></p>
+                        <button id="buyAdvanceSongButton" onclick="buyAdvanceSong(500)" class="w-full bg-red-600 hover:bg-red-700 py-2 rounded-lg font-bold transition-all disabled:opacity-50" disabled>
+                            Comprar Carta
+                        </button>
+                    </div>
+                    
+                    <div class="bg-purple-800 p-4 rounded-lg border border-purple-600">
+                        <h4 class="text-xl font-bold text-teal-400 mb-2">Descargar Letras (Lyrics)</h4>
+                        <p class="text-sm text-gray-300 mb-3">Gasta monedas para tener acceso a la descarga de las letras de una carta/canción.</p>
+                        <p class="text-lg font-bold text-lime-400 mb-3">Costo: 50 <i class="fas fa-coins text-base"></i></p>
+                        <button id="buyLyricsButton" onclick="buyLyricsDownload(50)" class="w-full bg-teal-600 hover:bg-teal-700 py-2 rounded-lg font-bold transition-all disabled:opacity-50" disabled>
+                            Comprar Descarga
+                        </button>
+                    </div>
+                    </div>
+
+                <button onclick="closeExchangeModal()" class="mt-6 bg-gray-500 hover:bg-gray-600 px-5 py-2 rounded-lg font-bold">Cerrar</button>
+            </div>
+        </div>
+        </main>
+    
+    <script>
+        // --- CONSTANTES ---
+        const GLOBAL_SELECTED_SONGS_KEY = 'selectedSongsGlobal';
+        const GLOBAL_COINS_KEY = 'totalCoins'; 
+        const MAX_SELECTED_SONGS_KEY = 'maxSelectedSongs'; 
+        const MAX_DEFAULT_SONGS = 5;
+        const MAX_TOTAL_SLOTS = 9; 
+
+        // Identificadores de sala (deben coincidir con los usados en los archivos de sala)
+        const ROOMS_DATA = {
+            'literatura': {
+                name: 'Literatura Musical',
+                starsKey: 'literaturamusical_userStars',
+                diamondsKey: 'literaturamusical_totalDiamonds',
+                votesKey: 'literaturamusical_votesRemaining'
+            },
+            'cine': {
+                name: 'Sala de Cine',
+                starsKey: 'cine_userStars',
+                diamondsKey: 'cine_totalDiamonds',
+                votesKey: 'cine_votesRemaining'
+            },
+            'proximamente1': { name: 'Próximamente', starsKey: 'proximamente1_userStars', diamondsKey: 'proximamente1_totalDiamonds', votesKey: 'proximamente1_votesRemaining' },
+            'proximamente2': { name: 'Próximamente', starsKey: 'proximamente2_userStars', diamondsKey: 'proximamente2_totalDiamonds', votesKey: 'proximamente2_votesRemaining' }
+        };
+
+        // --- RANGOS ACTUALIZADOS (20 RANGOS EN TOTAL) ---
+        // Se ha modificado el valor de minStars para que la progresión sea de aproximadamente 1000 estrellas
+        const RANKS = [
+            // Novato (3 niveles)
+            { name: "Novato de Alcantarilla", minStars: 0, image: "novatodealcantarilla.png", color: "text-gray-400", bgColor: "bg-gray-700", nextRank: "Novato de Suciedad" }, // 0 -> 100
+            { name: "Novato de Suciedad", minStars: 100, image: "novatodesuciedad.png", color: "text-gray-400", bgColor: "bg-gray-700", nextRank: "Novato de Memoria Cero" }, // 100 -> 300
+            { name: "Novato de Memoria Cero", minStars: 300, image: "novatodememoriacero.png", color: "text-gray-400", bgColor: "bg-gray-700", nextRank: "Aprendiz Inexperto" }, // 300 -> 1000
+            // Aprendiz (3 niveles)
+            { name: "Aprendiz Inexperto", minStars: 1000, image: "aprendizinexperto.png", color: "text-blue-400", bgColor: "bg-blue-900", nextRank: "Aprendiz con Potencial" }, // 1000 -> 2000
+            { name: "Aprendiz con Potencial", minStars: 2000, image: "aprendizconpotencial.png", color: "text-blue-400", bgColor: "bg-blue-900", nextRank: "Aprendiz Talentoso" }, // 2000 -> 3000
+            { name: "Aprendiz Talentoso", minStars: 3000, image: "aprendiztalentoso.png", color: "text-blue-400", bgColor: "bg-blue-900", nextRank: "Intermedio Aceptable" }, // 3000 -> 4000
+            // Intermedio (3 niveles)
+            { name: "Intermedio Aceptable", minStars: 4000, image: "intermedioaceptable.png", color: "text-green-400", bgColor: "bg-green-900", nextRank: "Intermedio que Casi Puede" }, // 4000 -> 5000
+            { name: "Intermedio que Casi Puede", minStars: 5000, image: "intermedioquecasipuede.png", color: "text-green-400", bgColor: "bg-green-900", nextRank: "Intermedio Destacado" }, // 5000 -> 6000
+            { name: "Intermedio Destacado", minStars: 6000, image: "intermediodestacado.png", color: "text-green-400", bgColor: "bg-green-900", nextRank: "Avanzado Regular" }, // 6000 -> 7000
+            // Avanzado (3 niveles)
+            { name: "Avanzado Regular", minStars: 7000, image: "avanzadoregular.png", color: "text-yellow-400", bgColor: "bg-yellow-900", nextRank: "Avanzado Superior" }, // 7000 -> 8000
+            { name: "Avanzado Superior", minStars: 8000, image: "avanzadosuperior.png", color: "text-yellow-400", bgColor: "bg-yellow-900", nextRank: "Avanzado Imparable" }, // 8000 -> 9000
+            { name: "Avanzado Imparable", minStars: 9000, image: "avanzadoimparable.png", color: "text-yellow-400", bgColor: "bg-yellow-900", nextRank: "Experto Soberbio" }, // 9000 -> 10000
+            // Experto (3 niveles)
+            { name: "Experto Soberbio", minStars: 10000, image: "expertosoberbio.png", color: "text-red-400", bgColor: "bg-red-900", nextRank: "Experto Fuera de Serie" }, // 10000 -> 11000
+            { name: "Experto Fuera de Serie", minStars: 11000, image: "expertofueradeserie.png", color: "text-red-400", bgColor: "bg-red-900", nextRank: "Experto de Élite" }, // 11000 -> 12000
+            { name: "Experto de Élite", minStars: 12000, image: "expertodeelite.png", color: "text-red-400", bgColor: "bg-red-900", nextRank: "Maestro Duro de Pelar" }, // 12000 -> 13000
+            // Maestro (3 niveles)
+            { name: "Maestro Duro de Pelar", minStars: 13000, image: "maestrodurodepelar.png", color: "text-purple-400", bgColor: "bg-purple-900", nextRank: "Maestro Imposible" }, // 13000 -> 14000
+            { name: "Maestro Imposible", minStars: 14000, image: "maestroimposible.png", color: "text-purple-400", bgColor: "bg-purple-900", nextRank: "Supermaestro" }, // 14000 -> 15000
+            { name: "Supermaestro", minStars: 15000, image: "supermaestro.png", color: "text-purple-400", bgColor: "bg-purple-900", nextRank: "Poder mítico" }, // 15000 -> 16000
+            // Leyenda (2 niveles finales)
+            { name: "Poder mítico", minStars: 16000, image: "podermitico.png", color: "text-pink-400", bgColor: "bg-pink-900", nextRank: "Leyenda" }, // 16000 -> 17000
+            { name: "Leyenda", minStars: 17000, image: "leyenda.png", color: "text-cyan-400", bgColor: "bg-cyan-900", nextRank: null }
+        ];
+        // -----------------------------------------------------
+
+        // --- ESTADO GLOBAL ---
+        let totalUserStars = 0;
+        let totalDiamonds = 0;
+        let totalCoins = 0; 
+        let votesRemainingLiteratura = 5; 
+        let votesRemainingCine = 5;       
+        let selectedSongToSell = null; // CAMBIO: AHORA ES selectedSongToConvert
+        let maxSelectedSongs = MAX_DEFAULT_SONGS; 
+
+        // --- MANEJO DE DATOS ---
+
+        function getGlobalSelectedSongs() {
+            return JSON.parse(localStorage.getItem(GLOBAL_SELECTED_SONGS_KEY) || '[]');
+        }
+
+        function saveGlobalSelectedSongs(songs) {
+            localStorage.setItem(GLOBAL_SELECTED_SONGS_KEY, JSON.stringify(songs));
+        }
+        
+        // Funciones para manejar monedas
+        function getGlobalCoins() {
+            return parseInt(localStorage.getItem(GLOBAL_COINS_KEY) || '0');
+        }
+
+        function saveGlobalCoins(coins) {
+            localStorage.setItem(GLOBAL_COINS_KEY, coins.toString());
+        }
+
+        // Funciones para manejar la capacidad máxima de canciones
+        function getMaxSelectedSongs() {
+            return parseInt(localStorage.getItem(MAX_SELECTED_SONGS_KEY) || MAX_DEFAULT_SONGS.toString());
+        }
+
+        function saveMaxSelectedSongs(max) {
+            localStorage.setItem(MAX_SELECTED_SONGS_KEY, max.toString());
+        }
+        
+        // Función para añadir estrellas compradas (se suman a la sala de literatura para persistencia)
+        function addGlobalStars(starsToAdd) {
+             // 1. Sumar al contador de la sala 'literatura' para persistencia
+             const starsKey = ROOMS_DATA['literatura'].starsKey;
+             let currentRoomStars = parseInt(localStorage.getItem(starsKey) || '0');
+             localStorage.setItem(starsKey, (currentRoomStars + starsToAdd).toString());
+             
+             // 2. Sumar al estado global de la sesión (totalUserStars se actualizará completamente en loadAppData)
+             totalUserStars += starsToAdd; 
+        }
+
+        function loadAppData() {
+            totalUserStars = 0;
+            totalDiamonds = 0;
+            totalCoins = getGlobalCoins(); 
+            maxSelectedSongs = getMaxSelectedSongs(); 
+
+            // 1. Cargar y sumar estadísticas GUAARDADAS POR SALA (progreso general)
+            Object.keys(ROOMS_DATA).forEach(key => {
+                const room = ROOMS_DATA[key];
+                
+                // Cargar Estrellas y sumar
+                const stars = parseInt(localStorage.getItem(room.starsKey) || '0');
+                totalUserStars += stars;
+
+                // Cargar Diamantes y sumar
+                const diamonds = parseInt(localStorage.getItem(room.diamondsKey) || '0');
+                totalDiamonds += diamonds;
+
+                // Cargar Votos restantes (de forma independiente)
+                const roomVotes = parseInt(localStorage.getItem(room.votesKey) || '5');
+                if (key === 'literatura') {
+                    votesRemainingLiteratura = roomVotes;
+                } else if (key === 'cine') {
+                    votesRemainingCine = roomVotes;
+                }
+            });
+            
+            // Si las estrellas totales son 0, asegurarse de que los votos estén a 5
+            if (totalUserStars === 0) {
+                 votesRemainingLiteratura = 5;
+                 votesRemainingCine = 5;
+                 // Sincronizar de nuevo con localStorage si es el caso de reinicio.
+                 localStorage.setItem(ROOMS_DATA['literatura'].votesKey, 5);
+                 localStorage.setItem(ROOMS_DATA['cine'].votesKey, 5);
+            }
+        }
+
+        // --- RENDERIZADO ---
+
+        function updateHeaderDisplays() {
+            // Asegurarse de que se recalcula antes de mostrar
+            loadAppData(); 
+
+            document.getElementById('userStarsDisplay').textContent = totalUserStars;
+            document.getElementById('totalDiamondsDisplay').textContent = totalDiamonds;
+            document.getElementById('totalCoinsDisplay').textContent = totalCoins; 
+            
+            // Actualizar los displays de votos específicos
+            document.getElementById('votesRemainingLiteraturaDisplay').textContent = votesRemainingLiteratura;
+            document.getElementById('votesRemainingCineDisplay').textContent = votesRemainingCine;
+            
+            // Usar la capacidad máxima cargada
+            document.getElementById('selectedSongsCount').textContent = `${getGlobalSelectedSongs().length} / ${maxSelectedSongs}`;
+            document.getElementById('maxSongsDisplay').textContent = maxSelectedSongs;
+
+            updateRankDisplay(); 
+            renderGeneralRanking(); 
+        }
+
+        function getCurrentRank() {
+            let currentRank = RANKS[0];
+            for (const rank of RANKS) {
+                if (totalUserStars >= rank.minStars) {
+                    currentRank = rank;
+                } else {
+                    break;
+                }
+            }
+            return currentRank;
+        }
+
+        function getNextRank(currentRank) {
+            const currentIndex = RANKS.findIndex(r => r.name === currentRank.name);
+            // Comprueba que no sea el último rango antes de devolver el siguiente
+            if (currentIndex < RANKS.length - 1) {
+                return RANKS[currentIndex + 1];
+            }
+            return null; // Si es el último rango, devuelve null
+        }
+
+        function updateRankDisplay() {
+            const currentRank = getCurrentRank();
+            const nextRank = getNextRank(currentRank);
+            const progressBar = document.getElementById('overallProgressBar');
+            const progressText = document.getElementById('overallProgressText');
+            
+            // Renderizar tarjetas de rango
+            const rankCardsContainer = document.getElementById('rankCardsContainerWrapper');
+            rankCardsContainer.innerHTML = '';
+            RANKS.forEach(rank => {
+                const isActive = rank.name === currentRank.name;
+                const cardHtml = `
+                    <div class="flex-shrink-0 w-72 h-80 ${rank.bgColor} p-6 rounded-xl shadow-2xl border ${isActive ? 'border-lime-400 transform scale-105' : 'border-purple-700'} transition-all duration-300 relative text-center">
+                        ${isActive ? '<span class="absolute top-2 right-2 bg-lime-400 text-gray-900 text-sm font-black px-3 py-1 rounded-full animate-pulse-custom">ACTUAL</span>' : ''}
+                        <img src="imagenrango/${rank.image}" alt="${rank.name}" class="w-24 h-24 mx-auto mb-4 object-contain">
+                        <h3 class="text-3xl font-extrabold ${rank.color}">${rank.name}</h3>
+                        <p class="text-gray-300 mt-2">${rank.minStars} Estrellas</p>
+                        ${rank.nextRank ? `<p class="text-sm text-gray-400 mt-4">Siguiente: ${rank.nextRank}</p>` : '<p class="text-sm text-gray-400 mt-4">¡Rango Máximo!</p>'}
+                    </div>
+                `;
+                rankCardsContainer.innerHTML += cardHtml;
+            });
+
+            // Actualizar barra de progreso
+            if (nextRank) {
+                const starsInCurrentLevel = totalUserStars - currentRank.minStars;
+                const starsNeededForNext = nextRank.minStars - currentRank.minStars;
+                const progressPercentage = (starsInCurrentLevel / starsNeededForNext) * 100;
+
+                progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
+                progressText.innerHTML = `<span class="font-bold text-lg">${starsInCurrentLevel} / ${starsNeededForNext}</span> Estrellas para alcanzar el rango <span class="font-bold ${nextRank.color}">${nextRank.name}</span>`;
+            } else {
+                progressBar.style.width = '100%';
+                progressBar.style.backgroundColor = '#facc15'; /* yellow-400 */
+                progressText.textContent = `¡Felicidades! Has alcanzado el rango máximo: ${currentRank.name}.`;
+            }
+        }
+
+        /**
+         * RENDERIZADO DEL RANKING GENERAL
+         */
+        function renderGeneralRanking() {
+            const container = document.getElementById('generalRankingContainer');
+            container.innerHTML = '';
+            
+            // SIMULACIÓN de Top 3 de la Clasificación General
+            const userRank = { 
+                name: "Tú (Usuario Actual)", 
+                stars: totalUserStars, 
+                isSelf: true 
+            };
+            
+            const simulatedTopUsers = [
+                { name: "Maestro Pro", stars: 9500, isSelf: false, color: 'text-yellow-500' },
+                { name: "Leyenda X", stars: 8000, isSelf: false, color: 'text-gray-400' }
+            ];
+            
+            // Lógica para ordenar e incluir al usuario
+            let rankingData = [simulatedTopUsers[0], simulatedTopUsers[1], userRank];
+            
+            // Ordenar por estrellas de mayor a menor
+            rankingData.sort((a, b) => b.stars - a.stars);
+            
+            // Asegurar que solo haya 3 elementos para el Top 3
+            rankingData = rankingData.slice(0, 3);
+            
+            const positionColors = ['text-yellow-400', 'text-gray-300', 'text-orange-400']; // Oro, Plata, Bronce
+            
+            rankingData.forEach((user, index) => {
+                const isUser = user.isSelf ? 'bg-purple-700/50 border-cyan-400' : 'bg-gray-700/50 border-purple-600';
+                const positionColor = positionColors[index] || 'text-white';
+                
+                const rankHtml = `
+                    <div class="flex justify-between items-center p-3 rounded-lg border-l-4 ${isUser} transition-all hover:bg-gray-700">
+                        <div class="flex items-center">
+                            <span class="text-2xl font-black mr-4 ${positionColor}">${index + 1}.</span>
+                            <p class="text-lg font-semibold ${user.isSelf ? 'text-cyan-400' : user.color || 'text-white'}">${user.name}</p>
+                        </div>
+                        <p class="text-xl font-bold text-yellow-300">${user.stars} <i class="fas fa-star text-sm ml-1"></i></p>
+                    </div>
+                `;
+                container.innerHTML += rankHtml;
+            });
+        }
+
+
+        /**
+         * NUEVA FUNCIÓN: Renderiza *ambas* listas de canciones (con y sin valor).
+         */
+        function renderAllSongLists() {
+            const allSongs = getGlobalSelectedSongs();
+            
+            const songsWithValue = allSongs.filter(song => song.quizStars > 0);
+            const songsWithoutValue = allSongs.filter(song => !song.quizStars || song.quizStars <= 0);
+
+            // Renderizar cartas con valor
+            const withValueContainer = document.getElementById('selectedSongsContainer');
+            const noSongsMessage = document.getElementById('noSongsMessage');
+            withValueContainer.innerHTML = '';
+            
+            if (songsWithValue.length === 0) {
+                noSongsMessage.classList.remove('hidden');
+            } else {
+                noSongsMessage.classList.add('hidden');
+                songsWithValue.forEach(song => {
+                    withValueContainer.innerHTML += createSongCardHtml(song, true);
+                });
+            }
+
+            // Renderizar cartas sin valor
+            const noValueContainer = document.getElementById('noValueCardsContainer');
+            const noValueMessage = document.getElementById('noValueCardsMessage');
+            noValueContainer.innerHTML = '';
+
+            if (songsWithoutValue.length === 0) {
+                noValueMessage.classList.remove('hidden');
+            } else {
+                noValueMessage.classList.add('hidden');
+                songsWithoutValue.forEach(song => {
+                    noValueContainer.innerHTML += createSongCardHtml(song, false);
+                });
+            }
+        }
+
+        /**
+         * NUEVA FUNCIÓN: Genera el HTML para una carta de canción.
+         * @param {object} song - El objeto de la canción.
+         * @param {boolean} hasValue - true si la carta tiene valor (muestra botón de convertir), false si está agotada.
+         */
+        function createSongCardHtml(song, hasValue) {
+            const roomInfo = ROOMS_DATA[song.room] || { name: 'Sala Desconocida' };
+                
+            // 1. Diamantes (Esquina superior izquierda)
+            const diamondCount = song.hasDiamond ? 1 : 0;
+            const diamondBadgeHtml = diamondCount > 0 ? `
+                <div class="diamond-badge">
+                    ${diamondCount} <i class="fas fa-gem ml-1 text-teal-300"></i>
+                </div>
+            ` : '';
+            
+            // 2. Estrellas (Esquina superior derecha)
+            const starsCount = song.quizStars > 0 ? song.quizStars : 0;
+            const starsBadgeHtml = `
+                <div class="star-badge ${starsCount > 0 ? 'bg-f59e0b' : 'bg-gray-600'}">
+                    ${starsCount} <i class="fas fa-star ml-1 ${starsCount > 0 ? 'text-yellow-800' : 'text-gray-400'}"></i>
+                </div>
+            `;
+            
+            // 3. Botón o Texto de estado
+            const actionHtml = hasValue ? `
+                <button onclick="openSellModal(${song.id}, '${song.title}', '${song.room}', ${song.quizStars || 0})" class="mt-4 bg-lime-600 hover:bg-lime-700 py-2 rounded-lg font-bold transition-all">
+                    Convertir Estrellas
+                </button>
+            ` : `
+                <p class="mt-4 text-center text-gray-400 font-bold py-2 bg-gray-700 rounded-lg">Valor Agotado</p>
+            `;
+            
+            // 4. Estilo de la carta
+            const cardStyle = hasValue 
+                ? 'bg-gray-800 border-pink-700' 
+                : 'bg-gray-800 border-gray-700 opacity-70';
+
+            return `
+                <div class="${cardStyle} border rounded-xl overflow-hidden shadow-lg relative flex flex-col md:flex-row">
+                    
+                    ${diamondBadgeHtml}
+                    ${starsBadgeHtml}
+                    
+                    <div class="h-48 md:h-full md:w-48 flex-shrink-0 bg-cover bg-center" style="background-image: url('${song.image}')"></div>
+                    <div class="p-4 flex flex-col justify-between flex-grow">
+                        <div>
+                            <h3 class="text-xl font-bold mb-1 ${hasValue ? 'text-pink-400' : 'text-gray-500'} flex items-center">${song.title}</h3>
+                            <p class="text-gray-400 mb-2">Autor: <span class="font-semibold ${hasValue ? 'text-lime-400' : 'text-gray-500'}">${song.author}</span></p>
+                            
+                            <p class="text-sm ${hasValue ? 'text-yellow-300' : 'text-gray-400'} mt-2">Valor de Conversión: <span class="font-bold text-lg">${starsCount}</span> <i class="fas fa-star text-sm"></i></p>
+                            <p class="text-sm ${diamondCount > 0 ? 'text-teal-300' : 'text-gray-400'}">Diamante del Quiz: <span class="font-bold text-lg">${diamondCount > 0 ? 'Sí' : 'No'}</span></p>
+                            <p class="text-sm text-gray-300 mt-2">Sala de Origen: <span class="font-semibold text-cyan-400">${roomInfo.name}</span></p>
+                        </div>
+                        ${actionHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        
+        // --- LÓGICA DE VENTA/CONVERSIÓN (ACTUALIZADA) ---
+
+        /**
+         * Abre el modal de conversión con la info de la carta.
+         */
+        function openSellModal(songId, songTitle, roomIdentifier, songStars) {
+            // Guardamos los datos para la referencia en el modal
+            selectedSongToSell = { 
+                id: songId, 
+                room: roomIdentifier, 
+                title: songTitle,
+                stars: songStars // Guardamos el valor actual
+            };
+            
+            // Actualizar el modal
+            document.getElementById('songTitleToSell').textContent = songTitle;
+            document.getElementById('currentCardStars').textContent = songStars;
+            
+            const input = document.getElementById('convertAmountInput');
+            input.value = '';
+            input.max = songStars; // El máximo a convertir es el valor actual
+            input.min = 1;
+
+            document.getElementById('coinsToGainDisplay').textContent = '0';
+            document.getElementById('confirmConvertButton').disabled = true; // Deshabilitar hasta que haya un valor válido
+
+            document.getElementById('sellModal').classList.remove('hidden');
+        }
+
+        /**
+         * NUEVA FUNCIÓN: Actualiza la vista previa del modal al escribir.
+         */
+        function updateConversionPreview() {
+            const input = document.getElementById('convertAmountInput');
+            const gainDisplay = document.getElementById('coinsToGainDisplay');
+            const confirmButton = document.getElementById('confirmConvertButton');
+            
+            let amount = parseInt(input.value);
+            const maxAmount = selectedSongToSell.stars;
+
+            if (isNaN(amount) || amount < 1) {
+                gainDisplay.textContent = '0';
+                confirmButton.disabled = true;
+                return;
+            }
+
+            if (amount > maxAmount) {
+                amount = maxAmount;
+                input.value = maxAmount; // Corregir automáticamente si se pasa
+            }
+
+            gainDisplay.textContent = amount; // 1 estrella = 1 moneda
+            confirmButton.disabled = false;
+        }
+
+        function closeSellModal() {
+            document.getElementById('sellModal').classList.add('hidden');
+            selectedSongToSell = null;
+        }
+
+        /**
+         * LÓGICA DE CONVERSIÓN (ACTUALIZADA)
+         */
+        function confirmConversion() {
+            if (!selectedSongToSell) return;
+
+            const input = document.getElementById('convertAmountInput');
+            const amountToConvert = parseInt(input.value);
+
+            // Validación
+            if (isNaN(amountToConvert) || amountToConvert < 1 || amountToConvert > selectedSongToSell.stars) {
+                alert("Cantidad inválida. Introduce un número entre 1 y " + selectedSongToSell.stars);
+                return;
+            }
+            
+            // 1. Encontrar la canción en la lista global y RESTAR su valor
+            let globalSelectedSongs = getGlobalSelectedSongs();
+            const songIndex = globalSelectedSongs.findIndex(s => 
+                s.id === selectedSongToSell.id && s.room === selectedSongToSell.room
+            );
+
+            if (songIndex === -1) {
+                alert("Error: No se encontró la canción.");
+                return;
+            }
+            
+            globalSelectedSongs[songIndex].quizStars -= amountToConvert;
+            saveGlobalSelectedSongs(globalSelectedSongs);
+            
+            // 2. Restar las estrellas del total de estrellas de la sala de origen
+            const roomKey = selectedSongToSell.room;
+            const roomData = ROOMS_DATA[roomKey];
+            
+            if (roomData) {
+                const starsKey = roomData.starsKey;
+                let currentRoomStars = parseInt(localStorage.getItem(starsKey) || '0');
+                
+                // Restar, asegurando que no baje de 0
+                const newRoomStars = Math.max(0, currentRoomStars - amountToConvert);
+                localStorage.setItem(starsKey, newRoomStars.toString());
+            }
+
+            // 3. Sumar el valor a las monedas globales
+            let currentCoins = getGlobalCoins();
+            const newCoins = currentCoins + amountToConvert; // 1 estrella = 1 moneda
+            saveGlobalCoins(newCoins);
+            
+            // 4. Recargar y actualizar todas las estadísticas
+            updateHeaderDisplays(); 
+            
+            alert(`"${selectedSongToSell.title}" ha convertido ${amountToConvert} estrellas. Has ganado ${amountToConvert} Monedas.`);
+            
+            closeSellModal();
+            renderAllSongLists(); // Re-renderizar ambas listas de canciones
+        }
+        
+        // --- LÓGICA DEL MODAL DE INTERCAMBIO (ACTUALIZADA) ---
+
+        function openExchangeModal() {
+            const currentCoins = getGlobalCoins();
+            document.getElementById('currentCoinsExchange').textContent = currentCoins;
+            
+            // Botones existentes
+            const buyStarsButton = document.getElementById('buyStarsButton');
+            const buySlotsButton = document.getElementById('buySlotsButton');
+            const buyAdvanceSongButton = document.getElementById('buyAdvanceSongButton');
+            // NUEVO: Botón de Compra de Letras
+            const buyLyricsButton = document.getElementById('buyLyricsButton');
+            
+            // 1. Botón de Estrellas (50 monedas por 10 estrellas)
+            if (currentCoins >= 50) {
+                buyStarsButton.removeAttribute('disabled');
+                buyStarsButton.textContent = 'Comprar 10 Estrellas'; 
+            } else {
+                buyStarsButton.setAttribute('disabled', 'true');
+                buyStarsButton.textContent = 'Monedas insuficientes';
+            }
+            
+            // 2. Botón de Slots
+            const currentSlots = getMaxSelectedSongs();
+            document.getElementById('currentSlotsCount').textContent = currentSlots;
+            
+            if (currentCoins >= 100 && currentSlots < MAX_TOTAL_SLOTS) {
+                buySlotsButton.removeAttribute('disabled');
+                buySlotsButton.textContent = 'Comprar +2 Slots';
+            } else if (currentSlots >= MAX_TOTAL_SLOTS) {
+                buySlotsButton.setAttribute('disabled', 'true');
+                buySlotsButton.textContent = 'Capacidad Máxima (9)';
+            } else {
+                buySlotsButton.setAttribute('disabled', 'true');
+                buySlotsButton.textContent = 'Monedas insuficientes';
+            }
+
+            // 3. Botón de Compra Anticipada (500 monedas por una canción)
+            const currentSelectedSongs = getGlobalSelectedSongs().length;
+            if (currentCoins >= 500 && currentSelectedSongs < MAX_TOTAL_SLOTS) { 
+                buyAdvanceSongButton.removeAttribute('disabled');
+                buyAdvanceSongButton.textContent = 'Comprar Carta';
+            } else if (currentSelectedSongs >= MAX_TOTAL_SLOTS) {
+                buyAdvanceSongButton.setAttribute('disabled', 'true');
+                buyAdvanceSongButton.textContent = 'Slots Llenos/Máximo';
+            } else {
+                buyAdvanceSongButton.setAttribute('disabled', 'true');
+                buyAdvanceSongButton.textContent = 'Monedas insuficientes';
+            }
+            
+            // 4. NUEVO: Botón de Descarga de Letras (50 monedas)
+            if (currentCoins >= 50) { 
+                buyLyricsButton.removeAttribute('disabled');
+                buyLyricsButton.textContent = 'Comprar Descarga';
+            } else {
+                buyLyricsButton.setAttribute('disabled', 'true');
+                buyLyricsButton.textContent = 'Monedas insuficientes';
+            }
+            
+            document.getElementById('exchangeModal').classList.remove('hidden');
+        }
+
+        function closeExchangeModal() {
+            document.getElementById('exchangeModal').classList.add('hidden');
+        }
+
+        /**
+         * Compra estrellas (progreso de rango) con monedas.
+         * @param {number} cost - Costo en monedas.
+         * @param {number} stars - Estrellas a ganar.
+         */
+        function buyStarsForRank(cost, stars) {
+            let currentCoins = getGlobalCoins();
+            if (currentCoins < cost) {
+                alert("Error: Monedas insuficientes.");
+                return;
+            }
+
+            // 1. Restar el costo
+            const newCoins = currentCoins - cost;
+            saveGlobalCoins(newCoins);
+            
+            // 2. Sumar las estrellas (la función addGlobalStars las hace persistentes)
+            addGlobalStars(stars); 
+
+            // 3. Actualizar la interfaz y cerrar
+            updateHeaderDisplays(); 
+            alert(`¡Has comprado ${stars} Estrellas! Se han restado ${cost} monedas.`);
+            closeExchangeModal();
+        }
+        
+        /**
+         * Compra slots de canciones extra con monedas.
+         * @param {number} cost - Costo en monedas.
+         * @param {number} slots - Slots a ganar.
+         */
+        function buyExtraSongSlots(cost, slots) {
+            let currentCoins = getGlobalCoins();
+            let currentSlots = getMaxSelectedSongs();
+            
+            if (currentCoins < cost || currentSlots >= MAX_TOTAL_SLOTS) {
+                alert("Error: No puedes comprar más slots o monedas insuficientes.");
+                return;
+            }
+            
+            // 1. Restar el costo
+            const newCoins = currentCoins - cost;
+            saveGlobalCoins(newCoins);
+
+            // 2. Sumar los slots (asegurando no superar el máximo)
+            const newMaxSlots = Math.min(MAX_TOTAL_SLOTS, currentSlots + slots);
+            saveMaxSelectedSongs(newMaxSlots);
+
+            // 3. Actualizar la interfaz y cerrar
+            updateHeaderDisplays(); 
+            renderAllSongLists(); // Volver a renderizar por si cambia el total de slots
+            alert(`¡Has comprado ${slots} slots extra! Tu nueva capacidad es de ${newMaxSlots} canciones.`);
+            closeExchangeModal();
+        }
+
+        /**
+         * Simula la compra de una carta/canción adelantada con monedas.
+         * @param {number} cost - Costo en monedas (500).
+         */
+        function buyAdvanceSong(cost) {
+            let currentCoins = getGlobalCoins();
+            let currentSongs = getGlobalSelectedSongs();
+            
+            if (currentCoins < cost) {
+                alert("Error: Monedas insuficientes.");
+                return;
+            }
+            
+            if (currentSongs.length >= MAX_TOTAL_SLOTS) {
+                alert("Error: Has alcanzado el límite máximo de cartas/canciones elegidas.");
+                return;
+            }
+            
+            // 1. Restar el costo
+            const newCoins = currentCoins - cost;
+            saveGlobalCoins(newCoins);
+
+            // 2. SIMULACIÓN de obtener una canción/carta
+            const newSongId = Date.now(); // ID único
+            const simulatedSong = {
+                id: newSongId,
+                room: 'literatura', // Asignado a una sala existente para efectos de consistencia
+                title: `Carta Adelantada #${currentSongs.length + 1}`,
+                author: 'Autor Misterioso',
+                image: 'https://via.placeholder.com/150x150?text=ADVANCE+CARD', // Placeholder image
+                quizStars: 50, // Le damos un valor por defecto de 50 estrellas para que se pueda vender
+                hasDiamond: false 
+            };
+            
+            // 3. Sumar la canción al listado global
+            currentSongs.push(simulatedSong);
+            saveGlobalSelectedSongs(currentSongs);
+            
+            // 4. Sumar las estrellas de la canción a la sala para el progreso general
+            addGlobalStars(simulatedSong.quizStars); 
+
+            // 5. Actualizar la interfaz
+            updateHeaderDisplays();
+            renderAllSongLists(); // Renderizar de nuevo las listas
+            
+            alert(`¡Has comprado la "${simulatedSong.title}"! Se han restado ${cost} monedas y se ha añadido a tu colección con ${simulatedSong.quizStars} estrellas de valor.`);
+            
+            closeExchangeModal();
+        }
+
+        /**
+         * NUEVA FUNCIÓN: Compra la descarga de letras por 50 monedas.
+         * Implementación simplificada solo resta monedas y confirma la compra.
+         * @param {number} cost - Costo en monedas (50).
+         */
+        function buyLyricsDownload(cost) {
+            let currentCoins = getGlobalCoins();
+            if (currentCoins < cost) {
+                alert("Error: Monedas insuficientes.");
+                return;
+            }
+
+            // 1. Restar el costo
+            const newCoins = currentCoins - cost;
+            saveGlobalCoins(newCoins);
+            
+            // 2. Actualizar la interfaz (monedas)
+            updateHeaderDisplays(); 
+            
+            // 3. Simular la acción/confirmar la compra
+            alert(`¡Has comprado la opción de descarga de letras por ${cost} Monedas! Ahora puedes ir a una de tus cartas elegidas para descargar sus letras.`);
+            
+            closeExchangeModal();
+        }
+
+        // --- FUNCIÓN DE ARRASTRAR PARA DESLIZAR (PARA EL CARRUSEL DE RANGOS) ---
+        function enableDragScroll(element) {
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+
+            element.addEventListener('mousedown', (e) => {
+                isDown = true;
+                element.classList.add('active');
+                startX = e.pageX - element.offsetLeft;
+                scrollLeft = element.scrollLeft;
+            });
+
+            element.addEventListener('mouseleave', () => {
+                isDown = false;
+                element.classList.remove('active');
+            });
+
+            element.addEventListener('mouseup', () => {
+                isDown = false;
+                element.classList.remove('active');
+            });
+
+            element.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - element.offsetLeft;
+                const walk = (x - startX) * 2; 
+                element.scrollLeft = scrollLeft - walk;
+            });
+            
+            // Añadir soporte para eventos táctiles (móviles)
+            element.addEventListener('touchstart', (e) => {
+                isDown = true;
+                element.classList.add('active');
+                startX = e.touches[0].pageX - element.offsetLeft;
+                scrollLeft = element.scrollLeft;
+            }, { passive: true });
+
+            element.addEventListener('touchend', () => {
+                isDown = false;
+                element.classList.remove('active');
+            });
+
+            element.addEventListener('touchmove', (e) => {
+                if (!isDown) return;
+                const x = e.touches[0].pageX - element.offsetLeft;
+                const walk = (x - startX) * 2;
+                element.scrollLeft = scrollLeft - walk;
+            }, { passive: true });
+        }
+
+        // --- Inicialización ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Cargar capacidad máxima y datos
+            maxSelectedSongs = getMaxSelectedSongs();
+            
+            // Llamar a updateHeaderDisplays para que haga loadAppData y el recalculo de totales
+            updateHeaderDisplays(); 
+            // Llamar a la nueva función que renderiza AMBAS listas
+            renderAllSongLists();
+            
+            // Inicializar la funcionalidad de arrastrar para deslizar
+            const scrollWrapper = document.getElementById('rankCardsContainerWrapper');
+            enableDragScroll(scrollWrapper);
+        });
+    </script>
+</body>
+
+</html>
