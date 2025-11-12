@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La IA Musical</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados para mantener la estética de literaturamusical.html */
+        .bg-custom {
+            /* Degradado de fondo similar al original */
+            background: linear-gradient(to bottom right, #083344, #0f766e, #065f46); 
+        }
+        .header-bg {
+            /* Degradado para el encabezado */
+            background: linear-gradient(to right, #042f4b, #067269);
+        }
+        /* Estilo para el efecto de hover en la tarjeta */
+        .podcast-card:hover {
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6);
+        }
+        .podcast-card {
+            transition: all 0.3s ease-in-out;
+        }
+        /* El efecto de zoom se mantiene solo en el div de la tarjeta */
+        .podcast-card:hover .podcast-img {
+            transform: scale(1.05);
+        }
+        .podcast-img {
+            transition: transform 0.5s ease;
+        }
+
+        /* Estilos del botón de Sala en el Header */
+        #sala-selector-btn {
+            background-color: #a4b953; /* Verde/Amarillento */
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        #sala-selector-btn:hover {
+            background-color: #8c9e47; 
+            transform: scale(1.05);
+        }
+
+        /* Estilos del modal */
+        .modal-btn {
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s; /* Añadido background-color */
+            color: white; /* Asegura texto blanco para todos */
+        }
+        .modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+        
+        /* ESTILOS UNIFICADOS Y VANGUARDISTAS PARA LOS BOTONES DEL MODAL */
+        /* Color base para todos los botones: un gris oscuro azulado */
+        .modal-btn {
+            background-color: #1e293b; /* slate-900 */
+            border: 1px solid #334155; /* slate-700 */
+        }
+        /* Efecto hover más pronunciado */
+        .modal-btn:hover {
+            background-color: #334155; /* slate-700 */
+            border-color: #475569; /* slate-600 */
+        }
+
+        /* Algunos iconos tienen colores específicos, los mantengo */
+        .btn-literatura::after { content: ' 📚'; }
+        .btn-cine::after { content: ' 🎬'; }
+        .btn-cuentos::after { content: ' 🧚'; }
+        .btn-sagas::after { content: ' ⚔️'; }
+        .btn-opera::after { content: ' 🎼'; }
+        .btn-teatro::after { content: ' 🎭'; }
+        .btn-series::after { content: ' 📱'; }
+        .btn-animes::after { content: ' 🌸'; }
+
+        /* Ajuste para que los botones de cabecera se muestren debajo del título en el centro */
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-custom text-white">
+
+    <div id="theme-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
+        <div class="bg-cyan-900/90 p-8 rounded-xl shadow-2xl max-w-lg w-full border border-teal-500/50">
+            <h2 class="text-3xl font-bold text-teal-300 mb-4 text-center">Selecciona una Sala de Podcast</h2>
+            <p class="text-cyan-100 text-center mb-6">Elige el tema de los episodios que quieres escuchar:</p>
+            <div id="theme-buttons" class="grid grid-cols-2 gap-4">
+                
+                <button class="modal-btn" onclick="selectTheme('Literatura')">Literatura</button>
+                <button class="modal-btn" onclick="selectTheme('Cine')">Cine</button>
+                
+                <button class="modal-btn" onclick="selectTheme('Cuentos')">Cuentos</button>
+                <button class="modal-btn" onclick="selectTheme('Sagas y aventuras')">Sagas y aventuras</button>
+                <button class="modal-btn" onclick="selectTheme('Ópera y conciertos')">Ópera y conciertos</button>
+                <button class="modal-btn" onclick="selectTheme('Teatro y Musicales')">Teatro y Musicales</button>
+                <button class="modal-btn" onclick="selectTheme('Series')">Series</button>
+                <button class="modal-btn" onclick="selectTheme('Animes')">Animes (y Dibujos)</button>
+                
+                <a href="temas.html" class="modal-btn bg-gray-600 hover:bg-gray-700 flex items-center justify-center col-span-2">
+                    Menú principal
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div id="main-content" class="hidden">
+        <header class="header-bg py-8 px-4 border-b border-cyan-700">
+            <div class="max-w-6xl mx-auto text-center">
+                
+                <div>
+                    <h1 id="header-title" class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-200 via-cyan-300 to-teal-400">
+                        🎙️ Podcast de La Inteligencia Artificial
+                    </h1>
+                    <p id="header-subtitle" class="text-lg md:text-xl text-cyan-100 mt-2">
+                        Episodios del tema: <strong id="current-theme-name"></strong>
+                    </p>
+                </div>
+
+                <div class="header-controls">
+                    <button id="sala-selector-btn" onclick="showModal()">
+                        Elegir tema de podcast
+                    </button>
+                    <a href="temas.html" class="inline-block bg-purple-600 hover:bg-purple-700 py-2 px-4 rounded-lg font-bold transition-all text-base hover:scale-105 shadow-lg shadow-purple-900/50">
+                        Menú principal
+                    </a>
+                </div>
+            </div>
+        </header>
+        
+        <main class="max-w-6xl mx-auto px-4 py-12">
+            <h2 class="text-3xl font-bold mb-10 text-yellow-400 text-center border-b border-yellow-400/50 pb-2">
+                Episodios Disponibles
+            </h2>
+            
+            <div id="podcastList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                </div>
+            
+        </main>
+    </div>
+
+
+    <script>
+        // --- DATOS DE LOS EPISODIOS (CATEGORIZADOS) ---
+        // Se añade el campo 'category' a cada episodio.
+        const podcastEpisodes = [
+            // --- LITERATURA (ID 0-10) ---
+            {
+                id: 0, title: "La literatura musical", author: "Podcast IA", category: "Literatura",
+                image: "podcastimages/presentacion.png", 
+                audioUrl: "https://drive.google.com/file/d/1CohZ4E4vBZYsg255_4yj-dQS3Ex79Veh/view?usp=drive_link", 
+                suggestedTitle: "¿Salvará la IA la poesía clásica?"
+            },
+            {
+                id: 1, title: "Veinte poemas de amor", author: "Podcast IA", category: "Literatura",
+                image: "podcastimages/poemas.png", 
+                audioUrl: "https://drive.google.com/file/d/1rDezgL9BLhX3x_u3WQnwIylyVQL3jraH/view?usp=drive_link", 
+                suggestedTitle: "Neruda y su éxtasis y desesperación en la naturaleza del cuerpo Amado"
+            },
+            {
+                id: 2, title: "Romancero Gitano", author: "Federico García Lorca", category: "Literatura",
+                image: "podcastimages/romancero.png",
+                audioUrl: "https://drive.google.com/file/d/1gjwNaLyF9pcyDi3hAnp8mC242AOSisWH/view?usp=drive_link", 
+                suggestedTitle: "Duende y Melodía: Lorca y el Romance de la Luna, Luna."
+            },
+            {
+                id: 3, title: "Canción del Pirata", author: "José de Espronceda", category: "Literatura",
+                image: "podcastimages/canciondelpirata.png",
+                audioUrl: "https://drive.google.com/file/d/1FESYoCEEVHec7pt8qHd9TBGVx0HGMoor/view?usp=drive_link", 
+                suggestedTitle: "¡Con Diez Cañones por Banda!: La Épica Musical de un Pirata."
+            },
+            {
+                id: 4, title: "Campos de Castilla", author: "Antonio Machado", category: "Literatura",
+                image: "podcastimages/campos.png",
+                audioUrl: "https://drive.google.com/file/d/1e0JmP5PkEJPptNR2PNDSuWSU1j0S4gpB/view?usp=sharing", 
+                suggestedTitle: "El Olmo Seco y la Armonía: El Paisaje de Machado."
+            },
+            {
+                id: 5, title: "Altazor", author: "Vicente Huidobro", category: "Literatura",
+                image: "podcastimages/Altazor.png",
+                audioUrl: "https://drive.google.com/file/d/1AcgtWTs8pOFsdRBvKBHisPX_HkXw2ORK/view?usp=drive_link", 
+                suggestedTitle: "Vanguardia Sonora: El Viaje de Altazor."
+            },
+            {
+                id: 6, title: "Trilce", author: "César Vallejo", category: "Literatura",
+                image: "podcastimages/trilce.png",
+                audioUrl: "https://drive.google.com/file/d/1ArrRC6iAOXmFBsJUw5gMCRWfHLD_MIwx/view?usp=drive_link", 
+                suggestedTitle: "Vallejo en Melodía: El Primer Canto de Trilce."
+            },
+            {
+                id: 7, title: "La Voz a Ti Debida", author: "Pedro Salinas", category: "Literatura",
+                image: "podcastimages/lavoz.png", 
+                audioUrl: "https://drive.google.com/file/d/17dRJL2X7fq5rlRn6ho-KsSETGs5Qkeb2/view?usp=drive_link",
+                suggestedTitle: "Amor Eterno y Sonido: La Balada de Salinas."
+            },
+            {
+                id: 8, title: "Residencia en la Tierra", author: "Pablo Neruda", category: "Literatura",
+                image: "podcastimages/residencia.png",
+                audioUrl: "https://drive.google.com/file/d/1NtevvMlrWrlanbsIpIEpZYpf2fHNdfNC/view?usp=drive_link", 
+                suggestedTitle: "Walking Around: La Angustia Existencial con Ritmo."
+            },
+            {
+                id: 9, title: "Poeta en Nueva York", author: "Federico García Lorca", category: "Literatura",
+                image: "podcastimages/poeta.png", 
+                audioUrl: "https://drive.google.com/file/d/1-9_6Om33P7uIMcHgNWYgws2zmHUeuqKB/view?usp=drive_link", 
+                suggestedTitle: "La Aurora y el Jazz: Lorca en la Gran Manzana."
+            },
+            {
+                id: 10, title: "Marinero en Tierra", author: "Rafael Alberti", category: "Literatura",
+                image: "podcastimages/marinero.png", 
+                audioUrl: "https://drive.google.com/file/d/1RoOZ6YiILZbmaQWX2-_4FGE_fuKyW1xB/view?usp=drive_link", 
+                suggestedTitle: "El Marinero Nostálgico: Melodías del Mediterráneo."
+            },
+            
+            // --- CINE ---
+            {
+                id: 11, title: "Regreso al Futuro", author: "Podcast IA", category: "Cine",
+                image: "podcastimages/cine_backfuture.png", 
+                audioUrl: "http://googleusercontent.com/cine_backfuture_ia.mp3", 
+                suggestedTitle: "Viajes en el Tiempo: El Efecto Mariposa y la IA"
+            },
+            {
+                id: 12, title: "Star Wars V", author: "Podcast IA", category: "Cine",
+                image: "podcastimages/cine_starwars.png", 
+                audioUrl: "http://googleusercontent.com/cine_starwars_ia.mp3", 
+                suggestedTitle: "No... I'm your father: El giro que cambió el Cine"
+            },
+            
+            // --- ANIMES (Anteriormente Dibujos Animados) ---
+            {
+                id: 13, title: "Studio Ghibli", author: "Podcast IA", category: "Animes",
+                image: "podcastimages/anime_ghibli.png", 
+                audioUrl: "http://googleusercontent.com/anime_ghibli_ia.mp3", 
+                suggestedTitle: "La Magia de Miyazaki: Música, Naturaleza y Sueños"
+            },
+            {
+                id: 14, title: "Dragon Ball Z", author: "Podcast IA", category: "Animes",
+                image: "podcastimages/anime_dbz.png", 
+                audioUrl: "http://googleusercontent.com/anime_dbz_ia.mp3", 
+                suggestedTitle: "El Poder de la Amistad: El Fenómeno DBZ en la Cultura Pop"
+            },
+            
+            // --- NUEVOS TEMAS SOLICITADOS (Placeholder Episodes) ---
+            {
+                id: 15, title: "Caperucita Roja", author: "Podcast IA", category: "Cuentos",
+                image: "podcastimages/placeholder_cuentos.png", 
+                audioUrl: "#", 
+                suggestedTitle: "La dulce voz del Lobo: Lecciones de un cuento clásico"
+            },
+            {
+                id: 16, title: "El Señor de los Anillos", author: "Podcast IA", category: "Sagas y aventuras",
+                image: "podcastimages/placeholder_sagas.png", 
+                audioUrl: "#", 
+                suggestedTitle: "El Anillo Único: La banda sonora de la épica"
+            },
+            {
+                id: 17, title: "La Flauta Mágica", author: "Podcast IA", category: "Ópera y conciertos",
+                image: "podcastimages/placeholder_opera.png", 
+                audioUrl: "#", 
+                suggestedTitle: "Mozart y la Reina de la Noche: La magia del bel canto"
+            },
+            {
+                id: 18, title: "El Fantasma de la Ópera", author: "Podcast IA", category: "Teatro y Musicales",
+                image: "podcastimages/placeholder_teatro.png", 
+                audioUrl: "#", 
+                suggestedTitle: "Bajo el telón: Los grandes temas de Broadway"
+            },
+            {
+                id: 19, title: "Juego de Tronos", author: "Podcast IA", category: "Series",
+                image: "podcastimages/placeholder_series.png", 
+                audioUrl: "#", 
+                suggestedTitle: "Fuego y Hielo: Los temas musicales que definieron Westeros"
+            },
+        ];
+
+        let currentTheme = null;
+
+        // --- FUNCIONES DEL MODAL ---
+        function showModal() {
+            document.getElementById('theme-modal').classList.remove('hidden');
+            document.getElementById('main-content').classList.add('hidden');
+        }
+
+        function hideModal() {
+            document.getElementById('theme-modal').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+        }
+
+        function selectTheme(theme) {
+            currentTheme = theme;
+            document.getElementById('header-title').textContent = `🎙️ Podcast de ${theme}`;
+            document.getElementById('current-theme-name').textContent = theme;
+            renderPodcastList(theme);
+            hideModal();
+        }
+
+        // --- FUNCIÓN DE RENDERIZADO FILTRADO ---
+        function renderPodcastList(filterTheme) {
+            const listContainer = document.getElementById('podcastList');
+            let html = '';
+            
+            // 1. Filtrar los episodios por el tema seleccionado
+            const filteredEpisodes = podcastEpisodes.filter(episode => episode.category === filterTheme);
+
+            if (filteredEpisodes.length === 0) {
+                listContainer.innerHTML = `<p class="text-xl text-center text-cyan-200 col-span-full">
+                    No hay episodios de ${filterTheme} disponibles aún.
+                </p>`;
+                return;
+            }
+
+            // 2. Generar el HTML para los episodios filtrados
+            filteredEpisodes.forEach((episode) => {
+                
+                // Variables de estilo y contenido para la tarjeta
+                let cardClasses = "podcast-card backdrop-blur-sm rounded-xl overflow-hidden shadow-2xl transition-all duration-300 ";
+                let titleClasses = "text-2xl font-bold mb-2 leading-snug transition-colors";
+                let labelClasses = "text-sm font-light text-yellow-300 mb-1";
+                let labelText = `${episode.category} | Episodio #${episode.id}`;
+                let originalWorkText; 
+                let audioLinkText = 'Escuchar Audio'; // Texto por defecto
+
+                // Asignar estilos basados en la categoría
+                switch(episode.category) {
+                    case "Literatura":
+                        cardClasses += "bg-cyan-900/50 border border-cyan-700/50 hover:shadow-cyan-400/30";
+                        originalWorkText = `Obra Original: ${episode.title} (${episode.author})`;
+                        if (episode.id === 0) { // Estilo especial para la Presentación (ID 0)
+                            labelText = '🎙️ PRESENTACIÓN';
+                            labelClasses = "text-sm font-bold text-teal-300 mb-1";
+                            cardClasses = cardClasses.replace("bg-cyan-900/50", "bg-teal-900/50");
+                            titleClasses = 'text-2xl font-bold mb-2 leading-snug text-cyan-300';
+                        }
+                        break;
+                    case "Cine":
+                    case "Sagas y aventuras":
+                        cardClasses += "bg-purple-900/50 border border-purple-500/50 hover:shadow-purple-400/50";
+                        originalWorkText = `Película / Saga: ${episode.title} (${episode.author})`;
+                        titleClasses += " text-purple-300";
+                        audioLinkText = 'Ver/Escuchar Fuente';
+                        break;
+                    case "Animes":
+                        cardClasses += "bg-pink-900/50 border border-pink-500/50 hover:shadow-pink-400/50";
+                        originalWorkText = `Anime / Estudio: ${episode.title} (${episode.author})`;
+                        titleClasses += " text-pink-300";
+                        audioLinkText = 'Ver/Escuchar Fuente';
+                        break;
+                    case "Series":
+                        cardClasses += "bg-gray-900/50 border border-gray-700/50 hover:shadow-gray-400/50";
+                        originalWorkText = `Serie: ${episode.title} (${episode.author})`;
+                        titleClasses += " text-gray-300";
+                        audioLinkText = 'Ver/Escuchar Fuente';
+                        break;
+                    case "Cuentos":
+                        cardClasses += "bg-orange-900/50 border border-orange-500/50 hover:shadow-orange-400/50";
+                        originalWorkText = `Cuento: ${episode.title} (${episode.author})`;
+                        titleClasses += " text-orange-300";
+                        break;
+                    case "Ópera y conciertos":
+                        cardClasses += "bg-rose-900/50 border border-rose-500/50 hover:shadow-rose-400/50";
+                        originalWorkText = `Obra: ${episode.title} (${episode.author})`;
+                        titleClasses += " text-rose-300";
+                        break;
+                    case "Teatro y Musicales":
+                        cardClasses += "bg-green-900/50 border border-green-500/50 hover:shadow-green-400/50";
+                        originalWorkText = `Obra: ${episode.title} (${episode.author})`;
+                        titleClasses += " text-green-300";
+                        break;
+                    default:
+                        cardClasses += "bg-gray-800/50 border border-gray-600/50";
+                        originalWorkText = `Fuente: ${episode.title} (${episode.author})`;
+                        titleClasses += " text-gray-300";
+                }
+                
+                // Si la URL es placeholder, ajustamos el texto del enlace
+                if (episode.audioUrl === "#") {
+                    audioLinkText = 'Próximamente...';
+                }
+
+                html += `
+                    <div class="${cardClasses}">
+                        <div class="block">
+                            <div class="overflow-hidden">
+                                <img src="${episode.image}" alt="Portada de ${episode.title}" 
+                                     class="podcast-img w-full h-48 object-cover" />
+                            </div>
+                            <div class="p-6">
+                                <p class="${labelClasses}">
+                                    ${labelText}
+                                </p>
+                                <h3 class="${titleClasses}">
+                                    ${episode.suggestedTitle}
+                                </h3>
+                                <p class="text-cyan-200 text-base">${originalWorkText}</p>
+                                
+                                <a href="${episode.audioUrl}" target="_blank" rel="noopener noreferrer" class="mt-4 flex items-center justify-between group">
+                                    <span class="text-teal-400 font-semibold flex items-center gap-2 group-hover:text-yellow-300 transition-colors">
+                                        <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+                                        </svg>
+                                        ${audioLinkText} </span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+        }
+
+        // --- Carga inicial: Mostrar el modal ---
+        window.onload = showModal;
+    </script>
+</body>
+</html>
+```http://googleusercontent.com/image_generation_content/0
