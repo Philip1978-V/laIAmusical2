@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca de Cartas/Canciones 🎶</title>
+    <style>
+        /* Estilos CSS (Generales se mantienen) */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1 {
+            color: #0056b3;
+            text-align: center;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .search-section, .data-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: #f9f9ff;
+        }
+        
+        /* Estilos específicos para la Búsqueda */
+        #search-input {
+            width: 98%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .search-results {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+        .result-item {
+            padding: 8px;
+            border-bottom: 1px dashed #eee;
+            cursor: pointer;
+        }
+        .result-item:hover {
+            background-color: #e6f0ff;
+        }
+        .result-title {
+            font-weight: bold;
+            color: #0056b3;
+        }
+        .result-sala {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        /* Estilos para la sección de Salas */
+        #salas-container ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        #salas-container li {
+            background-color: #e6f0ff;
+            border: 1px solid #0056b3;
+            border-radius: 5px;
+            padding: 10px 15px;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        #salas-container li:hover {
+            background-color: #cce0ff;
+            transform: translateY(-2px);
+        }
+        #salas-container a {
+            text-decoration: none;
+            color: #0056b3;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .count {
+            background-color: #0056b3;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 50px;
+            font-size: 0.8em;
+        }
+        
+        /* Estilos de Modal */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4); 
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; 
+            max-width: 500px;
+            border-radius: 8px;
+            position: relative;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #modal-title, #modal-author, #modal-room {
+            margin-bottom: 10px;
+        }
+        #modal-title {
+            font-size: 1.5em;
+            color: #0056b3;
+        }
+        #modal-author {
+            font-style: italic;
+            color: #555;
+        }
+        #modal-room {
+            font-size: 0.9em;
+            color: #888;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Biblioteca de Cartas/Canciones 🎶</h1>
+    <p style="text-align: center; margin-bottom: 20px;">
+        Aquí puedes ver todas las cartas/canciones disponibles en las distintas salas.
+    </p>
+
+    <div class="search-section">
+        <h2>🔍 Buscar Carta/Canción</h2>
+        <input type="text" id="search-input" placeholder="Escribe el título, autor o sala para buscar..." onkeyup="buscarEntradas()">
+        <div id="search-results" class="search-results">
+            <p style="text-align: center; color: #999;">Empieza a escribir para ver los resultados.</p>
+        </div>
+    </div>
+
+    <div class="data-section">
+        <h2>🚪 Salas Disponibles</h2>
+        <div id="salas-container">
+            </div>
+        <p style="text-align: center; font-size: 0.9em; margin-top: 15px;">
+            Haz clic en una sala para ver el listado completo y gestionar las compras/reproducciones.
+        </p>
+    </div>
+
+</div>
+
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="cerrarModal()">&times;</span>
+        <h3 id="modal-title"></h3>
+        <p id="modal-author"></p>
+        <p id="modal-room"></p>
+        <p style="margin-top: 20px; font-size: 0.9em; color: #333;">
+            Para interactuar (reproducir o comprar), por favor, dirígete a la sala correspondiente.
+        </p>
+    </div>
+</div>
+
+<script>
+    // --- CONSTANTES GLOBALES (Asegúrate de que sean consistentes en todos los archivos) ---
+    const CLAVE_LOCAL = "bibliotecaData";
+    
+    // Configuración de las salas: ¡AQUÍ ESTÁ LA CORRECCIÓN!
+    const salasConfig = [
+        { archivo: 'sala-literaria.html', nombre: 'Sala Literaria 📚' },
+        { archivo: 'sala-cine.html', nombre: 'Sala de Cine 🎬' }, // AÑADIDO: Sala de Cine
+        // Añade otras salas aquí a medida que las crees
+    ];
+
+    // --- DATOS BASE SIMULADOS DE OTRAS SALAS ---
+    // NOTA: Estas constantes son COPIAS DE SEGURIDAD de los arrays 'entradasBase' de las otras salas.
+    // Se necesitan aquí para FORZAR la inicialización de los datos en localStorage
+    // en caso de que el usuario nunca haya visitado las salas individuales.
+
+    // 1. Datos Base de sala-literaria.html
+    const entradasBase_Literaria = [
+        { titulo: "A una rosa", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/a_una_rosa.mp3" },
+        { titulo: "Adolescencia", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/adolescencia.mp3" },
+        { titulo: "Aeroplanos", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/aeroplanos.mp3" },
+        { titulo: "Altazor(Canto IV)", autor: "Vicente Huidobro", sala: "sala-literaria.html", audioUrl: "audio/altazor_canto_iv.mp3" },
+        { titulo: "Amor constante más allá de la muerte", autor: "Francisco de Quevedo", sala: "sala-literaria.html", audioUrl: "audio/amor_constante.mp3" },
+        { titulo: "Arbolé arbolé", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/arbole_arbole.mp3" },
+        { titulo: "Baladas y canciones del Paraná", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/baladas_parana.mp3" },
+        { titulo: "Campos de Castilla(Retrato)", autor: "Antonio Machado", sala: "sala-literaria.html", audioUrl: "audio/campos_castilla_retrato.mp3" },
+        { titulo: "Canción para los ojos", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/cancion_ojos.mp3" },
+        { titulo: "Cancion del Pirata", autor: "José de Espronceda", sala: "sala-literaria.html", audioUrl: "audio/cancion_pirata.mp3" },
+        { titulo: "Cántico", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/cantico.mp3" },
+        { titulo: "Columpio", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/columpio.mp3" },
+        { titulo: "Contra molinos y gigantes", autor: "Cervantes", sala: "sala-literaria.html", audioUrl: "audio/molinos-gigantes.mp3" },
+        { titulo: "Corazón coraza", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/corazon_coraza.mp3" },
+        { titulo: "Don Quijote de la Mancha", autor: "Miguel de Cervantes", sala: "sala-literaria.html", audioUrl: "audio/lit_quijote.mp3" },
+        { titulo: "El burro flautista(Fábulas literarias)", autor: "Tomás de Iriarte", sala: "sala-literaria.html", audioUrl: "audio/burro_flautista.mp3" },
+        { titulo: "El ciclo de Macondo", autor: "García Márquez", sala: "sala-literaria.html", audioUrl: "audio/macondo.mp3" },
+        { titulo: "El lenguaje del mundo", autor: "Anónimo", sala: "sala-literaria.html", audioUrl: "audio/lenguaje-mundo.mp3" },
+        { titulo: "El matrimonio Bennet", autor: "Jane Austen", sala: "sala-literaria.html", audioUrl: "audio/bennet.mp3" },
+        { titulo: "El ojo que todo lo ve", autor: "George Orwell", sala: "sala-literaria.html", audioUrl: "audio/ojo-ve.mp3" },
+        { titulo: "El remordimiento", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/el_remordimiento.mp3" },
+        { titulo: "El sol, la playa y la sinceridad", autor: "Albert Camus", sala: "sala-literaria.html", audioUrl: "audio/sol-playa.mp3" },
+        { titulo: "Elegía", autor: "Miguel Hernandez", sala: "sala-literaria.html", audioUrl: "audio/elegia.mp3" },
+        { titulo: "Freija", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/freija.mp3" },
+        { titulo: "Hija del viento", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/hija_del_viento.mp3" },
+        { titulo: "Historia del caballo de ébano", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/caballo_ebano.mp3" },
+        { titulo: "Ir y quedarse", autor: "Lope de Vega", sala: "sala-literaria.html", audioUrl: "audio/ir_y_quedarse.mp3" },
+        { titulo: "La fiebre de San Persburgo", autor: "Dostoyevski", sala: "sala-literaria.html", audioUrl: "audio/san-persburgo.mp3" },
+        { titulo: "La hermanilla", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/la_hermanilla.mp3" },
+        { titulo: "La naturaleza", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/la_naturaleza.mp3" },
+        { titulo: "La patinadora", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/la_patinadora.mp3" },
+        { titulo: "La princesa esta triste", autor: "Rubén Darío", sala: "sala-literaria.html", audioUrl: "audio/princesa_triste.mp3" },
+        { titulo: "La travesía de Odiseo", autor: "Homero", sala: "sala-literaria.html", audioUrl: "audio/odiseo.mp3" },
+        { titulo: "La voz a tí debida", autor: "Pedro Salinas", sala: "sala-literaria.html", audioUrl: "audio/la_voz_a_ti_debida.mp3" },
+        { titulo: "Marinero en tierra", autor: "Rafael Alberti", sala: "sala-literaria.html", audioUrl: "audio/marinero_tierra.mp3" },
+        { titulo: "Marinero en tierra(Sueño del marinero)", autor: "Rafael Alberti", sala: "sala-literaria.html", audioUrl: "audio/marinero_tierra_sueno.mp3" },
+        { titulo: "Memorias de la melancolía", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/memorias_melancolia.mp3" },
+        { titulo: "País", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/pais.mp3" },
+        { titulo: "Piedra de Sol", autor: "Octavio Paz", sala: "sala-literaria.html", audioUrl: "audio/piedra_sol.mp3" },
+        { titulo: "Poeta en New York(La aurora)", autor: "Federico García Lorca", sala: "sala-literaria.html", audioUrl: "audio/poeta_new_york_la_aurora.mp3" },
+        { titulo: "Por una mirada un mundo", autor: "Gustavo Adolfo Bécquer", sala: "sala-literaria.html", audioUrl: "audio/por_una_mirada.mp3" },
+        { titulo: "Residencia en la tierra(Barcarola)", autor: "Pablo Neruda", sala: "sala-literaria.html", audioUrl: "audio/residencia_tierra_barcarola.mp3" },
+        { titulo: "Romance del Duero", autor: "Gerardo Diego", sala: "sala-literaria.html", audioUrl: "audio/romance_duero.mp3" },
+        { titulo: "Romancero gitano(Romance de la luna, luna)", autor: "Federico García Lorca", sala: "sala-literaria.html", audioUrl: "audio/romancero_gitano_luna.mp3" },
+        { titulo: "San Baudelio de Berlanga", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/san_baudelio.mp3" },
+        { titulo: "Se equivocó la paloma", autor: "Rafael Alberti", sala: "sala-literaria.html", audioUrl: "audio/se_equivoco_paloma.mp3" },
+        { titulo: "Si el hombre pudiera decir", autor: "Desconocido", sala: "sala-literaria.html", audioUrl: "audio/si_el_hombre.mp3" },
+        { titulo: "Trilce", autor: "César Vallejo", sala: "sala-literaria.html", audioUrl: "audio/trilce.mp3" },
+        { titulo: "Veinte poemas de amor", autor: "Pablo Neruda", sala: "sala-literaria.html", audioUrl: "audio/veinte_poemas_amor.mp3" },
+    ];
+    
+    // 2. Datos Base de sala-cine.html
+    const entradasBase_Cine = [
+        { titulo: "1,21 gigabatios", autor: "Robert Zemeckis", sala: "sala-cine.html", audioUrl: "audio/cine_121gigabatios.mp3" },
+        { titulo: "¿Un Crío? Ya Soy un Hombre", autor: "Fernando Meirelles", sala: "sala-cine.html", audioUrl: "audio/cine_uncrio.mp3" },
+        { titulo: "Ciudad de ceniza y de Neón", autor: "Ridley Scott", sala: "sala-cine.html", audioUrl: "audio/cine_ciudadceniza.mp3" },
+        { titulo: "Debería estar en un museo", autor: "Steven Spielberg", sala: "sala-cine.html", audioUrl: "audio/cine_museo.mp3" },
+        { titulo: "El elegido", autor: "Hermanas Wachowski", sala: "sala-cine.html", audioUrl: "audio/cine_elegido.mp3" },
+        { titulo: "El maletín y el pasaje", autor: "Quentin Tarantino", sala: "sala-cine.html", audioUrl: "audio/cine_pulpfiction.mp3" },
+        { titulo: "El Ada azul y mil años", autor: "Steven Spielberg", sala: "sala-cine.html", audioUrl: "audio/cine_adaazul.mp3" },
+        { titulo: "Houston tenemos un problema", autor: "Ron Howard", sala: "sala-cine.html", audioUrl: "audio/cine_houston.mp3" },
+        { titulo: "identidad borrada", autor: "Varios Directores", sala: "sala-cine.html", audioUrl: "audio/cine_identidad.mp3" },
+        { titulo: "La Conexión Cuantificable", autor: "Christopher Nolan", sala: "sala-cine.html", audioUrl: "audio/cine_conexion.mp3" },
+        { titulo: "La isla Nublar", autor: "Steven Spielberg", sala: "sala-cine.html", audioUrl: "audio/cine_nublar.mp3" },
+        { titulo: "La oferta irrechazable", autor: "Francis Ford Coppola", sala: "sala-cine.html", audioUrl: "audio/cine_oferta.mp3" },
+        { titulo: "La última superviviente", autor: "Ridley Scott", sala: "sala-cine.html", audioUrl: "audio/cine_superviviente.mp3" },
+        { titulo: "la canción de la corona y el invierno", autor: "D. & D. (Game of Thrones)", sala: "sala-cine.html", audioUrl: "audio/cine_cancioncorona.mp3" },
+        { titulo: "Me llamo Bond, James Bond", autor: "Varios Autores", sala: "sala-cine.html", audioUrl: "audio/cine_bond.mp3" },
+        { titulo: "Mi tesoro", autor: "Peter Jackson", sala: "sala-cine.html", audioUrl: "audio/cine_mitesoro.mp3" },
+        { titulo: "Misión conseguida", autor: "Varios Directores", sala: "sala-cine.html", audioUrl: "audio/cine_mision.mp3" },
+        { titulo: "No olvides tu nombre", autor: "Hayao Miyazaki", sala: "sala-cine.html", audioUrl: "audio/cine_noolvides.mp3" },
+        { titulo: "No... I'm your father", autor: "George Lucas", sala: "sala-cine.html", audioUrl: "audio/cine_vader.mp3" },
+        { titulo: "Noche de Cristal", autor: "Steven Spielberg", sala: "sala-cine.html", audioUrl: "audio/cine_nochecristal.mp3" },
+        { titulo: "Que la fuerza te acompañe.", autor: "George Lucas", sala: "sala-cine.html", audioUrl: "audio/cine_fuerza.mp3" },
+        { titulo: "Sayonara Baby", autor: "James Cameron", sala: "sala-cine.html", audioUrl: "audio/cine_sayonara.mp3" },
+        { titulo: "Soy el rey del mundo", autor: "James Cameron", sala: "sala-cine.html", audioUrl: "audio/cine_rey.mp3" },
+        { titulo: "The Wire Fence", autor: "Autor Desconocido", sala: "sala-cine.html", audioUrl: "audio/cine_wirefence.mp3" },
+        { titulo: "Un hogar", autor: "Steven Spielberg", sala: "sala-cine.html", audioUrl: "audio/cine_hogar.mp3" },
+        { titulo: "Veinte años de pico y poster", autor: "Frank Darabont", sala: "sala-cine.html", audioUrl: "audio/cine_veinteanios.mp3" },
+        { titulo: "Volveré", autor: "James Cameron", sala: "sala-cine.html", audioUrl: "audio/cine_volvere.mp3" }
+    ];
+
+    // --- FUNCIONES DE GESTIÓN DE DATOS ---
+
+    function obtenerDatos() {
+        const data = localStorage.getItem(CLAVE_LOCAL);
+        return data ? JSON.parse(data) : [];
+    }
+
+    function guardarDatos(data) {
+        localStorage.setItem(CLAVE_LOCAL, JSON.stringify(data));
+    }
+    
+    // Función central para asegurar que los datos de una sala estén en el caché de la biblioteca
+    function inicializarSala(datosExistentes, entradasBase, archivoSala) {
+        let datos = [...datosExistentes];
+        let existeCambio = false;
+
+        // 1. Limpiar entradas de esta sala que ya no estén en la base (protección contra datos obsoletos)
+        datos = datos.filter(d => 
+            d.sala !== archivoSala || entradasBase.some(base => 
+                base.titulo === d.titulo && base.autor === d.autor
+            )
+        );
+
+        // 2. Añadir nuevas entradas/actualizar metadatos de esta sala
+        entradasBase.forEach(entradaBase => {
+            const yaExiste = datos.some(d => 
+                d.titulo === entradaBase.titulo && d.autor === entradaBase.autor && d.sala === entradaBase.sala
+            );
+            
+            if (!yaExiste) {
+                datos.push(entradaBase);
+                existeCambio = true;
+            } else {
+                // Lógica de actualización (ej. asegura que audioUrl esté presente)
+                const index = datos.findIndex(d => d.titulo === entradaBase.titulo && d.autor === entradaBase.autor && d.sala === entradaBase.sala);
+                if (index !== -1 && !datos[index].audioUrl) {
+                    datos[index].audioUrl = entradaBase.audioUrl;
+                    existeCambio = true;
+                }
+            }
+        });
+
+        return { datos: datos, cambio: existeCambio };
+    }
+
+    /**
+     * CORRECCIÓN CLAVE: Esta función llama a la inicialización de TODAS las salas
+     * conocidas para asegurar que el caché (localStorage) esté actualizado.
+     */
+    function forzarInicializacionYObtenerDatos() {
+        let datos = obtenerDatos();
+        let cambioGlobal = false;
+        
+        // Inicializar Sala Literaria
+        let resLit = inicializarSala(datos, entradasBase_Literaria, 'sala-literaria.html');
+        datos = resLit.datos;
+        if (resLit.cambio) {
+            cambioGlobal = true;
+        }
+
+        // Inicializar Sala Cine
+        let resCine = inicializarSala(datos, entradasBase_Cine, 'sala-cine.html');
+        datos = resCine.datos;
+        if (resCine.cambio) {
+            cambioGlobal = true;
+        }
+        
+        // Si hubo cambios en cualquier sala, guardar la lista unificada.
+        if (cambioGlobal) {
+            guardarDatos(datos);
+        }
+        
+        return datos;
+    }
+
+    // --- FUNCIONES DE BÚSQUEDA ---
+
+    function buscarEntradas() {
+        const input = document.getElementById('search-input');
+        const query = input.value.toLowerCase().trim();
+        const resultsContainer = document.getElementById('search-results');
+        
+        // Aseguramos que los datos estén cargados antes de buscar
+        const todosLosDatos = forzarInicializacionYObtenerDatos();
+
+        if (query.length < 3) {
+            resultsContainer.innerHTML = '<p style="text-align: center; color: #999;">Empieza a escribir para ver los resultados.</p>';
+            return;
+        }
+
+        const resultados = todosLosDatos.filter(entrada =>
+            entrada.titulo.toLowerCase().includes(query) ||
+            entrada.autor.toLowerCase().includes(query) ||
+            getSalaName(entrada.sala).toLowerCase().includes(query)
+        );
+
+        mostrarResultados(resultados);
+    }
+    
+    function getSalaName(archivo) {
+        const sala = salasConfig.find(s => s.archivo === archivo);
+        return sala ? sala.nombre : archivo; 
+    }
+
+    function mostrarResultados(resultados) {
+        const resultsContainer = document.getElementById('search-results');
+        resultsContainer.innerHTML = '';
+
+        if (resultados.length === 0) {
+            resultsContainer.innerHTML = '<p style="text-align: center; color: #999;">No se encontraron resultados.</p>';
+            return;
+        }
+
+        const resultadosFinales = resultados.sort((a, b) => a.titulo.localeCompare(b.titulo));
+
+        resultadosFinales.forEach(entrada => {
+            const salaNombre = getSalaName(entrada.sala);
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'result-item';
+            itemDiv.onclick = () => mostrarModal(entrada);
+
+            itemDiv.innerHTML = `
+                <div class="result-title">${entrada.titulo}</div>
+                <div class="result-sala">Autor: ${entrada.autor} | Clasificado en: <strong>${salaNombre}</strong></div>
+            `;
+            resultsContainer.appendChild(itemDiv);
+        });
+
+        resultsContainer.innerHTML += `<p style="font-size: 0.9em; margin-top: 10px;">Encontrados ${resultadosFinales.length} resultados.</p>`;
+    }
+
+
+    // --- FUNCIÓN PARA MOSTRAR LOS ENLACES (Corregida para usar forzarInicializacion) ---
+    function mostrarSalas() {
+        const container = document.getElementById('salas-container');
+        container.innerHTML = '';
+        
+        // CORRECCIÓN: Llamamos a forzarInicializacionYObtenerDatos() para asegurar los datos
+        const datos = forzarInicializacionYObtenerDatos(); 
+        
+        const ul = document.createElement('ul');
+
+        // Calcular cuántas entradas hay por cada archivo (sala)
+        const counts = datos.reduce((acc, entrada) => {
+            acc[entrada.sala] = (acc[entrada.sala] || 0) + 1;
+            return acc;
+        }, {});
+
+        // Generar los enlaces
+        salasConfig.forEach(sala => {
+            const count = counts[sala.archivo] || 0;
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <a href="${sala.archivo}">
+                    ${sala.nombre}
+                    <span class="count">${count}</span>
+                </a>
+            `;
+            ul.appendChild(li);
+        });
+
+        container.appendChild(ul);
+    }
+
+    // --- FUNCIONES DE MODAL ---
+
+    function mostrarModal(entrada) {
+        const modal = document.getElementById('myModal');
+        document.getElementById('modal-title').textContent = entrada.titulo;
+        document.getElementById('modal-author').textContent = `Autor: ${entrada.autor}`;
+        document.getElementById('modal-room').textContent = `Sala: ${getSalaName(entrada.sala)}`;
+        modal.style.display = 'block';
+    }
+
+    function cerrarModal() {
+        document.getElementById('myModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('myModal');
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    }
+
+
+    // --- Carga inicial ---
+    window.onload = mostrarSalas;
+
+</script>
+
+</body>
+</html>
