@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso - Literatura Musical</title>
+    <style>
+        /* --- ESTILOS GENERALES Y RESET --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Degradado de respaldo por si falta la imagen de fondo */
+            background: linear-gradient(135deg, #2c7a7b 0%, #1a202c 100%);
+            /* Intento de cargar imagen, si existe */
+            background-image: url('images/fondo.png'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+
+        /* --- CABECERA --- */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 2;
+            padding: 20px;
+        }
+
+        .title {
+            font-size: 3rem;
+            font-weight: 800;
+            text-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        /* --- CONTENEDOR DE FORMULARIOS --- */
+        .container {
+            background-color: rgba(31, 41, 55, 0.95); /* Gris oscuro semi-transparente */
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 420px;
+            border-top: 4px solid #48bb78; /* Línea verde superior */
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        h2 {
+            color: #48bb78;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        /* --- ELEMENTOS DEL FORMULARIO --- */
+        .form-group { margin-bottom: 1.25rem; }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #cbd5e0;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            border: 1px solid #4a5568;
+            background-color: #2d3748;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #48bb78;
+            box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.2);
+        }
+
+        button.primary-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #48bb78;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button.primary-btn:hover {
+            background-color: #38a169;
+            transform: translateY(-1px);
+        }
+
+        /* --- ENLACES Y TEXTOS DE AYUDA --- */
+        .switch-text {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #a0aec0;
+        }
+
+        .switch-text button {
+            background: none;
+            border: none;
+            color: #63b3ed;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        .forgot-pass {
+            text-align: right;
+            margin-top: -10px;
+            margin-bottom: 15px;
+        }
+        
+        .forgot-pass button {
+            background: none; border: none; color: #a0aec0; cursor: pointer; font-size: 0.8rem;
+        }
+        .forgot-pass button:hover { color: #fff; }
+
+        /* --- MENSAJES DE ERROR/ÉXITO --- */
+        .msg-box {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.9rem;
+            display: none;
+        }
+        .error { background-color: rgba(245, 101, 101, 0.2); color: #fc8181; border: 1px solid #c53030; }
+        .success { background-color: rgba(72, 187, 120, 0.2); color: #68d391; border: 1px solid #2f855a; }
+
+        /* --- UTILIDADES DE VISIBILIDAD --- */
+        .hidden { display: none !important; }
+
+        /* --- VISTA DE CONTENIDO PROTEGIDO (DASHBOARD) --- */
+        #protectedContent {
+            text-align: center;
+            max-width: 800px;
+            background: rgba(0,0,0,0.6);
+            padding: 40px;
+            border-radius: 15px;
+        }
+        .logout-btn {
+            background-color: #e53e3e;
+            margin-top: 20px;
+            width: auto;
+            padding: 10px 30px;
+        }
+        .logout-btn:hover { background-color: #c53030; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 class="title">Literatura Musical</h1>
+        <p class="subtitle">Portal de Acceso al Conocimiento</p>
+    </div>
+
+    <div id="authContainer" class="container">
+        
+        <div id="loginView">
+            <h2>Iniciar Sesión</h2>
+            <div id="loginMsg" class="msg-box error"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Usuario o Email</label>
+                    <input type="text" id="loginInput" required placeholder="Ej: musico123">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="loginPass" required placeholder="******">
+                </div>
+                
+                <div class="forgot-pass">
+                    <button type="button" onclick="switchView('recovery')">¿Olvidaste tu contraseña?</button>
+                </div>
+
+                <button type="submit" class="primary-btn">Entrar</button>
+            </form>
+
+            <div class="switch-text">
+                ¿No tienes cuenta? <button onclick="switchView('register')">Regístrate gratis</button>
+            </div>
+        </div>
+
+        <div id="registerView" class="hidden">
+            <h2>Crear Cuenta Nueva</h2>
+            <div id="registerMsg" class="msg-box error"></div>
+
+            <form id="registerForm">
+                <div class="form-group">
+                    <label>Nombre de Usuario</label>
+                    <input type="text" id="regUser" required placeholder="Mínimo 3 caracteres">
+                </div>
+                <div class="form-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="regEmail" required placeholder="nombre@ejemplo.com">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="regPass" required placeholder="Mínimo 6 caracteres">
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Contraseña</label>
+                    <input type="password" id="regPassConf" required>
+                </div>
+
+                <button type="submit" class="primary-btn">Registrarme</button>
+            </form>
+
+            <div class="switch-text">
+                ¿Ya tienes cuenta? <button onclick="switchView('login')">Inicia sesión</button>
+            </div>
+        </div>
+
+        <div id="recoveryView" class="hidden">
+            <h2>Recuperar Contraseña</h2>
+            <p style="color:#a0aec0; margin-bottom:15px; text-align:center; font-size:0.9rem;">Te enviaremos un enlace para restablecer tu acceso.</p>
+            <div id="recoveryMsg" class="msg-box"></div>
+
+            <form id="recoveryForm">
+                <div class="form-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="recEmail" required>
+                </div>
+                <button type="submit" class="primary-btn">Enviar Enlace</button>
+            </form>
+
+            <div class="switch-text">
+                <button onclick="switchView('login')">Volver al inicio</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="protectedContent" class="hidden">
+        <h2 style="font-size: 2.5rem; color: #fff;">¡Bienvenido, <span id="displayUsername" style="color:#48bb78;">Usuario</span>!</h2>
+        <p style="font-size: 1.2rem; margin-bottom: 20px;">Has accedido correctamente al sistema de Literatura Musical.</p>
+        
+        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; margin: 20px 0;">
+            <p>Aquí iría el contenido exclusivo, listas de temas, o la redirección a <strong>temas.html</strong>.</p>
+        </div>
+
+        <button id="btnLogout" class="primary-btn logout-btn">Cerrar Sesión</button>
+    </div>
+
+    <script type="module">
+        // --- 1. CONFIGURACIÓN FIREBASE (Tus claves reales) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { 
+            getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, 
+            onAuthStateChanged, sendPasswordResetEmail, signOut 
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { 
+            getFirestore, collection, doc, setDoc, query, where, getDocs, getDoc 
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+            authDomain: "laiamusical-4fba7.firebaseapp.com",
+            projectId: "laiamusical-4fba7",
+            storageBucket: "laiamusical-4fba7.firebasestorage.app",
+            messagingSenderId: "49783369602",
+            appId: "1:49783369602:web:91e287c094a8f2403d699b",
+            measurementId: "G-WC2JT6DRF4"
+        };
+
+        // Inicializar
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- 2. GESTIÓN DE UI (Vistas) ---
+        window.switchView = (viewName) => {
+            const views = ['loginView', 'registerView', 'recoveryView'];
+            const msgs = ['loginMsg', 'registerMsg', 'recoveryMsg'];
+            
+            // Ocultar todos los formularios y limpiar mensajes
+            views.forEach(v => document.getElementById(v).classList.add('hidden'));
+            msgs.forEach(m => {
+                const el = document.getElementById(m);
+                el.style.display = 'none';
+                el.className = 'msg-box'; // reset clases
+            });
+
+            // Mostrar el deseado
+            document.getElementById(viewName + 'View').classList.remove('hidden');
+        };
+
+        const showMessage = (elementId, msg, type = 'error') => {
+            const el = document.getElementById(elementId);
+            el.textContent = msg;
+            el.className = `msg-box ${type}`; // 'error' o 'success'
+            el.style.display = 'block';
+        };
+
+        // --- 3. FUNCIONES AUXILIARES ---
+        
+        // Buscar email dado un username (insensible a mayúsculas)
+        async function getEmailFromIdentifier(identifier) {
+            const lowerId = identifier.trim().toLowerCase();
+            const usersRef = collection(db, "users");
+
+            // Buscar por username
+            const qUser = query(usersRef, where("username", "==", lowerId));
+            const snapUser = await getDocs(qUser);
+            if (!snapUser.empty) return snapUser.docs[0].data().email;
+
+            // Buscar por email directo
+            const qEmail = query(usersRef, where("email", "==", lowerId));
+            const snapEmail = await getDocs(qEmail);
+            if (!snapEmail.empty) return snapEmail.docs[0].data().email;
+
+            return null; // No encontrado
+        }
+
+        // --- 4. MANEJADORES DE EVENTOS ---
+
+        // LOGIN
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('loginInput').value;
+            const pass = document.getElementById('loginPass').value;
+            
+            if(!input || !pass) return showMessage('loginMsg', 'Rellena todos los campos');
+
+            try {
+                let email = input;
+                // Si no parece un email, buscamos el username en Firestore
+                if (!input.includes('@')) {
+                    const foundEmail = await getEmailFromIdentifier(input);
+                    if (!foundEmail) throw { code: 'custom/user-not-found' };
+                    email = foundEmail;
+                }
+
+                await signInWithEmailAndPassword(auth, email, pass);
+                // El observador onAuthStateChanged manejará la redirección
+                
+            } catch (error) {
+                console.error(error);
+                let msg = 'Error al iniciar sesión.';
+                if (error.code === 'auth/wrong-password') msg = 'Contraseña incorrecta.';
+                if (error.code === 'auth/user-not-found' || error.code === 'custom/user-not-found') msg = 'Usuario no encontrado.';
+                if (error.code === 'auth/too-many-requests') msg = 'Demasiados intentos. Espera unos minutos.';
+                showMessage('loginMsg', msg);
+            }
+        });
+
+        // REGISTRO
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = document.getElementById('regUser').value.trim().toLowerCase();
+            const email = document.getElementById('regEmail').value.trim().toLowerCase();
+            const pass = document.getElementById('regPass').value;
+            const passConf = document.getElementById('regPassConf').value;
+
+            if (pass !== passConf) return showMessage('registerMsg', 'Las contraseñas no coinciden');
+            if (pass.length < 6) return showMessage('registerMsg', 'La contraseña debe tener al menos 6 caracteres');
+            if (user.length < 3) return showMessage('registerMsg', 'El usuario debe tener al menos 3 caracteres');
+
+            try {
+                // Verificar si username ya existe
+                const exists = await getEmailFromIdentifier(user);
+                if (exists) return showMessage('registerMsg', 'Ese nombre de usuario ya está ocupado');
+
+                // Crear usuario Auth
+                const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                
+                // Guardar datos en Firestore
+                await setDoc(doc(db, "users", cred.user.uid), {
+                    username: user,
+                    email: email,
+                    createdAt: new Date()
+                });
+
+                alert('¡Cuenta creada con éxito! Bienvenido.');
+                // onAuthStateChanged detectará el login automático
+
+            } catch (error) {
+                console.error(error);
+                let msg = 'Error en el registro.';
+                if (error.code === 'auth/email-already-in-use') msg = 'El correo ya está registrado.';
+                showMessage('registerMsg', msg);
+            }
+        });
+
+        // RECUPERACIÓN
+        document.getElementById('recoveryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('recEmail').value.trim();
+            
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showMessage('recoveryMsg', 'Correo enviado. Revisa tu bandeja de entrada (y spam).', 'success');
+            } catch (error) {
+                let msg = 'Error al enviar el correo.';
+                if (error.code === 'auth/user-not-found') msg = 'No existe cuenta con este correo.';
+                showMessage('recoveryMsg', msg);
+            }
+        });
+
+        // LOGOUT
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            signOut(auth);
+        });
+
+        // --- 5. GESTIÓN DE SESIÓN (OBSERVADOR) ---
+        onAuthStateChanged(auth, async (user) => {
+            const authContainer = document.getElementById('authContainer');
+            const protectedContent = document.getElementById('protectedContent');
+            const displayUser = document.getElementById('displayUsername');
+
+            if (user) {
+                // --- USUARIO LOGUEADO ---
+                // 1. Obtener nombre de usuario de Firestore
+                try {
+                    const docSnap = await getDoc(doc(db, "users", user.uid));
+                    if (docSnap.exists()) {
+                        displayUser.textContent = docSnap.data().username.toUpperCase();
+                    } else {
+                        displayUser.textContent = user.email;
+                    }
+                } catch (e) {
+                    displayUser.textContent = "Músico";
+                }
+
+                // 2. Cambiar interfaz
+                authContainer.classList.add('hidden');
+                protectedContent.classList.remove('hidden');
+
+                // OPCIONAL: Si prefieres redirigir a otro archivo HTML, descomenta esto:
+                // window.location.href = 'temas.html';
+
+            } else {
+                // --- USUARIO NO LOGUEADO ---
+                authContainer.classList.remove('hidden');
+                protectedContent.classList.add('hidden');
+                switchView('login'); // Resetear a login
+            }
+        });
+
+    </script>
+</body>
+</html>
