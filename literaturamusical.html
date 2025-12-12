@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Literatura Musical</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Estilos base (Mismo estilo oscuro de la imagen y literaturamusical.html) */
+        @keyframes pulse-custom { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.3; } }
+        @keyframes bounce-custom { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes blink-custom { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .animate-pulse-custom { animation: pulse-custom 3s ease-in-out infinite; }
+        .animate-bounce-custom { animation: bounce-custom 2s ease-in-out infinite; }
+        .animate-blink-custom { animation: blink-custom 1s step-start infinite; }
+        @keyframes bounce-sala1 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        .animate-bounce-sala2 { animation: bounce-sala1 1.5s ease-in-out infinite; } 
+        .hidden { display: none; }
+        
+        /* Estilos para el elemento de rango de progreso personalizado (Barra de reproducción) */
+        .progress-bar-custom {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #4b5563; /* gray-600 */
+            border-radius: 5px;
+            cursor: pointer;
+            outline: none;
+            transition: background 0.2s;
+        }
+
+        /* Estilo del "thumb" (indicador de posición) para navegadores WebKit (Chrome, Safari) */
+        .progress-bar-custom::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #a855f7; /* violet-500 */
+            cursor: pointer;
+            box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        /* Estilo del "thumb" (indicador de posición) para Firefox */
+        .progress-bar-custom::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #a855f7; /* violet-500 */
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        /* Estilo para la parte "progreso" de la barra */
+        .progress-bar-custom::-webkit-slider-runnable-track {
+             background: #4b5563; 
+        }
+
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen font-sans">
+    
+    <header class="bg-purple-950 p-3 shadow-xl sticky top-0 z-10 border-b border-purple-800">
+        <div class="container mx-auto flex justify-between items-center">
+            
+            <div class="flex items-center space-x-3">
+                <a href="temas.html" class="bg-yellow-500 text-gray-900 hover:bg-yellow-600 p-2 rounded-full font-bold transition-all hover:scale-105" title="Menú principal">
+                    <i class="fas fa-arrow-left w-5 h-5"></i>
+                </a>
+                <h1 class="text-xl md:text-2xl font-extrabold text-yellow-400 flex items-center">
+                     <i class="fas fa-music text-cyan-400 text-2xl md:text-3xl mr-1 animate-bounce-sala2"></i>
+                    Literatura Musical
+                </h1>
+            </div>
+            
+            <div class="flex items-center space-x-3 md:space-x-4">
+                 <div class="flex items-center space-x-2 text-sm md:text-md font-bold text-white">
+                    <div class="flex items-center space-x-1" title="Votos restantes">
+                        <i class="fas fa-hand-pointer text-cyan-400 text-lg"></i>
+                        <span id="votesRemainingDisplay" class="text-yellow-400">5</span>
+                    </div>
+                    <span class="text-cyan-400 hidden sm:inline-block">|</span>
+                    <div class="flex items-center space-x-1" title="Estrellas acumuladas">
+                        <i class="fas fa-star text-yellow-400 text-lg"></i>
+                        <span id="userStarsDisplay" class="text-yellow-400">0</span>
+                    </div>
+                    <span class="text-cyan-400 hidden sm:inline-block">|</span>
+                    <div class="flex items-center space-x-1" title="Diamantes (Quiz perfectos)">
+                        <i class="fas fa-gem text-teal-400 text-lg"></i>
+                        <span id="totalDiamondsDisplay" class="text-yellow-400">0</span>
+                    </div>
+                 </div>
+                 <button onclick="openGlobalInfoModal()" class="bg-purple-700 hover:bg-purple-600 p-2 rounded-full transition-all hover:scale-105 hidden sm:block animate-pulse" title="Información y Reglas">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </button>
+                <a href="perfil.html" class="bg-emerald-600 hover:bg-emerald-700 p-2 rounded-full transition-all hover:scale-105 animate-bounce-sala2" title="Ir a Perfil">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                </a>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container mx-auto p-4 pt-0">
+        <div class="text-center mt-3 space-y-1 px-4 bg-purple-900/50 py-2 rounded-lg border border-purple-700 mx-auto max-w-3xl">
+            <div class="space-y-2">
+                <p class="text-xs md:text-sm text-yellow-300 font-bold flex items-center justify-center">
+                    <i class="fas fa-chevron-right mr-2 text-cyan-400"></i>
+                    1. Dale al play y escucha
+                </p>
+                <p class="text-xs md:text-sm text-yellow-300 font-bold flex items-center justify-center">
+                    <i class="fas fa-chevron-right mr-2 text-cyan-400"></i>
+                    2. Realiza el Quiz
+                </p>
+                <p class="text-xs md:text-sm text-yellow-300 font-bold flex items-center justify-center">
+                    <i class="fas fa-chevron-right mr-2 text-cyan-400"></i>
+                    3. Elige las canciones que más te gusten
+                </p>
+                <p class="text-xs md:text-sm text-yellow-300 font-bold flex items-center justify-center">
+                    <i class="fas fa-chevron-right mr-2 text-cyan-400"></i>
+                    4. Puntúa con estrellas en los votos
+                </p>
+            </div>
+        </div>
+        </div>
+    
+    <main class="container mx-auto p-4 pt-6">
+        <section class="mb-10">
+            <h2 class="text-3xl md:text-4xl font-extrabold text-center mb-6 text-cyan-400 drop-shadow-lg">🏆 Top 3: Lo más votado 🏆</h2>
+            <div id="top3Container" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+        </section>
+        <section>
+            <h2 class="text-2xl md:text-3xl font-bold text-center mb-6 text-yellow-400">Resto del Ranking</h2>
+            <div id="rankingContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+        </section>
+    </main>
+
+    <div id="quizModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-gradient-to-br from-purple-900 to-yellow-900 rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto border-2 border-yellow-400 shadow-2xl">
+            <div class="sticky top-0 bg-purple-900 p-4 flex justify-between items-center border-b border-purple-700">
+                <h2 class="text-2xl font-bold text-yellow-400" id="quizTitle">Quiz de la Obra</h2>
+                <button onclick="closeQuizModal()" class="hover:bg-purple-700 p-2 rounded-full transition text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="quizContent" class="p-6 text-white space-y-6">
+                </div>
+        </div>
+    </div>
+    
+    <div id="voteModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-gradient-to-br from-purple-900 to-emerald-900 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border-2 border-emerald-400 shadow-2xl">
+            <div class="sticky top-0 bg-purple-900 p-4 flex justify-between items-center border-b border-purple-700">
+                <h2 class="text-2xl font-bold text-emerald-400" id="voteTitle">Votar por Canción/Obra</h2>
+                <button onclick="closeVoteSelectionModal()" class="hover:bg-purple-700 p-2 rounded-full transition text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6 text-white space-y-4">
+                <p class="text-lg text-center font-semibold mb-4">Selecciona cuántas estrellas ⭐ quieres usar para votar por: <span id="songTitleForVote" class="text-yellow-400 font-bold"></span></p>
+                <p class="text-sm text-center text-gray-300">Votos restantes: <span id="currentVotesRemaining" class="text-yellow-400 font-bold">5</span> | Estrellas actuales: <span id="currentUserStars" class="text-yellow-400 font-bold">0</span></p>
+                
+                <div class="grid grid-cols-2 gap-3" id="starOptionsContainer">
+                    </div>
+                
+                <div id="voteMessage" class="mt-4 text-center text-red-400 font-semibold hidden"></div>
+
+                <div class="flex justify-end pt-4">
+                    <button onclick="submitVote()" id="submitVoteButton" class="bg-emerald-600 hover:bg-emerald-700 px-6 py-3 rounded-lg font-bold text-lg disabled:bg-gray-500 disabled:cursor-not-allowed" disabled>
+                        Confirmar Voto
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-purple-950 p-4 shadow-inner mt-12 border-t border-purple-800">
+        <div class="container mx-auto flex justify-center items-center">
+            <a href="https://youtube.com/user/literaturamusical?si=xxxxxxxxxxxxxxxx" target="_blank" class="text-purple-400 hover:text-purple-500 font-semibold flex items-center gap-2 transition-all">
+                <svg class="w-8 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M21.582,6.186c-0.23-0.814-0.814-1.398-1.628-1.628C18.309,4,12,4,12,4S5.691,4,4.046,4.558C3.232,4.788,2.648,5.372,2.418,6.186C1.86,7.831,1.86,12,1.86,12s0,4.169,0.558,5.814c0.23,0.814,0.814,1.398,1.628,1.628C5.691,20,12,20,12,20s6.309,0,7.954-0.558c0.814-0.23,1.398-0.814,1.628-1.628C22.14,16.169,22.14,12,22.14,12S22.14,7.831,21.582,6.186z M10,15.464V8.536L16,12L10,15.464z"></path>
+                </svg>
+                Visita nuestro canal de Literatura Musical en YouTube
+            </a>
+        </div>
+    </footer>
+
+    <script>
+        // ===================================
+        //             DATOS
+        // ===================================
+
+        var initialSongs = [
+            { 
+                id: 1, 
+                title: "El lenguaje del mundo", 
+                author: "Autor Musical Desconocido", 
+                year: 2005, 
+                genre: "Fusión / World Music", 
+                image: "imagenportada/lit_alquimista.png", 
+                totalStars: 0, // Votos reiniciados para la semana
+                quizStars: 0, 
+                localAudioUrl: "audio/lit_alquimista.mp3", 
+                description: "Basada en *El Alquimista* de Paulo Coelho. Narra la búsqueda de Santiago por su 'Leyenda Personal' y la conexión con el alma del mundo en el desierto.", 
+                unlocked: false, 
+                listened: false, 
+                hasDiamond: false, 
+                contentQuizData: { questions: [ 
+                    { q: "¿Quién es el autor de 'El Alquimista'?", a: "Paulo Coelho", d: ["Gabriel García Márquez", "Jorge Luis Borges", "Isabel Allende"] }, 
+                    { q: "¿Cuál es el propósito del viaje del protagonista Santiago?", a: "Encontrar un tesoro cerca de las Pirámides de Egipto", d: ["Estudiar en la universidad", "Convertirse en rey", "Vengarse de un enemigo"] }, 
+                    { q: "¿Qué le da el Melquisedec (Rey de Salem) a Santiago?", a: "Dos piedras: Urim y Tumim", d: ["Un mapa", "Oro", "Un camello"] }, 
+                    { q: "¿Qué concepto central rige la vida y el universo en la novela?", a: "La Leyenda Personal", d: ["El Destino Fijo", "La Voluntad de Dios", "El Gran Misterio"] }, 
+                    { q: "¿Qué hace Santiago para evitar el fracaso en el desierto?", a: "Convierte en viento (habla con el sol)", d: ["Se rinde", "Busca ayuda en el Oasis", "Reza a Alá"] } 
+                ] } 
+            },
+            { 
+                id: 2, 
+                title: "El ciclo de Macondo", 
+                author: "Autor Musical Desconocido", 
+                year: 1997, 
+                genre: "Rock Progresivo / Folk", 
+                image: "imagenportada/lit_macondo.png", 
+                totalStars: 0, 
+                quizStars: 0, 
+                localAudioUrl: "audio/lit_macondo.mp3", 
+                description: "Inspirada en *Cien años de soledad* de Gabriel García Márquez. Un viaje a través de la saga de la familia Buendía y el pueblo de Macondo, lleno de realismo mágico.", 
+                unlocked: false, 
+                listened: false, 
+                hasDiamond: false, 
+                contentQuizData: { questions: [ 
+                    { q: "¿Quién es el autor de 'Cien años de soledad'?", a: "Gabriel García Márquez", d: ["Mario Vargas Llosa", "Julio Cortázar", "Carlos Fuentes"] }, 
+                    { q: "¿Cómo se llama el pueblo donde vive la familia Buendía?", a: "Macondo", d: ["Comala", "Santa María", "Arequipa"] }, 
+                    { q: "¿Qué fenómeno natural dura más de cuatro años en Macondo?", a: "Una lluvia constante", d: ["Una sequía terrible", "Una plaga de langostas", "Un huracán"] }, 
+                    { q: "¿Cuál es el nombre del patriarca que funda Macondo?", a: "José Arcadio Buendía", d: ["Coronel Aureliano Buendía", "Aureliano Segundo", "Arcadio"] }, 
+                    { q: "¿Qué castigo recibe el último de la estirpe Buendía?", a: "Nace con cola de cerdo", d: ["Nace ciego", "Muere de viejo", "Se vuelve invisible"] } 
+                ] } 
+            },
+            { 
+                id: 3, 
+                title: "El ojo que todo lo ve", 
+                author: "Autor Musical Desconocido", 
+                year: 2012, 
+                genre: "Rock Alternativo / Electrónica", 
+                image: "imagenportada/lit_1984.png", 
+                totalStars: 0, 
+                quizStars: 0, 
+                localAudioUrl: "audio/lit_1984.mp3", 
+                description: "Basada en *1984* de George Orwell. Una pieza sombría sobre el control gubernamental, la manipulación de la historia y el Gran Hermano.", 
+                unlocked: false, 
+                listened: false, 
+                hasDiamond: false, 
+                contentQuizData: { questions: [ 
+                    { q: "¿Quién es el autor de la novela distópica '1984'?", a: "George Orwell", d: ["Aldous Huxley", "Ray Bradbury", "Yevgueni Zamiatin"] }, 
+                    { q: "¿Cómo se llama el líder totalitario omnipresente?", a: "Gran Hermano (Big Brother)", d: ["El Comandante", "El Ojo", "El Protector"] }, 
+                    { q: "¿Cuál es el lema del Partido más famoso?", a: "La Guerra es Paz, la Libertad es Esclavitud, la Ignorancia es Fuerza", d: ["El Pueblo es el Partido", "La Paz es la Meta", "La Verdad es Absoluta"] }, 
+                    { q: "¿Cómo se llama el protagonista que trabaja en el Ministerio de la Verdad?", a: "Winston Smith", d: ["Julia", "O'Brien", "Emmanuel Goldstein"] }, 
+                    { q: "¿Cuál es el objetivo principal del 'doble pensar'?", a: "Creer simultáneamente en dos ideas contradictorias", d: ["Pensar solo en el futuro", "Meditar en silencio", "Decir siempre la verdad"] } 
+                ] } 
+            },
+            { 
+                id: 4, 
+                title: "La Fiebre de San Petersburgo", 
+                author: "Autor Musical Desconocido", 
+                year: 1890, 
+                genre: "Clásica / Gótica", 
+                image: "imagenportada/lit_crimen.png", 
+                totalStars: 0, 
+                quizStars: 0, 
+                localAudioUrl: "audio/lit_crimen.mp3", 
+                description: "Inspirada en *Crimen y castigo* de Fiódor Dostoievski. Se centra en el conflicto psicológico de Raskólnikov y su justificación del asesinato en el San Petersburgo pobre.", 
+                unlocked: false, 
+                listened: false, 
+                hasDiamond: false, 
+                contentQuizData: { questions: [ 
+                    { q: "¿Quién es el autor de 'Crimen y castigo'?", a: "Fiódor Dostoievski", d: ["León Tolstói", "Antón Chéjov", "Iván Turguénev"] }, 
+                    { q: "¿Cuál es el nombre del protagonista y asesino?", a: "Rodión Raskólnikov", d: ["Dmitri Karamázov", "Aliocha", "Myshkin"] }, 
+                    { q: "¿A quién asesina Raskólnikov?", a: "A una anciana usurera y a su hermana", d: ["Al alcalde de la ciudad", "A un policía corrupto", "A su profesor"] }, 
+                    { q: "¿En qué ciudad rusa se desarrolla principalmente la acción?", a: "San Petersburgo", d: ["Moscú", "Kazan", "Kiev"] }, 
+                    { q: "¿Qué personaje representa la redención a través del sufrimiento?", a: "Sonia Marmeládova", d: ["Porfiri Petróvich", "Svidrigáilov", "Luzhin"] } 
+                ] } 
+            },
+            { 
+                id: 5, 
+                title: "El Matrimonio Bennet", 
+                author: "Autor Musical Desconocido", 
+                year: 1985, 
+                genre: "Pop / Balada", 
+                image: "imagenportada/lit_orgullo.png", 
+                totalStars: 0, 
+                quizStars: 0, 
+                localAudioUrl: "audio/lit_orgullo.mp3", 
+                description: "Basado en *Orgullo y prejuicio* de Jane Austen. Captura la tensión, el orgullo y los malentendidos entre Elizabeth Bennet y el Sr. Darcy.", 
+                unlocked: false, 
+                listened: false, 
+                hasDiamond: false, 
+                contentQuizData: { questions: [ 
+                    { q: "¿Quién es la autora de 'Orgullo y prejuicio'?", a: "Jane Austen", d: ["Charlotte Brontë", "Emily Brontë", "Mary Shelley"] }, 
+                    { q: "¿Cómo se llama la heroína principal?", a: "Elizabeth Bennet", d: ["Jane Bennet", "Lydia Bennet", "Catherine Morland"] }, 
+                    { q: "¿Cuál es el nombre completo del protagonista masculino?", a: "Fitzwilliam Darcy", d: ["Charles Bingley", "George Wickham", "Edward Ferrars"] }, 
+                    { q: "¿Cuál es la principal motivación de la Sra. Bennet?", a: "Casar bien a sus cinco hijas", d: ["Escribir un libro", "Viajar por el mundo", "Abrir una tienda"] }, 
+                    { q: "¿Qué propiedad en Derbyshire es propiedad del Sr. Darcy?", a: "Pemberley", d: ["Longbourn", "Netherfield", "Rosings"] } 
+                ] } 
+            },
+            { 
+                id: 6, 
+                title: "Contra molinos y gigantes", 
+                author: "Autor Musical Desconocido", 
+                year: 2001, 
+                genre: "Rock Épico / Sinfónico", 
+                image: "imagenportada/lit_quijote.png", 
+                totalStars: 0, 
+                quizStars: 0, 
+                localAudioUrl: "audio/lit_quijote.mp3", 
+                description: "Basada en *Don Quijote de la Mancha* de Miguel de Cervantes. Un tributo a la locura noble del caballero que confunde molinos de viento con gigantes.", 
+                unlocked: false, 
+                listened: false, 
+                hasDiamond: false, 
+                contentQuizData: { questions: [ 
+                    { q: "¿Quién es el autor de 'Don Quijote de la Mancha'?", a: "Miguel de Cervantes", d: ["Lope de Vega", "Félix Lope de Rueda", "Tirso de Molina"] }, 
+                    { q: "¿Cuál es el nombre real del Quijote?", a: "Alonso Quijano", d: ["Sancho Panza", "Rocinante", "Dulcinea"] }, 
+                    { q: "¿Cómo se llama su escudero fiel?", a: "Sancho Panza", d: ["Rocinante", "Tomé Cecial", "El Bachiller Sansón Carrasco"] }, 
+                    { q: "¿Qué confunde Quijote con gigantes?", a: "Molinos de viento", d: ["Rebaños de ovejas", "Ventas (posadas)", "Árboles"] }, 
+                    { q: "¿Cómo llama Quijote a su amada labradora?", a: "Dulcinea del Toboso", d: ["Aldonza Lorenzo", "Maritornes", "Antonia Quijana"] } 
+                ] } 
+            },
+            { 
+                id: 7, 
+                title: "El sol, la playa y la sinceridad", 
+                author: "Autor Musical Desconocido", 
+                year: 1973, 
+                genre: "Jazz / Ambient", 
+                image: "imagenportada/lit_extranjero.png", 
+                totalStars: 0, 
+                quizStars: 0, 
+                localAudioUrl: "audio/lit_extranjero.mp3", 
+                description: "Basado en *El extranjero* de Albert Camus. Refleja la apatía, el clima opresivo y el absurdo existencialista del protagonista, Meursault.", 
+                unlocked: false, 
+                listened: false, 
+                hasDiamond: false, 
+                contentQuizData: { questions: [ 
+                    { q: "¿Quién es el autor de 'El extranjero'?", a: "Albert Camus", d: ["Jean-Paul Sartre", "Simone de Beauvoir", "Franz Kafka"] }, 
+                    { q: "¿Cuál es el nombre del protagonista?", a: "Meursault", d: ["Rambert", "Tarrou", "Bernard"] }, 
+                    { q: "¿Qué hace Meursault en la playa que lo lleva a ser juzgado?", a: "Asesina a un hombre árabe", d: ["Roba un banco", "Quema una casa", "Se burla de la policía"] }, 
+                    { q: "¿Cuál es el tema filosófico central de la obra?", a: "El absurdo", d: ["El nihilismo", "La moral kantiana", "El racionalismo"] }, 
+                    { q: "¿Qué frase famosa dice Meursault al inicio sobre la muerte de su madre?", a: "Hoy ha muerto mamá. O quizá ayer, no sé.", d: ["Nunca la quise", "Fue un día muy triste", "La extraño mucho"] } 
+                ] } 
+            },
+            { 
+                id: 8, 
+                title: "La travesía de Odiseo", 
+                author: "Autor Musical Desconocido (2018)", 
+                year: 2018, 
+                genre: "Metal Progresivo / Folk Épico", 
+                image: "imagenportada/lit_odisea.png", 
+                totalStars: 0, 
+                quizStars: 0, 
+                localAudioUrl: "audio/lit_odisea.mp3", 
+                description: "Inspirada en *La Odisea* de Homero. Detalla el épico viaje de regreso del héroe Odiseo a Ítaca, enfrentando monstruos y dioses.", 
+                unlocked: false, 
+                listened: false, 
+                hasDiamond: false, 
+                contentQuizData: { questions: [ 
+                    { q: "¿Quién es el autor tradicionalmente atribuido de 'La Odisea'?", a: "Homero", d: ["Virgilio", "Hesíodo", "Sófocles"] }, 
+                    { q: "¿Cómo se llama la esposa de Odiseo?", a: "Penélope", d: ["Helena", "Calipso", "Circe"] }, 
+                    { q: "¿Cuál es la isla de la que es rey Odiseo?", a: "Ítaca", d: ["Troya", "Creta", "Lesbos"] }, 
+                    { q: "¿Qué criatura gigante de un solo ojo captura a Odiseo y sus hombres?", a: "Polifemo (Cíclope)", d: ["Las Sirenas", "Escila", "Caribdis"] }, 
+                    { q: "¿Cuánto tiempo dura la travesía de Odiseo después de la Guerra de Troya?", a: "Diez años", d: ["Un año", "Cinco años", "Veinte años"] } 
+                ] } 
+            },
+            { id: 9, title: "Próximamente", author: "???", year: "???", genre: "???", image: "imagenportada/placeholder.png", totalStars: 0, comingSoon: true }, 
+            { id: 10, title: "Próximamente", author: "???", year: "???", genre: "???", image: "imagenportada/placeholder.png", totalStars: 0, comingSoon: true }, 
+            { id: 11, title: "Próximamente", author: "???", year: "???", genre: "???", image: "imagenportada/placeholder.png", totalStars: 0, comingSoon: true }, 
+            { id: 12, title: "Próximamente", author: "???", year: "???", genre: "???", image: "imagenportada/placeholder.png", totalStars: 0, comingSoon: true } 
+        ];
+
+
+        // ===================================
+        // VARIABLES GLOBALES
+        // ===================================
+
+        var songs = initialSongs; 
+        var votesRemaining = 5;
+        var userStars = 0;
+        var totalDiamonds = 0;
+        var selectedSongId = null;
+        var selectedSongIdForVote = null;
+        var selectedStarsForVote = 0;
+        var currentlyPlayingAudio = null; // Variable global para controlar la reproducción
+
+        const ROOM_IDENTIFIER = 'LITERATURA_MUSICAL'; // Identificador único
+        const GLOBAL_SELECTED_SONGS_KEY = 'selectedSongsGlobal';
+        const MAX_SELECTED_SONGS = 5;
+
+
+        // ===================================
+        // FUNCIONES DE UTILIDAD (ALMACENAMIENTO/RANDOM)
+        // ===================================
+        
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function saveAppData() {
+            // Guarda el estado de la sala (votos, estrellas de la sala y estado de las canciones)
+            const appData = {
+                songs: songs, 
+                votesRemaining: votesRemaining,
+                userStars: userStars,
+                totalDiamonds: totalDiamonds,
+            };
+            localStorage.setItem('literaturamusicalAppData', JSON.stringify(appData)); // CLAVE CAMBIADA
+        }
+
+        function loadAppData() {
+            const storedData = localStorage.getItem('literaturamusicalAppData'); // CLAVE CAMBIADA
+            if (storedData) {
+                const appData = JSON.parse(storedData);
+                // Cargar datos principales
+                votesRemaining = appData.votesRemaining !== undefined ? appData.votesRemaining : 5;
+                userStars = appData.userStars || 0;
+                totalDiamonds = appData.totalDiamonds || 0;
+                
+                // Fusionar datos guardados con los datos iniciales
+                const storedSongsMap = new Map(appData.songs.map(s => [s.id, s]));
+                songs = initialSongs.map(initialSong => {
+                    const storedSong = storedSongsMap.get(initialSong.id);
+                    if (storedSong) {
+                        return { 
+                            ...initialSong, 
+                            totalStars: storedSong.totalStars !== undefined ? storedSong.totalStars : initialSong.totalStars,
+                            quizStars: storedSong.quizStars || initialSong.quizStars,
+                            unlocked: storedSong.unlocked || initialSong.unlocked,
+                            listened: storedSong.listened || initialSong.listened,
+                            hasDiamond: storedSong.hasDiamond || initialSong.hasDiamond
+                        };
+                    }
+                    return initialSong;
+                });
+            }
+        }
+        
+        function saveGlobalSelectedSongs(globalSelected) {
+             localStorage.setItem(GLOBAL_SELECTED_SONGS_KEY, JSON.stringify(globalSelected));
+        }
+
+        function loadGlobalSelectedSongs() {
+            const storedGlobal = localStorage.getItem(GLOBAL_SELECTED_SONGS_KEY);
+            return storedGlobal ? JSON.parse(storedGlobal) : [];
+        }
+
+        function updateHeaderDisplays() {
+            if (document.getElementById('votesRemainingDisplay')) {
+                document.getElementById('votesRemainingDisplay').textContent = votesRemaining;
+            }
+            if (document.getElementById('userStarsDisplay')) {
+                document.getElementById('userStarsDisplay').textContent = userStars;
+            }
+            if (document.getElementById('totalDiamondsDisplay')) {
+                document.getElementById('totalDiamondsDisplay').textContent = totalDiamonds;
+            }
+            // Actualiza también los modales si están abiertos
+            if (document.getElementById('currentVotesRemaining')) { document.getElementById('currentVotesRemaining').textContent = votesRemaining; }
+            if (document.getElementById('currentUserStars')) { document.getElementById('currentUserStars').textContent = userStars; }
+        }
+
+        function openGlobalInfoModal() {
+            alert("Mecánica de Votación:\n\n* Cada usuario dispone de 5 votos semanales (solo se reinicia en el contexto real).\n* El voto se realiza gastando 5, 6, 7, 8, 9 o 10 estrellas.\n* Solo se puede votar con una cantidad igual o menor a las estrellas acumuladas.\n\nMecánica de Quiz y Estrellas:\n\n* **Moneda (Estrellas):** Se ganan **5 estrellas** por cada pregunta acertada.\n* **Bonificación:** Se ganan **10 estrellas más de bonificación** si aciertas las 5 preguntas (Total 35 ⭐).\n* **Diamante (💎):** Se gana por conseguir el Quiz Perfecto. Se usa en el Perfil.");
+        }
+
+
+        // ===================================
+        // FUNCIONES DE RENDERIZADO
+        // ===================================
+
+        function formatNumber(num) {
+            return num.toLocaleString('es-ES');
+        }
+
+        // Estructura de la tarjeta (Card) de la obra.
+        function createSongCard(song, position, isTop3 = false) { 
+            const isComingSoon = song.comingSoon;
+            if (isComingSoon) {
+                return `
+                    <div class="bg-gray-800 rounded-xl overflow-hidden shadow-2xl transition-all hover:scale-[1.02] border-2 border-gray-700 h-full flex flex-col justify-center items-center p-6 min-h-[300px]">
+                        <i class="fas fa-lock text-gray-500 text-6xl mb-4"></i>
+                        <h3 class="text-xl font-bold text-gray-400 mb-2">Próximamente</h3>
+                        <p class="text-gray-500 text-center">Nuevo contenido disponible la próxima semana.</p>
+                    </div>
+                `;
+            }
+
+            // Clases de estilo según la posición en el Top 3
+            let rankClass = 'bg-purple-900 border-purple-700';
+            let titleClass = 'text-white';
+            let yearClass = 'text-gray-300';
+            let descClass = 'text-gray-400';
+            let rankIcon = '';
+            
+            if (isTop3) {
+                rankClass = position === 1 ? 'bg-gradient-to-br from-yellow-700 to-yellow-900 border-yellow-400 scale-[1.05] hover:scale-[1.08]' :
+                            position === 2 ? 'bg-gradient-to-br from-gray-500 to-gray-700 border-gray-400' :
+                            'bg-gradient-to-br from-amber-700 to-amber-900 border-amber-400';
+                titleClass = 'text-shadow-md text-white';
+                yearClass = 'text-white font-extrabold';
+                descClass = 'text-gray-200';
+                // Medalla en la esquina superior derecha
+                rankIcon = position === 1 ? '<span class="text-4xl" style="color: gold;">🥇</span>' : position === 2 ? '<span class="text-4xl" style="color: silver;">🥈</span>' : '<span class="text-4xl" style="color: #CD7F32;">🥉</span>';
+            }
+
+            const isListened = song.listened;
+            const isUnlocked = song.unlocked;
+            // Bloqueo del botón de Quiz si ya está desbloqueado
+            const quizButtonDisabled = isUnlocked ? 'disabled' : '';
+            const quizButtonTitle = isUnlocked ? 'Quiz completado' : 'Hacer Quiz';
+            
+            const isSelected = loadGlobalSelectedSongs().some(s => s.room === ROOM_IDENTIFIER && s.id === song.id);
+            const selectButtonText = isSelected ? 'Elegida ✅' : 'Elegir';
+            const selectButtonClass = isSelected ? 'bg-red-600 hover:bg-red-700' : 'bg-yellow-600 hover:bg-yellow-700';
+            const selectButtonTitle = isSelected ? 'Quitar de mi selección' : (!isUnlocked ? 'Completa el Quiz para elegir' : (!isListened ? 'Dale al Play para elegir' : 'Elegir esta obra para el Top 3'));
+            const selectButtonDisabled = isSelected ? '' : (isUnlocked && isListened ? '' : 'disabled');
+            
+            const diamondIcon = song.hasDiamond ? '<span class="absolute top-2 right-12 text-teal-400 text-2xl drop-shadow-lg" title="Quiz Perfecto">💎</span>' : '';
+
+            return `
+                <div class="bg-purple-900 rounded-xl overflow-hidden shadow-2xl transition-all hover:scale-[1.02] border-2 ${rankClass} h-full flex flex-col">
+                    ${diamondIcon}
+                    <div class="relative">
+                        <img src="${song.image}" alt="Portada de ${song.title}" class="w-full h-48 object-cover object-center ${isTop3 ? 'md:h-64' : 'h-32'}">
+                        <div class="absolute inset-0 bg-black/50 flex flex-col justify-end p-4">
+                            ${isTop3 ? `<div class="absolute top-2 right-2 drop-shadow-lg">${rankIcon}</div>` : ''}
+                            <h3 class="text-xl ${isTop3 ? 'md:text-2xl' : ''} font-extrabold ${titleClass} leading-tight drop-shadow-md">${song.title}</h3>
+                            <p class="text-sm font-semibold ${yearClass}">${song.author} (${song.year})</p>
+                        </div>
+                    </div>
+                    <div class="p-4 flex-grow flex flex-col justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider ${yearClass} mb-2">${song.genre}</p>
+                            <p class="text-sm ${descClass} mb-4 line-clamp-3">${song.description}</p>
+                            <div class="flex justify-between items-center text-sm font-semibold mb-3">
+                                <span class="text-yellow-400">Votos: ${formatNumber(song.totalStars)} ⭐</span>
+                                <button onclick="openVoteSelectionModal(${song.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-full text-xs transition-all hover:scale-105" ${isUnlocked ? '' : 'disabled'} title="${isUnlocked ? 'Votar por esta obra' : '¡Completa el Quiz antes!'}">
+                                    Votar (${votesRemaining})
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-auto pt-3 border-t border-purple-700">
+                            <audio id="audioPlayer${song.id}" class="w-full hidden" src="${song.localAudioUrl}" preload="none" ontimeupdate="updateProgress(${song.id})" onloadedmetadata="updateProgress(${song.id})" onended="handleAudioEnd(${song.id})" ></audio>
+                            <div class="flex items-center space-x-3 mb-2">
+                                <button id="playButton${song.id}" onclick="togglePlayPause(${song.id})" class="bg-cyan-600 hover:bg-cyan-700 text-white p-2 rounded-full transition-all hover:scale-110 flex-shrink-0" title="Reproducir / Pausar">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <div class="flex-grow">
+                                    <input type="range" id="progressBar${song.id}" value="0" min="0" max="0" step="0.01" class="progress-bar-custom" onchange="seekAudio(${song.id})" oninput="updateTimeDisplayOnly(${song.id})">
+                                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                                        <span id="currentTime${song.id}">0:00</span>
+                                        <span id="duration${song.id}">0:00</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center mt-3">
+                                <button onclick="openQuizModal(${song.id})" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 px-3 py-1 rounded-full font-bold text-xs transition-all hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed" ${quizButtonDisabled} title="${quizButtonTitle}">
+                                    Quiz ${isUnlocked ? '✔️' : ''}
+                                </button>
+                                <button onclick="chooseSong(${song.id})" 
+                                    id="selectButton${song.id}"
+                                    class="${selectButtonClass} text-white px-3 py-1 rounded-full font-bold text-xs transition-all hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed" 
+                                    ${selectButtonDisabled} 
+                                    title="${selectButtonTitle}">
+                                    ${selectButtonText}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRanking() {
+            // Detener y resetear cualquier audio en reproducción al re-renderizar
+            if (currentlyPlayingAudio) {
+                const id = getSongIdFromAudio(currentlyPlayingAudio);
+                handleAudioEnd(id); 
+            }
+
+            // Ordenar las canciones: Top 3 (más votos) primero
+            const sortedSongs = [...songs.filter(s => !s.comingSoon)].sort((a, b) => b.totalStars - a.totalStars);
+            const top3Songs = sortedSongs.slice(0, 3);
+            const regularSongs = sortedSongs.slice(3);
+            const comingSoonSongs = songs.filter(s => s.comingSoon);
+
+            const top3 = document.getElementById('top3Container');
+            const ranking = document.getElementById('rankingContainer');
+            
+            top3.innerHTML = '';
+            ranking.innerHTML = '';
+            
+            // Renderizar Top 3
+            top3Songs.forEach((s, i) => top3.innerHTML += createSongCard(s, i + 1, true));
+            // Renderizar Resto del Ranking 
+            regularSongs.forEach((s, i) => ranking.innerHTML += createSongCard(s, i + 4, false));
+            // Renderizar Próximamente
+            comingSoonSongs.forEach(s => ranking.innerHTML += createSongCard(s));
+            
+            // Asegurar que el estado del audio se mantenga después de renderizar
+            setupAudioListeners();
+        }
+
+
+        // ===================================
+        // FUNCIONES DE AUDIO
+        // ===================================
+        
+        // Función auxiliar para extraer el ID numérico del elemento de audio
+        function getSongIdFromAudio(audioElement) {
+            const idString = audioElement.id.replace('audioPlayer', '');
+            return parseInt(idString);
+        }
+
+        // Función para marcar la canción como escuchada
+        function markAsListened(id) {
+            const songIndex = songs.findIndex(s => s.id === id); 
+            if (songIndex !== -1 && !songs[songIndex].listened) {
+                songs[songIndex].listened = true;
+                saveAppData();
+                updateSelectButtonState(id); // <--- AHORA SOLO ACTUALIZA EL BOTÓN
+            }
+        }
+
+        // Función para actualizar el estado del botón 'Elegir' sin re-renderizar todo
+        function updateSelectButtonState(id) {
+            const song = songs.find(s => s.id === id);
+            const button = document.getElementById(`selectButton${id}`);
+            if (!song || !button) return;
+
+            const globalSelected = loadGlobalSelectedSongs();
+            const isSelected = globalSelected.some(s => s.room === ROOM_IDENTIFIER && s.id === id);
+            
+            // Recalcular el estado del botón 'Elegir'
+            const isUnlocked = song.unlocked;
+            const isListened = song.listened;
+            
+            const selectButtonText = isSelected ? 'Elegida ✅' : 'Elegir';
+            const selectButtonClass = isSelected ? 'bg-red-600 hover:bg-red-700' : 'bg-yellow-600 hover:bg-yellow-700';
+            const selectButtonTitle = isSelected ? 'Quitar de mi selección' : 
+                                      (!isUnlocked ? 'Completa el Quiz para elegir' : 
+                                       (!isListened ? 'Dale al Play para elegir' : 'Elegir esta obra para el Top 3'));
+            const selectButtonDisabled = isSelected ? false : (isUnlocked && isListened ? false : true);
+
+            // Aplicar las actualizaciones al botón
+            button.disabled = selectButtonDisabled;
+            button.title = selectButtonTitle;
+            button.textContent = selectButtonText;
+            // Asegurar que las clases se actualicen, manteniendo las clases utilitarias
+            button.className = `${selectButtonClass} text-white px-3 py-1 rounded-full font-bold text-xs transition-all hover:scale-105 ${selectButtonDisabled ? 'disabled:bg-gray-500 disabled:cursor-not-allowed' : ''}`;
+        }
+        
+        function setupAudioListeners() {
+            // Se llama después de renderizar para añadir el listener
+            songs.filter(m => !m.comingSoon).forEach(song => { 
+                const audioPlayer = document.getElementById(`audioPlayer${song.id}`);
+                if (audioPlayer) {
+                    // Pre-carga del duration
+                    audioPlayer.onloadedmetadata = function() {
+                        const durationSpan = document.getElementById(`duration${song.id}`);
+                        if(durationSpan) {
+                            durationSpan.textContent = formatTime(audioPlayer.duration);
+                            // También inicializar el máximo de la barra
+                            const progressBar = document.getElementById(`progressBar${song.id}`);
+                            if(progressBar) progressBar.max = audioPlayer.duration;
+                        }
+                    };
+                    // Forzar el evento si ya está cargado
+                    if(audioPlayer.readyState > 0) audioPlayer.onloadedmetadata();
+                }
+            });
+        }
+
+        function formatTime(seconds) {
+            if (isNaN(seconds) || seconds < 0) return "0:00";
+            const min = Math.floor(seconds / 60);
+            const sec = Math.floor(seconds % 60);
+            return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+        }
+
+        function updateProgress(audioId) {
+            const audioPlayer = document.getElementById(`audioPlayer${audioId}`);
+            const progressBar = document.getElementById(`progressBar${audioId}`);
+            const currentTimeSpan = document.getElementById(`currentTime${audioId}`);
+            const durationSpan = document.getElementById(`duration${audioId}`);
+            if (audioPlayer && progressBar && currentTimeSpan && durationSpan && !isNaN(audioPlayer.duration)) {
+                if (audioPlayer.readyState > 0) {
+                    const duration = audioPlayer.duration;
+                    const currentTime = audioPlayer.currentTime;
+                    progressBar.max = duration;
+                    progressBar.value = currentTime;
+                    currentTimeSpan.textContent = formatTime(currentTime);
+                    if (durationSpan.textContent === '0:00' || durationSpan.textContent === '') {
+                        durationSpan.textContent = formatTime(duration);
+                    }
+                }
+            }
+        }
+
+        function updateTimeDisplayOnly(audioId) {
+            const audioPlayer = document.getElementById(`audioPlayer${audioId}`);
+            const progressBar = document.getElementById(`progressBar${audioId}`);
+            const currentTimeSpan = document.getElementById(`currentTime${audioId}`);
+            if (audioPlayer && progressBar && currentTimeSpan) {
+                // Solo actualizar el tiempo mostrado al mover el slider sin cambiar la posición del audio
+                currentTimeSpan.textContent = formatTime(progressBar.value);
+            }
+        }
+
+        function seekAudio(audioId) {
+            const audioPlayer = document.getElementById(`audioPlayer${audioId}`);
+            const progressBar = document.getElementById(`progressBar${audioId}`);
+            if (audioPlayer && progressBar) {
+                audioPlayer.currentTime = progressBar.value;
+            }
+        }
+
+        // FUNCIÓN DE REPRODUCCIÓN - Optimizada para un solo click (comportamiento instantáneo)
+        function togglePlayPause(audioId) {
+            const audioPlayer = document.getElementById(`audioPlayer${audioId}`);
+            const buttonElement = document.getElementById(`playButton${audioId}`);
+
+            // 1. Pausar cualquier audio reproduciéndose actualmente y restablecer su botón
+            if (currentlyPlayingAudio && currentlyPlayingAudio !== audioPlayer) {
+                currentlyPlayingAudio.pause();
+                const prevId = getSongIdFromAudio(currentlyPlayingAudio);
+                const prevButton = document.getElementById(`playButton${prevId}`);
+                if (prevButton) {
+                    prevButton.innerHTML = '<i class="fas fa-play"></i>'; // Restablecer a icono Play
+                }
+            }
+            
+            // 2. Reproducir o Pausar el audio actual
+            if (audioPlayer.paused) {
+                // Reproducir al instante y marcar como escuchado al primer play
+                audioPlayer.play().catch(error => {
+                    // Manejo del error de reproducción (ej. política de auto-reproducción del navegador)
+                    console.error("Error al intentar reproducir el audio:", error);
+                    // Opcional: mostrar un mensaje al usuario si la reproducción falla por políticas
+                });
+                buttonElement.innerHTML = '<i class="fas fa-pause"></i>';
+                currentlyPlayingAudio = audioPlayer;
+                markAsListened(audioId); // Se marca como escuchado al darle al Play.
+
+            } else {
+                audioPlayer.pause();
+                buttonElement.innerHTML = '<i class="fas fa-play"></i>';
+                currentlyPlayingAudio = null;
+            }
+        }
+        
+        function handleAudioEnd(audioId) {
+            const audioPlayer = document.getElementById(`audioPlayer${audioId}`);
+            const buttonElement = document.getElementById(`playButton${audioId}`);
+            if (audioPlayer && buttonElement) {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+                buttonElement.innerHTML = '<i class="fas fa-play"></i>';
+            }
+            if (currentlyPlayingAudio === audioPlayer) {
+                currentlyPlayingAudio = null;
+            }
+        }
+
+
+        // ===================================
+        // FUNCIONES DE QUIZ
+        // ===================================
+
+        function generateQuizQuestions(song) { 
+            if (!song.contentQuizData || !song.contentQuizData.questions || song.contentQuizData.questions.length < 5) {
+                return '<p class="text-red-400">Error: No hay suficientes preguntas para esta obra. Complete el array contentQuizData.</p>';
+            }
+            // Si ya está desbloqueado, no se muestra el quiz para volver a hacer.
+            if (song.unlocked) {
+                 return `
+                    <div class="text-center p-6 bg-emerald-900/50 rounded-xl mb-4 border-2 border-emerald-400">
+                        <i class="fas fa-check-circle text-4xl text-emerald-400 mb-3"></i>
+                        <h3 class="text-2xl font-bold text-yellow-400">Quiz Completo</h3>
+                        <p class="text-lg text-white mt-2">¡Ya has completado el Quiz para esta obra!</p>
+                        <p class="text-md text-gray-300">Puedes votar, pero no ganarás más estrellas con este Quiz.</p>
+                        <div class="mt-4 flex justify-center">
+                            <button onclick="closeQuizModal();" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-bold text-lg transition-all hover:scale-105">
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                 `;
+            }
+
+            const selectedQuestions = shuffleArray([...song.contentQuizData.questions]).slice(0, 5);
+            let quizHtml = '';
+            selectedQuestions.forEach((qData, index) => {
+                const qNum = index + 1;
+                const options = shuffleArray([qData.a, ...qData.d]);
+                const optionsHtml = options.map(opt => `
+                    <label class="flex items-center p-3 bg-purple-700/50 rounded-lg hover:bg-purple-600 cursor-pointer">
+                        <input type="radio" name="question${qNum}" value="${opt}" class="form-radio h-5 w-5 text-yellow-400">
+                        <span class="ml-3 text-lg">${opt}</span>
+                    </label>
+                `).join('');
+                quizHtml += `
+                    <div class="p-4 bg-purple-800 rounded-xl border border-purple-600" data-q-original="${qData.q}" data-q-correct="${qData.a}">
+                        <p class="text-xl font-semibold mb-4 text-cyan-300">Pregunta ${qNum}: ${qData.q}</p>
+                        <div class="space-y-2">${optionsHtml}</div>
+                    </div>
+                `;
+            });
+
+            quizHtml += `
+                <div class="mt-6 flex justify-end">
+                    <button onclick="submitQuiz(${song.id}, ${JSON.stringify(selectedQuestions).replace(/"/g, '&quot;')})" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 px-6 py-3 rounded-lg font-bold text-lg transition-all hover:scale-105">
+                        Comprobar Respuestas
+                    </button>
+                </div>
+            `;
+            return quizHtml;
+        }
+
+        function openQuizModal(id) {
+            selectedSongId = id;
+            const song = songs.find(s => s.id === id); 
+            if (!song) return;
+
+            document.getElementById('quizTitle').textContent = `Quiz: ${song.title}`;
+            document.getElementById('quizContent').innerHTML = generateQuizQuestions(song);
+            document.getElementById('quizModal').classList.remove('hidden');
+        }
+
+        function closeQuizModal() {
+            document.getElementById('quizModal').classList.add('hidden');
+            selectedSongId = null;
+        }
+
+        function submitQuiz(id, questionsData) {
+            const totalQuestions = questionsData.length;
+            let correctAnswers = 0;
+            const resultsHtml = [];
+            const songIndex = songs.findIndex(s => s.id === id); 
+            if (songIndex === -1) return;
+
+            questionsData.forEach((qData, index) => {
+                const qNum = index + 1;
+                const correct = qData.a;
+                const selectedInput = document.querySelector(`input[name="question${qNum}"]:checked`);
+                const userAnswer = selectedInput ? selectedInput.value : 'Sin responder';
+                const isCorrect = userAnswer === correct;
+
+                if (isCorrect) {
+                    correctAnswers++;
+                }
+
+                const icon = isCorrect ? '<i class="fas fa-check-circle text-green-400"></i>' : '<i class="fas fa-times-circle text-red-400"></i>';
+                const questionText = document.querySelector(`[data-q-original="${qData.q}"] p`).textContent;
+                const answerColor = isCorrect ? 'text-green-400' : 'text-red-400';
+
+                resultsHtml.push(`
+                    <div class="p-3 rounded-xl border-2 ${isCorrect ? 'border-green-600 bg-green-900/20' : 'border-red-600 bg-red-900/20'}">
+                        <p class="font-semibold text-cyan-300">${icon} ${questionText}</p>
+                        <p class="text-sm ml-6 mt-1">Tu respuesta: <span class="${answerColor}">${userAnswer}</span></p>
+                        ${!isCorrect ? `<p class="text-sm ml-6">Correcta: <span class="text-yellow-400">${correct}</span></p>` : ''}
+                    </div>
+                `);
+            });
+
+            let starsGained = correctAnswers * 5;
+            let resultMessage = `<p class="font-bold text-yellow-300 mt-2">¡Bien hecho! Has ganado estrellas por tu acierto.</p>`;
+
+            if (correctAnswers === totalQuestions) {
+                // Bono por 5 aciertos
+                starsGained += 10;
+                songs[songIndex].hasDiamond = true; 
+                totalDiamonds++;
+                resultMessage = `<p class="text-3xl font-extrabold text-teal-400 mt-2 animate-bounce-custom">¡QUIZ PERFECTO! 💎 (+10 ⭐ de bono)</p>`;
+            } else if (correctAnswers === 0) {
+                resultMessage = `<p class="font-bold text-red-400 mt-2">No has ganado estrellas. ¡Inténtalo de nuevo!</p>`;
+            } else {
+                resultMessage = `<p class="font-bold text-cyan-300 mt-2">¡Sigue practicando para mejorar!</p>`;
+            }
+
+            songs[songIndex].quizStars = starsGained; 
+            userStars += starsGained;
+            songs[songIndex].unlocked = true; 
+            
+            const quizContent = document.getElementById('quizContent');
+            quizContent.innerHTML = `
+                <div class="text-center p-6 bg-purple-700 rounded-xl mb-4">
+                    <h3 class="text-3xl font-bold mb-4">¡Resultado!</h3>
+                    <p class="text-2xl font-semibold text-yellow-400">Respuestas Correctas: ${correctAnswers} de ${totalQuestions}</p>
+                    <p class="text-xl mt-4 text-cyan-400">Estrellas ganadas: <span class="font-bold text-3xl">${starsGained} ⭐</span></p>
+                    ${resultMessage}
+                </div>
+                <div class="space-y-4">
+                    ${resultsHtml.join('')}
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button onclick="closeQuizModal(); renderRanking(); updateHeaderDisplays();" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-bold text-lg transition-all hover:scale-105">
+                        Cerrar y Continuar
+                    </button>
+                </div>
+            `;
+            
+            saveAppData(); 
+        }
+
+
+        // ===================================
+        // FUNCIONES DE VOTO
+        // ===================================
+
+        function openVoteSelectionModal(id) {
+            const song = songs.find(s => s.id === id); 
+            if (!song || !song.unlocked) return;
+            
+            selectedSongIdForVote = id;
+            selectedStarsForVote = 0; // Reset
+            
+            document.getElementById('songTitleForVote').textContent = song.title;
+            document.getElementById('voteModal').classList.remove('hidden');
+            
+            // Generar opciones de estrellas
+            const starOptionsContainer = document.getElementById('starOptionsContainer');
+            starOptionsContainer.innerHTML = '';
+            
+            const starAmounts = [5, 6, 7, 8, 9, 10];
+            starAmounts.forEach(stars => {
+                const isDisabled = userStars < stars;
+                starOptionsContainer.innerHTML += `
+                    <button onclick="selectStarsForVote(${stars})" id="starOption${stars}" class="p-4 rounded-xl font-bold text-xl transition-all ${isDisabled ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-purple-700 hover:bg-purple-600 text-yellow-400 hover:scale-105'}" ${isDisabled ? 'disabled' : ''}>
+                        ${stars} ⭐
+                    </button>
+                `;
+            });
+            
+            // Asegurar que el botón de confirmar esté deshabilitado inicialmente
+            document.getElementById('submitVoteButton').disabled = true;
+            document.getElementById('voteMessage').classList.add('hidden');
+
+            updateHeaderDisplays(); // Actualizar contadores en el modal
+        }
+
+        function closeVoteSelectionModal() {
+            document.getElementById('voteModal').classList.add('hidden');
+            selectedSongIdForVote = null;
+            selectedStarsForVote = 0;
+        }
+
+        function selectStarsForVote(stars) {
+            selectedStarsForVote = stars;
+            const starOptionsContainer = document.getElementById('starOptionsContainer');
+            
+            // Remover selección anterior y aplicar a la actual
+            starOptionsContainer.querySelectorAll('button').forEach(btn => {
+                btn.classList.remove('ring-4', 'ring-emerald-400', 'ring-offset-2', 'ring-offset-purple-900');
+            });
+            
+            const selectedButton = document.getElementById(`starOption${stars}`);
+            if (selectedButton) {
+                selectedButton.classList.add('ring-4', 'ring-emerald-400', 'ring-offset-2', 'ring-offset-purple-900');
+            }
+            
+            // Habilitar o deshabilitar el botón de confirmación y mensaje
+            const submitButton = document.getElementById('submitVoteButton');
+            const message = document.getElementById('voteMessage');
+
+            if (votesRemaining <= 0) {
+                message.textContent = "No tienes votos restantes.";
+                message.classList.remove('hidden');
+                submitButton.disabled = true;
+            } else if (userStars < selectedStarsForVote) {
+                message.textContent = `Necesitas ${selectedStarsForVote} ⭐ para votar con esta opción.`;
+                message.classList.remove('hidden');
+                submitButton.disabled = true;
+            } else {
+                message.classList.add('hidden');
+                submitButton.disabled = false;
+            }
+        }
+
+        function submitVote() {
+            if (votesRemaining <= 0) {
+                alert("No tienes votos restantes.");
+                return;
+            }
+            if (userStars < selectedStarsForVote) {
+                alert(`No tienes suficientes estrellas para votar con ${selectedStarsForVote} ⭐.`);
+                return;
+            }
+            if (selectedSongIdForVote === null || selectedStarsForVote === 0) {
+                alert("Por favor, selecciona una obra y una cantidad de estrellas para votar.");
+                return;
+            }
+
+            const songIndex = songs.findIndex(s => s.id === selectedSongIdForVote); 
+            if (songIndex === -1) return;
+
+            // Procesar el voto
+            userStars -= selectedStarsForVote;
+            votesRemaining -= 1;
+            songs[songIndex].totalStars += selectedStarsForVote; 
+
+            // Guardar y actualizar la interfaz
+            saveAppData();
+            renderRanking();
+            updateHeaderDisplays();
+            closeVoteSelectionModal();
+            alert(`¡Voto exitoso! Has gastado ${selectedStarsForVote} ⭐ por "${songs[songIndex].title}". Te quedan ${votesRemaining} votos.`);
+        }
+
+        // ===================================
+        // FUNCIONES DE SELECCIÓN GLOBAL
+        // ===================================
+        
+        function chooseSong(id) {
+            const song = songs.find(s => s.id === id); 
+            if (!song) return;
+
+            let globalSelected = loadGlobalSelectedSongs();
+            const songData = { id: id, room: ROOM_IDENTIFIER, title: song.title }; 
+            const isSelected = globalSelected.some(s => s.room === ROOM_IDENTIFIER && s.id === id);
+
+            if (isSelected) {
+                // Deseleccionar 
+                globalSelected = globalSelected.filter(s => !(s.room === ROOM_IDENTIFIER && s.id === id));
+                saveGlobalSelectedSongs(globalSelected);
+                renderRanking();
+                alert(`"${song.title}" ha sido eliminada de tu selección global.`); 
+                return;
+            }
+            
+            if (globalSelected.filter(s => s.room === ROOM_IDENTIFIER).length >= MAX_SELECTED_SONGS) {
+                alert(`Solo puedes elegir ${MAX_SELECTED_SONGS} canciones/obras en esta sala.`);
+                return;
+            }
+            
+            if (!song.listened) {
+                alert("Debes darle al Play primero para desbloquear la opción de elegir.");
+                return;
+            }
+
+            // Seleccionar
+            globalSelected.push(songData);
+            saveGlobalSelectedSongs(globalSelected);
+            renderRanking();
+            alert(`¡"${song.title}" ha sido añadida a tu selección global!\nLlevas ${globalSelected.filter(s => s.room === ROOM_IDENTIFIER).length} de ${MAX_SELECTED_SONGS} elegidas en esta sala.`); 
+        }
+
+
+        // ===================================
+        //         INICIALIZACIÓN
+        // ===================================
+
+        window.onload = function() {
+            loadAppData();
+            renderRanking();
+            updateHeaderDisplays();
+        };
+
+    </script>
+</body>
+</html>
