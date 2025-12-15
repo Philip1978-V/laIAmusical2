@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil de usuario</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+
+    <style>
+        /* AÑADIDO: Mismo fondo que temas.html */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #0f172a; 
+            background: linear-gradient(180deg, #0f172a 0%, #0d9488 100%);
+            min-height: 100vh;
+            color: white;
+            padding-bottom: 3rem; 
+        }
+
+        .scroll-container {
+            /* Estilo para drag-to-scroll */
+            cursor: grab;
+            user-select: none;
+            overflow-x: scroll;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .scroll-container.active {
+            cursor: grabbing;
+        }
+
+        /* Ocultar barra de desplazamiento */
+        .scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+        .scroll-container {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        
+        /* NEW: Estilos para medallas de ranking */
+        .medal-gold { color: #FFD700; }
+        .medal-silver { color: #C0C0C0; }
+        .medal-bronze { color: #CD7F32; }
+    </style>
+</head>
+<body>
+
+    <header class="p-4 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 shadow-lg border-b border-teal-800">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            
+            <a href="temas.html" class="text-teal-400 hover:text-white transition flex items-center gap-3">
+                <i class="fas fa-arrow-left text-2xl"></i>
+                <span class="text-xl font-bold tracking-wide hidden sm:inline">La IA Musical</span>
+            </a>
+
+            <button onclick="logout()" class="text-gray-400 hover:text-white transition flex items-center gap-2 py-1 px-3 rounded-md bg-slate-800 hover:bg-slate-700">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 mt-6">
+
+        <div class="bg-slate-800 p-6 rounded-xl shadow-2xl border border-teal-700 mb-8">
+            <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
+                
+                <div class="relative group w-32 h-32 flex-shrink-0">
+                    <img id="userAvatar" src="images/default_avatar.png" alt="Avatar de Usuario" class="w-32 h-32 rounded-full object-cover border-4 border-teal-500 shadow-xl transition group-hover:opacity-80">
+                    <input type="file" id="avatarUpload" class="hidden" accept="image/*" onchange="uploadAvatar(event)">
+                    <label for="avatarUpload" class="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition duration-300 cursor-pointer">
+                        <i class="fas fa-camera text-white text-2xl"></i>
+                    </label>
+                </div>
+                
+                <div class="text-center md:text-left flex-grow">
+                    <h2 id="userNameDisplay" class="text-3xl font-bold text-teal-200 mb-1">Cargando Nombre...</h2>
+                    <p id="userEmailDisplay" class="text-gray-400 text-sm mb-4">cargando@email.com</p>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-900 p-4 rounded-lg border border-teal-800">
+                        
+                        <div class="text-center">
+                            <i class="fas fa-star text-yellow-400 text-2xl"></i>
+                            <p id="userStarsDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-xs text-gray-400">Estrellas</span>
+                        </div>
+                        
+                        <div class="text-center">
+                            <i class="fas fa-gem text-blue-400 text-2xl"></i>
+                            <p id="userDiamondsDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-xs text-gray-400">Diamantes</span>
+                        </div>
+
+                        <div class="text-center">
+                            <i class="fas fa-coins text-amber-500 text-2xl"></i>
+                            <p id="userCoinsDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-xs text-gray-400">Monedas</span>
+                        </div>
+
+                        <div class="text-center">
+                            <i class="fas fa-vote-yea text-teal-400 text-2xl"></i>
+                            <p id="votesRemainingDisplay" class="text-xl font-bold mt-1">0/5</p>
+                            <span class="text-xs text-gray-400">Votos Semanales</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <div class="lg:col-span-2 space-y-8">
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center"><i class="fas fa-medal mr-2 text-yellow-500"></i> Ranking Semanal (Top 3)</h3>
+                    <div id="weeklyRankingContainer" class="bg-slate-800 p-4 rounded-xl shadow-inner border border-teal-700">
+                        <p class="text-gray-400 text-center">Cargando ranking semanal...</p>
+                    </div>
+                </section>
+
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center"><i class="fas fa-globe-americas mr-2 text-blue-400"></i> Clasificación General (Top 10)</h3>
+                    <div id="globalRankingContainer" class="bg-slate-800 p-4 rounded-xl shadow-inner border border-teal-700">
+                        <p class="text-gray-400 text-center">Cargando clasificación general...</p>
+                    </div>
+                </section>
+            </div>
+
+            <div class="lg:col-span-1 space-y-8">
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center"><i class="fas fa-chart-bar mr-2 text-red-400"></i> Mi Rango</h3>
+                    <div id="userRankContainer" class="bg-slate-800 p-4 rounded-xl shadow-xl border border-teal-700">
+                        <p class="text-gray-400">Calculando rango...</p>
+                    </div>
+                </section>
+                
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center"><i class="fas fa-exchange-alt mr-2 text-amber-500"></i> Intercambio</h3>
+                    <div class="bg-slate-800 p-4 rounded-xl shadow-xl border border-teal-700">
+                        <p class="text-gray-300 mb-3 text-sm">Cambia tus monedas por Estrellas. ¡Impulsa tu rango!</p>
+                        <div class="flex items-center justify-between bg-slate-700 p-3 rounded-lg border border-slate-600">
+                            <p class="font-bold text-lg text-teal-300">50 <i class="fas fa-coins text-amber-500"></i> <i class="fas fa-arrow-right mx-2 text-gray-400"></i> 20 <i class="fas fa-star text-yellow-400"></i></p>
+                            <button onclick="exchangeCoinsForStars()" id="exchangeButton" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 transition rounded-md font-bold text-white text-sm">
+                                Canjear
+                            </button>
+                        </div>
+                        <p id="exchangeMessage" class="text-xs mt-2 text-gray-400">Coste de la transacción: 50 Monedas.</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+        <section class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center"><i class="fas fa-check-double mr-2"></i> Cartas Votadas (Ciclo Actual)</h3>
+            <div id="votedSongsContainerWrapper" class="scroll-container flex gap-4 p-2">
+                <p id="votedSongsMessage" class="text-gray-400 p-4 w-full text-center bg-slate-800 rounded-lg">Aún no has votado ninguna canción esta semana. ¡Explora el Reproductor!</p>
+            </div>
+        </section>
+
+        <section class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center"><i class="fas fa-clipboard-list mr-2"></i> Retos Semanales</h3>
+            <div id="missionCardsContainerWrapper" class="scroll-container flex gap-4 p-2">
+                <p id="missionsMessage" class="text-gray-400 p-4 w-full text-center bg-slate-800 rounded-lg">Cargando misiones...</p>
+            </div>
+        </section>
+        
+        <section>
+            <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center"><i class="fas fa-history mr-2"></i> Historial de Actividad (Hoy)</h3>
+            <div id="activityLogContainer" class="bg-slate-800 p-4 rounded-xl border border-teal-700 space-y-3">
+                <p class="text-gray-400 text-center">Cargando historial...</p>
+            </div>
+        </section>
+
+    </main>
+    
+    <div id="errorModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm">
+        <div class="bg-slate-800 p-8 rounded-xl border border-red-700 max-w-sm w-full shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 text-red-400 flex items-center gap-2"><i class="fas fa-exclamation-triangle"></i> Error</h3>
+            <p id="errorDetails" class="text-gray-300 mb-4 text-sm">Ha ocurrido un error inesperado.</p>
+            <button onclick="closeErrorModal()" class="mt-4 w-full py-2 rounded bg-red-600 hover:bg-red-500 text-white font-bold transition">Aceptar</button>
+        </div>
+    </div>
+
+
+    <script>
+        // --- 1. CONFIGURACIÓN FIREBASE Y CONSTANTES ---
+        const firebaseConfig = {
+            // Claves obtenidas de index.html
+            apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+            authDomain: "laiamusical-4fba7.firebaseapp.com",
+            projectId: "laiamusical-4fba7",
+            storageBucket: "laiamusical-4fba7.firebasestorage.app",
+            messagingSenderId: "49783369602",
+            appId: "1:49783369602:web:91e287c094a8f2403d699b",
+            measurementId: "G-WC2JT6DRF4"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        const maxVotes = 5;
+        const WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000; 
+        const DAY_IN_MS = 24 * 60 * 60 * 1000;
+        const DAILY_COIN_REWARD = 10;
+        
+        // MODIFICADO: 50 Monedas por 20 Estrellas
+        const EXCHANGE_RATE_COINS = 50; 
+        const EXCHANGE_RATE_STARS = 20; 
+        
+        const AVATAR_DEFAULT_URL = 'images/default_avatar.png';
+
+        // NEW: Definición de rangos y estrellas necesarias para el siguiente nivel
+        const rankDefinitions = [
+            { name: "Músico Novato", minStars: 0, nextLevelStars: 100, icon: 'fa-user' },
+            { name: "Aprendiz de Compositor", minStars: 100, nextLevelStars: 500, icon: 'fa-feather-alt' },
+            { name: "Maestro de Orquesta", minStars: 500, nextLevelStars: 2000, icon: 'fa-trophy' },
+            { name: "Leyenda Musical", minStars: 2000, nextLevelStars: 99999999, icon: 'fa-crown' } // Nivel final
+        ];
+
+        let currentUser = null;
+        let currentUserId = null;
+        let userProfileData = {}; // Objeto para almacenar todos los datos del usuario
+
+        // --- MOCK DATA para el renderizado de canciones (Debe ser el mismo que en reproductor.html) ---
+        const songs = [
+            { id: 5, title: "El lenguaje del mundo", author: "Paulo Coelho", year: 1988, topic: "Literatura", cover: "https://picsum.photos/id/20/300/300" },
+            { id: 6, title: "El ciclo de Macondo", author: "Gabriel García Márquez", year: 1967, topic: "Literatura", cover: "https://picsum.photos/id/21/300/300" },
+            { id: 7, title: "El ojo que todo lo ve", author: "George Orwell", year: 1949, topic: "Literatura", cover: "https://picsum.photos/id/22/300/300" },
+            { id: 8, title: "Crimen y castigo", author: "Fyodor Dostoevsky", year: 1866, topic: "Literatura", cover: "https://picsum.photos/id/23/300/300" },
+            { id: 1, title: "Sinfonía del Nuevo Mundo", author: "Antonín Dvořák", year: 1893, topic: "Literatura", cover: "https://picsum.photos/id/10/300/300" },
+            { id: 2, title: "La muerte del amor", author: "Inspirada en *Tristán e Isolda*", year: 1865, topic: "Literatura", cover: "https://picsum.photos/id/11/300/300" },
+            { id: 13, title: "Royale with Cheese", author: "Quentin Tarantino", year: 1994, topic: "Cine", cover: "https://picsum.photos/id/28/300/300" },
+            { id: 14, title: "La oferta que no pudo rechazar", author: "Francis Ford Coppola", year: 1972, topic: "Cine", cover: "https://picsum.photos/id/29/300/300" },
+            { id: 15, title: "Estrellas en la deriva", author: "Christopher Nolan", year: 2014, topic: "Cine", cover: "https://picsum.photos/id/30/300/300" },
+            { id: 16, title: "20 años de pico y póster", author: "Frank Darabont", year: 1994, topic: "Cine", cover: "https://picsum.photos/id/31/300/300" },
+            { id: 10, title: "La Reina de la Noche", author: "Inspirada en *La Flauta Mágica*", year: 1791, topic: "Ópera", cover: "https://picsum.photos/id/32/300/300" },
+            { id: 11, title: "Nessun Dorma", author: "Inspirada en *Turandot*", year: 1926, topic: "Ópera", cover: "https://picsum.photos/id/33/300/300" },
+            { id: 12, title: "Va, pensiero", author: "Inspirada en *Nabucco*", year: 1842, topic: "Ópera", cover: "https://picsum.photos/id/34/300/300" },
+            { id: 9, title: "Pequeña serenata nocturna", author: "Inspirada en *Eine kleine Nachtmusik*", year: 1787, topic: "Ópera", cover: "https://picsum.photos/id/27/300/300" },
+        ];
+
+        function getSongById(id) {
+            return songs.find(s => s.id === parseInt(id));
+        }
+
+        // --- 2. FUNCIONES DE ACTUALIZACIÓN DE INTERFAZ ---
+        
+        function updateProfileDisplays() {
+            const data = userProfileData;
+            
+            document.getElementById('userNameDisplay').textContent = data.username || currentUser.email.split('@')[0];
+            document.getElementById('userEmailDisplay').textContent = currentUser.email;
+            
+            // Contadores
+            document.getElementById('userStarsDisplay').textContent = (data.userStars || 0).toLocaleString();
+            document.getElementById('userDiamondsDisplay').textContent = data.userDiamonds || 0;
+            document.getElementById('userCoinsDisplay').textContent = data.userCoins || 0;
+            
+            const votes = data.votesRemaining !== undefined ? data.votesRemaining : maxVotes;
+            document.getElementById('votesRemainingDisplay').textContent = `${votes}/${maxVotes}`;
+            
+            // Avatar
+            const avatarUrl = data.avatarURL || AVATAR_DEFAULT_URL;
+            document.getElementById('userAvatar').src = avatarUrl;
+
+            // Renderizar secciones dinámicas
+            renderVotedSongs(data.voteLog || {});
+            renderActivityLog(data.activityLog || []);
+            renderMissions(data); 
+            renderUserRankBar(data.userStars || 0); // NEW: Renderizar barra de rango
+        }
+
+        // --- NEW: FUNCIONES DE RANKING ---
+
+        async function fetchAndRenderRankings() {
+            try {
+                // Obtener todos los documentos de usuario
+                const snapshot = await db.collection('users').get();
+                let allUsers = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    allUsers.push({
+                        id: doc.id,
+                        username: data.username || 'Usuario Anónimo',
+                        stars: data.userStars || 0,
+                        avatar: data.avatarURL || AVATAR_DEFAULT_URL,
+                        // Para el ranking semanal, se usa el score total por simplicidad
+                        weeklyScore: data.userStars || 0 
+                    });
+                });
+
+                // Ordenar por estrellas (descendente)
+                allUsers.sort((a, b) => b.stars - a.stars);
+                
+                // Renderizar los dos rankings
+                renderWeeklyRanking(allUsers);
+                renderGlobalRanking(allUsers);
+
+            } catch (error) {
+                console.error("Error al obtener los usuarios para el ranking:", error);
+                document.getElementById('weeklyRankingContainer').innerHTML = '<p class="text-red-400 text-center">Error al cargar el ranking.</p>';
+                document.getElementById('globalRankingContainer').innerHTML = '<p class="text-red-400 text-center">Error al cargar el ranking.</p>';
+            }
+        }
+
+        function renderRankingList(containerId, users, max, isWeekly = false) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            if (users.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center">No hay usuarios registrados aún.</p>';
+                return;
+            }
+
+            const list = document.createElement('ul');
+            list.className = 'space-y-3';
+
+            users.slice(0, max).forEach((user, index) => {
+                const rank = index + 1;
+                let medalClass = 'text-gray-400';
+                let medalIcon = 'fa-trophy';
+                let rankTextClass = 'text-gray-400';
+
+                // Destacar el top 3 con medallas
+                if (rank === 1) {
+                    medalClass = 'medal-gold';
+                    medalIcon = 'fa-crown';
+                    rankTextClass = 'text-yellow-400 font-bold';
+                } else if (rank === 2) {
+                    medalClass = 'medal-silver';
+                    medalIcon = 'fa-medal';
+                    rankTextClass = 'text-slate-300 font-semibold';
+                } else if (rank === 3) {
+                    medalClass = 'medal-bronze';
+                    medalIcon = 'fa-medal';
+                    rankTextClass = 'text-yellow-600 font-semibold';
+                }
+
+                const score = isWeekly ? user.weeklyScore : user.stars;
+                const isCurrentUser = user.id === currentUserId;
+                const itemClass = isCurrentUser ? 'bg-teal-700/50 border-teal-500' : 'bg-slate-700/50 border-slate-700';
+
+                const listItem = document.createElement('li');
+                listItem.className = `flex items-center p-3 rounded-lg border-l-4 transition ${itemClass}`;
+                listItem.innerHTML = `
+                    <span class="text-lg w-8 text-center ${rankTextClass}">${rank}.</span>
+                    <i class="fas ${medalIcon} ${medalClass} text-xl w-6 flex-shrink-0 mx-2"></i>
+                    <img src="${user.avatar}" alt="Avatar" class="w-8 h-8 rounded-full object-cover mr-3 border-2 border-slate-600">
+                    <span class="flex-grow font-semibold truncate ${isCurrentUser ? 'text-white' : 'text-gray-200'}">${user.username} ${isCurrentUser ? '(Tú)' : ''}</span>
+                    <div class="flex items-center ml-4">
+                        <span class="font-bold text-yellow-400">${score.toLocaleString()}</span>
+                        <i class="fas fa-star text-yellow-400 text-sm ml-1"></i>
+                    </div>
+                `;
+                list.appendChild(listItem);
+            });
+
+            container.appendChild(list);
+        }
+        
+        function renderWeeklyRanking(allUsers) {
+            // Renderiza el Top 3
+            renderRankingList('weeklyRankingContainer', allUsers, 3, true);
+        }
+
+        function renderGlobalRanking(allUsers) {
+            // Renderiza el Top 10
+            renderRankingList('globalRankingContainer', allUsers, 10, false);
+        }
+
+        // --- NEW: FUNCIÓN DE RANGO DE USUARIO (Barra de progreso) ---
+        function renderUserRankBar(currentStars) {
+            const container = document.getElementById('userRankContainer');
+            container.innerHTML = '';
+
+            let currentRank = rankDefinitions[0];
+            let nextRank = null;
+
+            // Determinar el rango actual y el siguiente
+            for (let i = rankDefinitions.length - 1; i >= 0; i--) {
+                if (currentStars >= rankDefinitions[i].minStars) {
+                    currentRank = rankDefinitions[i];
+                    nextRank = rankDefinitions[i + 1] || currentRank; // Si es el nivel máximo, nextRank es el mismo
+                    break;
+                }
+            }
+
+            const isMaxLevel = currentRank.name === "Leyenda Musical";
+            const starsForNext = nextRank.minStars;
+            const starsInLevel = currentStars - currentRank.minStars;
+            const starsNeeded = isMaxLevel ? 0 : starsForNext - currentStars;
+            const totalStarsForLevel = starsForNext - currentRank.minStars;
+            const progressPercent = isMaxLevel ? 100 : Math.min(100, (starsInLevel / totalStarsForLevel) * 100);
+
+            let rankHTML = `
+                <div class="flex items-center mb-4">
+                    <i class="fas ${currentRank.icon} text-3xl text-red-400 mr-3"></i>
+                    <div>
+                        <p class="text-xl font-bold text-teal-300">Rango Actual: ${currentRank.name}</p>
+                        <p class="text-sm text-gray-400">Total de estrellas: ${currentStars.toLocaleString()} <i class="fas fa-star text-yellow-400 text-xs"></i></p>
+                    </div>
+                </div>
+                
+                <div class="w-full bg-slate-600 rounded-full h-3 mb-2">
+                    <div class="bg-red-500 h-3 rounded-full transition-all duration-500" style="width: ${progressPercent}%"></div>
+                </div>
+                
+                <p class="text-sm text-gray-300 font-semibold">
+                    ${isMaxLevel 
+                        ? '¡Has alcanzado el rango máximo! <i class="fas fa-bahai text-blue-300"></i>' 
+                        : `Próximo Rango: ${nextRank.name} (${starsNeeded.toLocaleString()} estrellas restantes)`}
+                </p>
+            `;
+            container.innerHTML = rankHTML;
+        }
+
+        // --- NEW: FUNCIÓN DE INTERCAMBIO DE MONEDAS ---
+        async function exchangeCoinsForStars() {
+            if (!currentUserId || !userProfileData) return;
+
+            const userCoins = userProfileData.userCoins || 0;
+            const userRef = db.collection('users').doc(currentUserId);
+            const messageElement = document.getElementById('exchangeMessage');
+            
+            // Guardar el mensaje original para restaurar
+            const originalMessage = `Coste de la transacción: ${EXCHANGE_RATE_COINS} Monedas.`;
+
+            messageElement.textContent = 'Procesando...';
+            messageElement.classList.remove('text-red-400', 'text-green-400');
+            messageElement.classList.add('text-gray-400');
+
+            if (userCoins < EXCHANGE_RATE_COINS) {
+                messageElement.textContent = `Error: Necesitas ${EXCHANGE_RATE_COINS} Monedas para canjear. Te faltan ${EXCHANGE_RATE_COINS - userCoins}.`;
+                messageElement.classList.add('text-red-400');
+                return;
+            }
+
+            try {
+                // Usar una transacción para garantizar que la operación es atómica y segura
+                await db.runTransaction(async (transaction) => {
+                    const doc = await transaction.get(userRef);
+                    if (!doc.exists) throw "Documento de usuario no encontrado.";
+
+                    const currentCoins = doc.data().userCoins || 0;
+                    const currentStars = doc.data().userStars || 0;
+
+                    if (currentCoins < EXCHANGE_RATE_COINS) {
+                        // Re-chequeo dentro de la transacción
+                        throw `No tienes suficientes monedas (solo ${currentCoins}).`;
+                    }
+
+                    // Aplicar la transacción
+                    const newCoins = currentCoins - EXCHANGE_RATE_COINS;
+                    const newStars = currentStars + EXCHANGE_RATE_STARS;
+
+                    transaction.update(userRef, {
+                        userCoins: newCoins,
+                        userStars: newStars,
+                        activityLog: firebase.firestore.FieldValue.arrayUnion({
+                            type: 'exchange',
+                            description: `Canjeaste ${EXCHANGE_RATE_COINS} Monedas por ${EXCHANGE_RATE_STARS} Estrellas.`,
+                            coinsSpent: EXCHANGE_RATE_COINS,
+                            starsGained: EXCHANGE_RATE_STARS,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+                });
+
+                messageElement.textContent = `¡Canje realizado! Ganaste ${EXCHANGE_RATE_STARS} Estrellas.`;
+                messageElement.classList.add('text-green-400');
+
+            } catch (error) {
+                const errMsg = typeof error === 'string' ? error : error.message;
+                console.error("Error en la transacción de intercambio:", error);
+                messageElement.textContent = `Error al canjear: ${errMsg}`;
+                messageElement.classList.add('text-red-400');
+            }
+
+            // Restaurar el mensaje después de 5 segundos
+            setTimeout(() => {
+                messageElement.textContent = originalMessage;
+                messageElement.classList.remove('text-red-400', 'text-green-400');
+                messageElement.classList.add('text-gray-400');
+            }, 5000);
+        }
+        window.exchangeCoinsForStars = exchangeCoinsForStars;
+
+
+        function renderVotedSongs(voteLog) {
+            const container = document.getElementById('votedSongsContainerWrapper');
+            const songIds = Object.keys(voteLog);
+            
+            if (songIds.length === 0) {
+                container.innerHTML = '<p id="votedSongsMessage" class="text-gray-400 p-4 w-full text-center bg-slate-800 rounded-lg">Aún no has votado ninguna canción esta semana. ¡Explora el Reproductor!</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            songIds.forEach(songId => {
+                const song = getSongById(songId);
+                const starsGiven = voteLog[songId]; 
+                
+                if (song) {
+                    const card = document.createElement('div');
+                    card.className = 'w-40 flex-shrink-0 bg-slate-700 rounded-lg overflow-hidden shadow-lg border border-teal-800';
+                    card.innerHTML = `
+                        <img src="${song.cover}" alt="${song.title}" class="w-full h-24 object-cover">
+                        <div class="p-3">
+                            <h4 class="text-sm font-bold truncate">${song.title}</h4>
+                            <p class="text-xs text-gray-400 truncate">${song.author.split('(')[0].trim()}</p>
+                            <div class="flex items-center mt-2 justify-center bg-slate-600/50 p-1 rounded">
+                                <i class="fas fa-star text-yellow-400 text-sm mr-1"></i>
+                                <span class="font-bold text-sm text-white">${starsGiven === true ? 'Votado' : starsGiven}</span>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                }
+            });
+        }
+
+        const missionDefinitions = [
+            { id: 'm1', title: 'Votar la Ronda', goal: 5, unit: 'votos', reward: '50 Estrellas' },
+            { id: 'm2', title: 'Quiz Perfecto', goal: 1, unit: 'perfectos', reward: '2 Diamantes' },
+            { id: 'm3', title: 'Acumular Estrellas', goal: 100, unit: 'estrellas', reward: '20 Monedas' }
+        ];
+
+        function renderMissions(data) {
+            const container = document.getElementById('missionCardsContainerWrapper');
+            container.innerHTML = '';
+            
+            const voteCount = Object.keys(data.voteLog || {}).length;
+            const perfectQuizzes = (data.activityLog || []).filter(a => a.type === 'quiz' && a.score === 5).length;
+            const starsAccumulated = data.userStars || 0;
+            const currentMissionsClaimed = data.missionsClaimed || {};
+            
+            const now = new Date().getTime();
+            const lastVoteLogResetTime = data.lastVoteLogResetDate ? data.lastVoteLogResetDate.toDate().getTime() : 0;
+            const isNewCycle = now - lastVoteLogResetTime >= WEEK_IN_MS;
+
+            missionDefinitions.forEach(mission => {
+                let progress = 0;
+                let isCompleted = false;
+                let isClaimed = currentMissionsClaimed[mission.id] === true && !isNewCycle; 
+
+                if (mission.id === 'm1') {
+                    progress = voteCount;
+                    isCompleted = progress >= mission.goal;
+                } else if (mission.id === 'm2') {
+                    progress = perfectQuizzes;
+                    isCompleted = progress >= mission.goal;
+                } else if (mission.id === 'm3') {
+                    progress = starsAccumulated;
+                    isCompleted = progress >= mission.goal;
+                }
+                
+                progress = Math.min(progress, mission.goal);
+                const progressPercent = (progress / mission.goal) * 100;
+                
+                let btnClasses = isCompleted && !isClaimed ? 'bg-green-600 hover:bg-green-500' : 'bg-slate-600 cursor-default';
+                let btnText = isClaimed ? '¡Reclamado!' : (isCompleted ? 'Reclamar' : 'Progresando');
+                let cardClasses = isClaimed ? 'border-green-600 bg-slate-700/70' : (isCompleted ? 'border-yellow-500 bg-slate-700' : 'border-teal-700 bg-slate-800');
+
+                const card = document.createElement('div');
+                card.className = `w-64 flex-shrink-0 p-4 rounded-xl shadow-xl border-t-4 ${cardClasses}`;
+                card.innerHTML = `
+                    <h4 class="font-bold text-lg mb-1">${mission.title}</h4>
+                    <p class="text-xs text-gray-400 mb-3">Recompensa: <span class="text-yellow-400 font-semibold">${mission.reward}</span></p>
+                    
+                    <div class="w-full bg-slate-600 rounded-full h-2.5 mb-2">
+                        <div class="bg-teal-400 h-2.5 rounded-full transition-all duration-500" style="width: ${progressPercent}%"></div>
+                    </div>
+                    <p class="text-sm font-semibold text-gray-300 mb-4">${progress}/${mission.goal} ${mission.unit}</p>
+
+                    <button class="w-full py-2 rounded text-white font-bold transition ${btnClasses}" 
+                        ${isCompleted && !isClaimed ? `onclick="claimMission('${mission.id}')"` : 'disabled'}>
+                        ${btnText}
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+            
+            if (missionDefinitions.length === 0) {
+                 container.innerHTML = '<p id="missionsMessage" class="text-gray-400 p-4 w-full text-center bg-slate-800 rounded-lg">No hay misiones disponibles por el momento.</p>';
+            }
+        }
+
+        async function claimMission(missionId) {
+            if (!currentUserId) return;
+            const mission = missionDefinitions.find(m => m.id === missionId);
+            if (!mission) return;
+
+            const data = userProfileData;
+            const voteCount = Object.keys(data.voteLog || {}).length;
+            const perfectQuizzes = (data.activityLog || []).filter(a => a.type === 'quiz' && a.score === 5).length;
+            const starsAccumulated = data.userStars || 0;
+            const currentMissionsClaimed = data.missionsClaimed || {};
+            
+            let isCompleted = false;
+            let rewardType = 'stars';
+            let rewardAmount = 0;
+
+            if (mission.id === 'm1' && voteCount >= mission.goal) {
+                isCompleted = true;
+                rewardType = 'stars'; rewardAmount = 50;
+            } else if (mission.id === 'm2' && perfectQuizzes >= mission.goal) {
+                isCompleted = true;
+                rewardType = 'diamonds'; rewardAmount = 2;
+            } else if (mission.id === 'm3' && starsAccumulated >= mission.goal) {
+                isCompleted = true;
+                rewardType = 'coins'; rewardAmount = 20;
+            }
+
+            if (isCompleted && currentMissionsClaimed[missionId] !== true) {
+                const userRef = db.collection('users').doc(currentUserId);
+                const updateData = {};
+                
+                if (rewardType === 'stars') updateData.userStars = firebase.firestore.FieldValue.increment(rewardAmount);
+                if (rewardType === 'diamonds') updateData.userDiamonds = firebase.firestore.FieldValue.increment(rewardAmount);
+                if (rewardType === 'coins') updateData.userCoins = firebase.firestore.FieldValue.increment(rewardAmount);
+                
+                updateData[`missionsClaimed.${missionId}`] = true;
+
+                try {
+                    await userRef.update(updateData);
+                    await userRef.update({
+                        activityLog: firebase.firestore.FieldValue.arrayUnion({
+                            type: 'mission_claimed',
+                            missionId: mission.id,
+                            reward: `${rewardAmount} ${rewardType}`,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+                    alert(`¡Misión reclamada! Ganaste ${rewardAmount} ${rewardType}.`);
+                } catch (error) {
+                    console.error("Error al reclamar misión:", error);
+                    alert("Error al reclamar la recompensa. Inténtalo de nuevo.");
+                }
+            } else if (currentMissionsClaimed[missionId] === true) {
+                alert("Ya has reclamado esta misión.");
+            } else {
+                alert("Misión no completada aún.");
+            }
+        }
+        window.claimMission = claimMission;
+
+
+        // FUNCIÓN AUXILIAR PARA FILTRAR POR DÍA
+        function isToday(dateString) {
+            if (!dateString) return false;
+            const date = new Date(dateString);
+            const today = new Date();
+            // Comparar día, mes y año
+            return date.getDate() === today.getDate() &&
+                   date.getMonth() === today.getMonth() &&
+                   date.getFullYear() === today.getFullYear();
+        }
+
+        function renderActivityLog(log) {
+            const container = document.getElementById('activityLogContainer');
+            container.innerHTML = '';
+            
+            // MODIFICADO: Filtrar solo el log del día actual
+            const dailyLog = log.filter(entry => isToday(entry.timestamp));
+
+            if (dailyLog.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center">Tu historial de actividad de hoy está vacío.</p>';
+                return;
+            }
+            
+            // Ordenar por timestamp descendente
+            const sortedLog = dailyLog.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            sortedLog.forEach(entry => {
+                const song = getSongById(entry.songId) || { title: 'Desconocido' };
+                let iconClass = 'fas fa-question-circle text-gray-500';
+                let message = 'Actividad registrada.';
+                let colorClass = 'text-gray-300';
+                
+                // Mostrar solo la hora para el log de hoy
+                const timeStr = new Date(entry.timestamp).toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' });
+
+                if (entry.type === 'vote') {
+                    iconClass = 'fas fa-vote-yea text-teal-400';
+                    message = `Votaste **${entry.starsGiven} Estrellas** a "${song.title}".`;
+                    colorClass = 'text-teal-100';
+                } else if (entry.type === 'quiz') {
+                    iconClass = 'fas fa-trophy text-yellow-500';
+                    message = `Completaste Quiz en "${song.title}" con **${entry.score}/5**. Ganaste ${entry.starsGained}★.`;
+                    colorClass = 'text-yellow-100';
+                    if (entry.diamondsGained > 0) {
+                        message += ` (+${entry.diamondsGained}♦)`;
+                    }
+                } else if (entry.type === 'daily_reward') {
+                    iconClass = 'fas fa-gift text-amber-500';
+                    message = `Recibiste tu Recompensa Diaria: **${entry.coinsGained} Monedas**.`;
+                    colorClass = 'text-amber-300';
+                } else if (entry.type === 'weekly_reset') {
+                    iconClass = 'fas fa-sync-alt text-blue-400';
+                    message = `¡Reseteo Semanal! Votos restablecidos y log de votos borrado.`;
+                    colorClass = 'text-blue-300';
+                } else if (entry.type === 'exchange') {
+                    iconClass = 'fas fa-exchange-alt text-amber-500';
+                    message = `Intercambio: ${entry.description}`;
+                    colorClass = 'text-amber-300';
+                }
+
+                const logItem = document.createElement('div');
+                logItem.className = 'flex items-start bg-slate-700/50 p-3 rounded-lg border border-slate-700';
+                logItem.innerHTML = `
+                    <i class="${iconClass} text-xl w-6 flex-shrink-0 mt-0.5"></i>
+                    <div class="ml-3 flex-grow">
+                        <p class="${colorClass} text-sm">${message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>
+                        <span class="text-xs text-gray-400">${timeStr}</span>
+                    </div>
+                `;
+                container.appendChild(logItem);
+            });
+        }
+
+        // --- 3. GESTIÓN DE FIREBASE Y PERSISTENCIA DE DATOS ---
+
+        async function processAndDisplayUserData(data) {
+            if (!data || !currentUserId) return;
+            
+            userProfileData = { ...data }; 
+
+            const userRef = db.collection('users').doc(currentUserId);
+            const now = firebase.firestore.Timestamp.now();
+            const nowTime = now.toMillis();
+            const updateData = {}; 
+            
+            // Obtener fechas
+            const lastDailyCoinCheck = data.lastDailyCoinDate ? data.lastDailyCoinDate.toDate().getTime() : 0;
+            const lastVoteCheck = data.lastVoteDate ? data.lastVoteDate.toDate().getTime() : 0;
+            const lastVoteLogReset = data.lastVoteLogResetDate ? data.lastVoteLogResetDate.toDate().getTime() : 0;
+
+            // 1. LÓGICA DE RECOMPENSA DIARIA DE MONEDAS
+            if (nowTime - lastDailyCoinCheck >= DAY_IN_MS) {
+                const newCoins = (data.userCoins || 0) + DAILY_COIN_REWARD;
+                updateData.userCoins = newCoins;
+                updateData.lastDailyCoinDate = now;
+                
+                updateData.activityLog = firebase.firestore.FieldValue.arrayUnion({
+                    type: 'daily_reward',
+                    coinsGained: DAILY_COIN_REWARD,
+                    timestamp: new Date().toISOString()
+                });
+                
+                userProfileData.userCoins = newCoins; 
+                userProfileData.activityLog = [...(data.activityLog || []), { type: 'daily_reward', coinsGained: DAILY_COIN_REWARD, timestamp: new Date().toISOString() }];
+            }
+
+            // 2. LÓGICA DE RESET SEMANAL DE VOTOS Y LOGS
+            if (nowTime - lastVoteCheck >= WEEK_IN_MS) {
+                updateData.votesRemaining = maxVotes;
+                updateData.lastVoteDate = now;
+                userProfileData.votesRemaining = maxVotes;
+            }
+            if (nowTime - lastVoteLogReset >= WEEK_IN_MS) {
+                updateData.voteLog = {}; 
+                updateData.lastVoteLogResetDate = now;
+                updateData.missionsClaimed = {}; 
+                
+                updateData.activityLog = firebase.firestore.FieldValue.arrayUnion({
+                    type: 'weekly_reset',
+                    timestamp: new Date().toISOString()
+                });
+
+                userProfileData.voteLog = {}; 
+                userProfileData.missionsClaimed = {}; 
+                userProfileData.activityLog = [...(userProfileData.activityLog || []), { type: 'weekly_reset', timestamp: new Date().toISOString() }];
+            }
+
+
+            // 3. GUARDAR CAMBIOS DE RESETEO/RECOMPENSA
+            if (Object.keys(updateData).length > 0) {
+                await userRef.set(updateData, { merge: true });
+            }
+
+            // 4. Actualizar la interfaz con los valores finales y rankings
+            updateProfileDisplays();
+            fetchAndRenderRankings();
+        }
+
+
+        async function uploadAvatar(event) {
+            const file = event.target.files[0];
+            if (!file || !currentUserId) return;
+
+            const storageRef = storage.ref(`avatars/${currentUserId}`);
+            
+            try {
+                const uploadMessage = document.getElementById('userNameDisplay');
+                uploadMessage.textContent = 'Subiendo Avatar...';
+
+                await storageRef.put(file);
+                
+                const downloadURL = await storageRef.getDownloadURL();
+
+                const userRef = db.collection('users').doc(currentUserId);
+                await userRef.update({
+                    avatarURL: downloadURL
+                });
+
+                alert("Avatar actualizado con éxito.");
+                uploadMessage.textContent = userProfileData.username || currentUser.email.split('@')[0];
+
+            } catch (error) {
+                console.error("Error al subir el avatar:", error);
+                document.getElementById('errorDetails').textContent = `Error al subir avatar: ${error.message}`;
+                document.getElementById('errorModal').classList.remove('hidden');
+            }
+        }
+        window.uploadAvatar = uploadAvatar;
+
+        function logout() {
+            auth.signOut().then(() => {
+                window.location.href = 'index.html'; 
+            }).catch((error) => {
+                console.error("Error al cerrar sesión:", error);
+                alert("Error al cerrar sesión.");
+            });
+        }
+        window.logout = logout;
+
+
+        function initAuthObserver() {
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    currentUser = user;
+                    currentUserId = user.uid;
+
+                    const userRef = db.collection('users').doc(currentUserId);
+                    
+                    // Listener en tiempo real para el documento del usuario
+                    userRef.onSnapshot(async (doc) => {
+                        if (doc.exists) {
+                            await processAndDisplayUserData(doc.data());
+                        } else {
+                            // Si el documento no existe (recién registrado)
+                            const initialData = {
+                                username: user.email.split('@')[0],
+                                userStars: 0,
+                                userDiamonds: 0,
+                                userCoins: 0,
+                                votesRemaining: maxVotes,
+                                quizLog: {},
+                                voteLog: {},
+                                activityLog: [],
+                                missionsClaimed: {},
+                                avatarURL: AVATAR_DEFAULT_URL,
+                                lastDailyCoinDate: firebase.firestore.Timestamp.now(),
+                                lastVoteDate: firebase.firestore.Timestamp.now(),
+                                lastVoteLogResetDate: firebase.firestore.Timestamp.now(),
+                                lastQuizLogResetDate: firebase.firestore.Timestamp.now(),
+                                createdAt: firebase.firestore.Timestamp.now()
+                            };
+                            await userRef.set(initialData);
+                            await processAndDisplayUserData(initialData); 
+                        }
+                    }, (error) => {
+                        console.error("Error en el listener de Firestore:", error);
+                        document.getElementById('errorDetails').textContent = "Error de sincronización en tiempo real. Revisa la consola.";
+                        document.getElementById('errorModal').classList.remove('hidden');
+                    });
+
+                } else {
+                    window.location.href = 'index.html';
+                }
+            });
+        }
+        window.initAuthObserver = initAuthObserver; 
+        
+        // --- 4. FUNCIONES DE INTERFAZ Y UTILIDAD ---
+
+        function closeErrorModal() {
+            document.getElementById('errorModal').classList.add('hidden');
+            document.getElementById('errorModal').classList.remove('flex');
+        }
+        window.closeErrorModal = closeErrorModal;
+
+        function enableDragScroll(id) {
+            const element = document.getElementById(id);
+            if (!element) return;
+            
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+
+            element.addEventListener('mousedown', (e) => {
+                isDown = true;
+                element.classList.add('active');
+                startX = e.pageX - element.offsetLeft;
+                scrollLeft = element.scrollLeft;
+            });
+
+            element.addEventListener('mouseleave', () => {
+                isDown = false;
+                element.classList.remove('active');
+            });
+
+            element.addEventListener('mouseup', () => {
+                isDown = false;
+                element.classList.remove('active');
+            });
+
+            element.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - element.offsetLeft;
+                const walk = (x - startX) * 2; 
+                element.scrollLeft = scrollLeft - walk;
+            });
+            
+            element.addEventListener('touchstart', (e) => {
+                isDown = true;
+                element.classList.add('active');
+                startX = e.touches[0].pageX - element.offsetLeft;
+                scrollLeft = element.scrollLeft;
+            }, { passive: true });
+
+            element.addEventListener('touchend', () => {
+                isDown = false;
+                element.classList.remove('active');
+            });
+
+            element.addEventListener('touchmove', (e) => {
+                if (!isDown) return;
+                const x = e.touches[0].pageX - element.offsetLeft;
+                const walk = (x - startX) * 2;
+                element.scrollLeft = scrollLeft - walk;
+            }, { passive: true });
+        }
+        window.enableDragScroll = enableDragScroll;
+
+
+        // --- INICIALIZACIÓN ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initAuthObserver();
+            
+            enableDragScroll('missionCardsContainerWrapper');
+            enableDragScroll('votedSongsContainerWrapper'); 
+        });
+    </script>
+</body>
+</html>
