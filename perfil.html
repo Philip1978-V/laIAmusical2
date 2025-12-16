@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Usuario - La IA Musical</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #0f172a; 
+            background: linear-gradient(180deg, #0f172a 0%, #0d9488 100%);
+            min-height: 100vh;
+            color: white;
+            padding-bottom: 3rem; 
+        }
+
+        .scroll-container {
+            cursor: grab;
+            user-select: none;
+            overflow-x: scroll;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .scroll-container.active {
+            cursor: grabbing;
+        }
+
+        .scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+        .scroll-container {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .medal-gold { color: #FFD700; }
+        .medal-silver { color: #C0C0C0; }
+        .medal-bronze { color: #CD7F32; }
+    </style>
+</head>
+<body>
+
+    <header class="p-4 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 shadow-lg border-b border-teal-800">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <a href="temas.html" class="text-xl font-bold tracking-wide text-white hover:text-teal-200 transition-colors">
+                    La IA Musical
+                </a>
+            </div>
+
+            <button onclick="logout()" class="text-gray-400 hover:text-white transition flex items-center gap-2 py-1 px-3 rounded-md bg-slate-800 hover:bg-slate-700">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 mt-6">
+
+        <div class="bg-slate-800 p-6 rounded-xl shadow-2xl border border-teal-700 mb-8">
+            <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
+                
+                <div class="text-center md:text-left flex-grow">
+                    <h2 id="userNameDisplay" class="text-3xl font-bold text-teal-200 mb-1">Cargando Nombre...</h2>
+                    <p id="userEmailDisplay" class="text-gray-400 text-sm mb-4">cargando@email.com</p>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-900 p-4 rounded-lg border border-teal-800">
+                        
+                        <div class="text-center">
+                            <i class="fas fa-star text-yellow-400 text-2xl"></i>
+                            <p id="userStarsDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-xs text-gray-400">Estrellas</span>
+                        </div>
+                        
+                        <div class="text-center">
+                            <i class="fas fa-gem text-blue-400 text-2xl"></i>
+                            <p id="userDiamondsDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-xs text-gray-400">Diamantes</span>
+                        </div>
+
+                        <div class="text-center">
+                            <i class="fas fa-coins text-amber-500 text-2xl"></i>
+                            <p id="userCoinsDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-xs text-gray-400">Monedas</span>
+                        </div>
+
+                        <div class="text-center">
+                            <i class="fas fa-vote-yea text-teal-400 text-2xl"></i>
+                            <p id="votesRemainingDisplay" class="text-xl font-bold mt-1">0/5</p>
+                            <span class="text-xs text-gray-400">Votos Semanales</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <div class="lg:col-span-2 space-y-8">
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center"><i class="fas fa-medal mr-2 text-yellow-500"></i> Ranking Semanal (Top 3)</h3>
+                    <div id="weeklyRankingContainer" class="bg-slate-800 p-4 rounded-xl shadow-inner border border-teal-700">
+                        <p class="text-gray-400 text-center">Cargando ranking semanal...</p>
+                    </div>
+                </section>
+
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center"><i class="fas fa-globe-americas mr-2 text-blue-400"></i> Clasificación General (Top 10)</h3>
+                    <div id="globalRankingContainer" class="bg-slate-800 p-4 rounded-xl shadow-inner border border-teal-700">
+                        <p class="text-gray-400 text-center">Cargando clasificación general...</p>
+                    </div>
+                </section>
+            </div>
+
+            <div class="lg:col-span-1 space-y-8">
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center"><i class="fas fa-chart-bar mr-2 text-red-400"></i> Mi Rango</h3>
+                    <div id="userRankContainer" class="bg-slate-800 p-4 rounded-xl shadow-xl border border-teal-700">
+                        <p class="text-gray-400">Calculando rango...</p>
+                    </div>
+                </section>
+                
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center"><i class="fas fa-exchange-alt mr-2 text-amber-500"></i> Intercambio</h3>
+                    <div class="bg-slate-800 p-4 rounded-xl shadow-xl border border-teal-700">
+                        <p class="text-gray-300 mb-3 text-sm">Cambia tus monedas por Estrellas. ¡Impulsa tu rango!</p>
+                        <div class="flex items-center justify-between bg-slate-700 p-3 rounded-lg border border-slate-600">
+                            <p class="font-bold text-lg text-teal-300">10 <i class="fas fa-coins text-amber-500"></i> <i class="fas fa-arrow-right mx-2 text-gray-400"></i> 100 <i class="fas fa-star text-yellow-400"></i></p>
+                            <button onclick="exchangeCoinsForStars()" id="exchangeButton" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 transition rounded-md font-bold text-white text-sm">
+                                Canjear
+                            </button>
+                        </div>
+                        <p id="exchangeMessage" class="text-xs mt-2 text-gray-400">Coste de la transacción: 10 Monedas.</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <section class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center"><i class="fas fa-check-double mr-2"></i> Cartas Votadas (Ciclo Actual)</h3>
+            <div id="votedSongsContainerWrapper" class="scroll-container flex gap-4 p-2">
+                <p id="votedSongsMessage" class="text-gray-400 p-4 w-full text-center bg-slate-800 rounded-lg">Aún no has votado ninguna canción esta semana. ¡Explora el Reproductor!</p>
+            </div>
+        </section>
+
+        <section class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center"><i class="fas fa-clipboard-list mr-2"></i> Retos Semanales</h3>
+            <div id="missionCardsContainerWrapper" class="scroll-container flex gap-4 p-2">
+                <p id="missionsMessage" class="text-gray-400 p-4 w-full text-center bg-slate-800 rounded-lg">Cargando misiones...</p>
+            </div>
+        </section>
+        
+        <section>
+            <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center"><i class="fas fa-history mr-2"></i> Historial de Actividad</h3>
+            <div id="activityLogContainer" class="bg-slate-800 p-4 rounded-xl border border-teal-700 space-y-3">
+                <p class="text-gray-400 text-center">Cargando historial...</p>
+            </div>
+        </section>
+
+    </main>
+    
+    <div id="errorModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm">
+        <div class="bg-slate-800 p-8 rounded-xl border border-red-700 max-w-sm w-full shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 text-red-400 flex items-center gap-2"><i class="fas fa-exclamation-triangle"></i> Error</h3>
+            <p id="errorDetails" class="text-gray-300 mb-4 text-sm">Ha ocurrido un error inesperado.</p>
+            <button onclick="closeErrorModal()" class="mt-4 w-full py-2 rounded bg-red-600 hover:bg-red-500 text-white font-bold transition">Aceptar</button>
+        </div>
+    </div>
+
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+            authDomain: "laiamusical-4fba7.firebaseapp.com",
+            projectId: "laiamusical-4fba7",
+            storageBucket: "laiamusical-4fba7.firebasestorage.app",
+            messagingSenderId: "49783369602",
+            appId: "1:49783369602:web:91e287c094a8f2403d699b",
+            measurementId: "G-WC2JT6DRF4"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const maxVotes = 5;
+        const WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000; 
+        const DAY_IN_MS = 24 * 60 * 60 * 1000;
+        const DAILY_COIN_REWARD = 10;
+        const EXCHANGE_RATE_COINS = 10;
+        const EXCHANGE_RATE_STARS = 100;
+        const AVATAR_DEFAULT_URL = 'images/default_avatar.png';
+
+        const rankDefinitions = [
+            { name: "Músico Novato", minStars: 0, nextLevelStars: 100, icon: 'fa-user' },
+            { name: "Aprendiz de Compositor", minStars: 100, nextLevelStars: 500, icon: 'fa-feather-alt' },
+            { name: "Maestro de Orquesta", minStars: 500, nextLevelStars: 2000, icon: 'fa-trophy' },
+            { name: "Leyenda Musical", minStars: 2000, nextLevelStars: 99999999, icon: 'fa-crown' }
+        ];
+
+        let currentUser = null;
+        let currentUserId = null;
+        let userProfileData = {};
+
+        const songs = [
+            { id: 5, title: "El lenguaje del mundo", author: "Paulo Coelho", year: 1988, topic: "Literatura", cover: "https://picsum.photos/id/20/300/300" },
+            { id: 6, title: "El ciclo de Macondo", author: "Gabriel García Márquez", year: 1967, topic: "Literatura", cover: "https://picsum.photos/id/21/300/300" },
+            { id: 7, title: "El ojo que todo lo ve", author: "George Orwell", year: 1949, topic: "Literatura", cover: "https://picsum.photos/id/22/300/300" },
+            { id: 8, title: "Crimen y castigo", author: "Fyodor Dostoevsky", year: 1866, topic: "Literatura", cover: "https://picsum.photos/id/23/300/300" },
+            { id: 1, title: "Sinfonía del Nuevo Mundo", author: "Antonín Dvořák", year: 1893, topic: "Literatura", cover: "https://picsum.photos/id/10/300/300" },
+            { id: 2, title: "La muerte del amor", author: "Inspirada en *Tristán e Isolda*", year: 1865, topic: "Literatura", cover: "https://picsum.photos/id/11/300/300" },
+            { id: 13, title: "Royale with Cheese", author: "Quentin Tarantino", year: 1994, topic: "Cine", cover: "https://picsum.photos/id/28/300/300" },
+            { id: 14, title: "La oferta que no pudo rechazar", author: "Francis Ford Coppola", year: 1972, topic: "Cine", cover: "https://picsum.photos/id/29/300/300" },
+            { id: 15, title: "Estrellas en la deriva", author: "Christopher Nolan", year: 2014, topic: "Cine", cover: "https://picsum.photos/id/30/300/300" },
+            { id: 16, title: "20 años de pico y póster", author: "Frank Darabont", year: 1994, topic: "Cine", cover: "https://picsum.photos/id/31/300/300" },
+            { id: 10, title: "La Reina de la Noche", author: "Inspirada en *La Flauta Mágica*", year: 1791, topic: "Ópera", cover: "https://picsum.photos/id/32/300/300" },
+            { id: 11, title: "Nessun Dorma", author: "Inspirada en *Turandot*", year: 1926, topic: "Ópera", cover: "https://picsum.photos/id/33/300/300" },
+            { id: 12, title: "Va, pensamiento", author: "Inspirada en *Nabucco*", year: 1842, topic: "Ópera", cover: "https://picsum.photos/id/34/300/300" },
+            { id: 9, title: "Pequeña serenata nocturna", author: "Inspirada en *Eine kleine Nachtmusik*", year: 1787, topic: "Ópera", cover: "https://picsum.photos/id/27/300/300" },
+        ];
+
+        function getSongById(id) {
+            return songs.find(s => s.id === parseInt(id));
+        }
+
+        function updateProfileDisplays() {
+            const data = userProfileData;
+            document.getElementById('userNameDisplay').textContent = data.username || currentUser.email.split('@')[0];
+            document.getElementById('userEmailDisplay').textContent = currentUser.email;
+            document.getElementById('userStarsDisplay').textContent = (data.userStars || 0).toLocaleString();
+            document.getElementById('userDiamondsDisplay').textContent = data.userDiamonds || 0;
+            document.getElementById('userCoinsDisplay').textContent = data.userCoins || 0;
+            const votes = data.votesRemaining !== undefined ? data.votesRemaining : maxVotes;
+            document.getElementById('votesRemainingDisplay').textContent = `${votes}/${maxVotes}`;
+
+            renderVotedSongs(data.voteLog || {});
+            renderActivityLog(data.activityLog || []);
+            renderMissions(data); 
+            renderUserRankBar(data.userStars || 0);
+        }
+
+        async function fetchAndRenderRankings() {
+            try {
+                const snapshot = await db.collection('users').get();
+                let allUsers = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    allUsers.push({
+                        id: doc.id,
+                        username: data.username || 'Usuario Anónimo',
+                        stars: data.userStars || 0,
+                        avatar: data.avatarURL || AVATAR_DEFAULT_URL,
+                        weeklyScore: data.userStars || 0 
+                    });
+                });
+
+                allUsers.sort((a, b) => b.stars - a.stars);
+                renderWeeklyRanking(allUsers);
+                renderGlobalRanking(allUsers);
+
+            } catch (error) {
+                console.error("Error al obtener los usuarios:", error);
+            }
+        }
+
+        function renderRankingList(containerId, users, max, isWeekly = false) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            if (users.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center">No hay usuarios registrados aún.</p>';
+                return;
+            }
+            const list = document.createElement('ul');
+            list.className = 'space-y-3';
+            users.slice(0, max).forEach((user, index) => {
+                const rank = index + 1;
+                let medalClass = 'text-gray-400';
+                let medalIcon = 'fa-trophy';
+                if (rank === 1) { medalClass = 'medal-gold'; medalIcon = 'fa-crown'; }
+                else if (rank === 2) { medalClass = 'medal-silver'; medalIcon = 'fa-medal'; }
+                else if (rank === 3) { medalClass = 'medal-bronze'; medalIcon = 'fa-medal'; }
+
+                const score = isWeekly ? user.weeklyScore : user.stars;
+                const isCurrentUser = user.id === currentUserId;
+                const itemClass = isCurrentUser ? 'bg-teal-700/50 border-teal-500' : 'bg-slate-700/50 border-slate-700';
+
+                const listItem = document.createElement('li');
+                listItem.className = `flex items-center p-3 rounded-lg border-l-4 transition ${itemClass}`;
+                listItem.innerHTML = `
+                    <span class="text-lg w-8 text-center text-gray-400">${rank}.</span>
+                    <i class="fas ${medalIcon} ${medalClass} text-xl w-6 flex-shrink-0 mx-2"></i>
+                    <img src="${user.avatar}" alt="Avatar" class="w-8 h-8 rounded-full object-cover mr-3 border-2 border-slate-600">
+                    <span class="flex-grow font-semibold truncate ${isCurrentUser ? 'text-white' : 'text-gray-200'}">${user.username} ${isCurrentUser ? '(Tú)' : ''}</span>
+                    <div class="flex items-center ml-4">
+                        <span class="font-bold text-yellow-400">${score.toLocaleString()}</span>
+                        <i class="fas fa-star text-yellow-400 text-sm ml-1"></i>
+                    </div>
+                `;
+                list.appendChild(listItem);
+            });
+            container.appendChild(list);
+        }
+        
+        function renderWeeklyRanking(allUsers) { renderRankingList('weeklyRankingContainer', allUsers, 3, true); }
+        function renderGlobalRanking(allUsers) { renderRankingList('globalRankingContainer', allUsers, 10, false); }
+
+        function renderUserRankBar(currentStars) {
+            const container = document.getElementById('userRankContainer');
+            container.innerHTML = '';
+            let currentRank = rankDefinitions[0];
+            let nextRank = null;
+            for (let i = rankDefinitions.length - 1; i >= 0; i--) {
+                if (currentStars >= rankDefinitions[i].minStars) {
+                    currentRank = rankDefinitions[i];
+                    nextRank = rankDefinitions[i + 1] || currentRank;
+                    break;
+                }
+            }
+            const isMaxLevel = currentRank.name === "Leyenda Musical";
+            const starsForNext = nextRank.minStars;
+            const starsInLevel = currentStars - currentRank.minStars;
+            const totalStarsForLevel = starsForNext - currentRank.minStars;
+            const progressPercent = isMaxLevel ? 100 : Math.min(100, (starsInLevel / totalStarsForLevel) * 100);
+
+            container.innerHTML = `
+                <div class="flex items-center mb-4">
+                    <i class="fas ${currentRank.icon} text-3xl text-red-400 mr-3"></i>
+                    <div>
+                        <p class="text-xl font-bold text-teal-300">Rango Actual: ${currentRank.name}</p>
+                        <p class="text-sm text-gray-400">Total: ${currentStars.toLocaleString()} <i class="fas fa-star text-yellow-400 text-xs"></i></p>
+                    </div>
+                </div>
+                <div class="w-full bg-slate-600 rounded-full h-3 mb-2">
+                    <div class="bg-red-500 h-3 rounded-full transition-all duration-500" style="width: ${progressPercent}%"></div>
+                </div>
+                <p class="text-sm text-gray-300 font-semibold">${isMaxLevel ? '¡Has alcanzado el rango máximo!' : `Próximo: ${nextRank.name}`}</p>
+            `;
+        }
+
+        async function exchangeCoinsForStars() {
+            if (!currentUserId || !userProfileData) return;
+            const userCoins = userProfileData.userCoins || 0;
+            const userRef = db.collection('users').doc(currentUserId);
+            if (userCoins < EXCHANGE_RATE_COINS) return;
+
+            try {
+                await db.runTransaction(async (transaction) => {
+                    const doc = await transaction.get(userRef);
+                    const currentCoins = doc.data().userCoins || 0;
+                    const currentStars = doc.data().userStars || 0;
+                    if (currentCoins < EXCHANGE_RATE_COINS) throw "Monedas insuficientes.";
+                    transaction.update(userRef, {
+                        userCoins: currentCoins - EXCHANGE_RATE_COINS,
+                        userStars: currentStars + EXCHANGE_RATE_STARS,
+                        activityLog: firebase.firestore.FieldValue.arrayUnion({
+                            type: 'exchange',
+                            description: `Canjeaste ${EXCHANGE_RATE_COINS} Monedas por ${EXCHANGE_RATE_STARS} Estrellas.`,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        function renderVotedSongs(voteLog) {
+            const container = document.getElementById('votedSongsContainerWrapper');
+            const songIds = Object.keys(voteLog);
+            if (songIds.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 p-4 w-full text-center bg-slate-800 rounded-lg">Aún no has votado ninguna canción.</p>';
+                return;
+            }
+            container.innerHTML = '';
+            songIds.forEach(songId => {
+                const song = getSongById(songId);
+                if (song) {
+                    const card = document.createElement('div');
+                    card.className = 'w-40 flex-shrink-0 bg-slate-700 rounded-lg overflow-hidden shadow-lg border border-teal-800';
+                    card.innerHTML = `<img src="${song.cover}" class="w-full h-24 object-cover"><div class="p-3"><h4 class="text-sm font-bold truncate">${song.title}</h4><div class="flex items-center mt-2 justify-center bg-slate-600/50 p-1 rounded"><i class="fas fa-star text-yellow-400 text-sm mr-1"></i><span class="text-white text-sm font-bold">${voteLog[songId]}</span></div></div>`;
+                    container.appendChild(card);
+                }
+            });
+        }
+
+        const missionDefinitions = [
+            { id: 'm1', title: 'Votar la Ronda', goal: 5, unit: 'votos', reward: '50 Estrellas' },
+            { id: 'm2', title: 'Quiz Perfecto', goal: 1, unit: 'perfectos', reward: '2 Diamantes' },
+            { id: 'm3', title: 'Acumular Estrellas', goal: 100, unit: 'estrellas', reward: '20 Monedas' }
+        ];
+
+        function renderMissions(data) {
+            const container = document.getElementById('missionCardsContainerWrapper');
+            container.innerHTML = '';
+            const voteCount = Object.keys(data.voteLog || {}).length;
+            const perfectQuizzes = (data.activityLog || []).filter(a => a.type === 'quiz' && a.score === 5).length;
+            const starsAccumulated = data.userStars || 0;
+            const claimed = data.missionsClaimed || {};
+            
+            missionDefinitions.forEach(mission => {
+                let progress = mission.id === 'm1' ? voteCount : (mission.id === 'm2' ? perfectQuizzes : starsAccumulated);
+                progress = Math.min(progress, mission.goal);
+                const isCompleted = progress >= mission.goal;
+                const isClaimed = claimed[mission.id] === true;
+                const card = document.createElement('div');
+                card.className = `w-64 flex-shrink-0 p-4 rounded-xl border-t-4 ${isClaimed ? 'bg-slate-700/70 border-green-600' : 'bg-slate-800 border-teal-700'}`;
+                card.innerHTML = `<h4 class="font-bold text-lg">${mission.title}</h4><p class="text-xs text-yellow-400 mb-2">${mission.reward}</p><div class="w-full bg-slate-600 h-2 rounded-full mb-2"><div class="bg-teal-400 h-2 rounded-full" style="width: ${(progress/mission.goal)*100}%"></div></div><button class="w-full py-2 rounded font-bold ${isCompleted && !isClaimed ? 'bg-green-600' : 'bg-slate-600'}" ${isCompleted && !isClaimed ? `onclick="claimMission('${mission.id}')"` : 'disabled'}>${isClaimed ? 'Reclamado' : (isCompleted ? 'Reclamar' : 'En curso')}</button>`;
+                container.appendChild(card);
+            });
+        }
+
+        async function claimMission(missionId) {
+            if (!currentUserId) return;
+            const userRef = db.collection('users').doc(currentUserId);
+            const mission = missionDefinitions.find(m => m.id === missionId);
+            const updates = {};
+            updates[`missionsClaimed.${missionId}`] = true;
+            await userRef.update(updates);
+        }
+
+        function renderActivityLog(log) {
+            const container = document.getElementById('activityLogContainer');
+            container.innerHTML = '';
+            if (log.length === 0) { container.innerHTML = '<p class="text-gray-400 text-center">Sin actividad.</p>'; return; }
+            log.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10).forEach(entry => {
+                const item = document.createElement('div');
+                item.className = 'bg-slate-700/50 p-3 rounded-lg text-sm';
+                item.textContent = `${new Date(entry.timestamp).toLocaleDateString()}: ${entry.type}`;
+                container.appendChild(item);
+            });
+        }
+
+        async function processAndDisplayUserData(data) {
+            userProfileData = data;
+            updateProfileDisplays();
+            fetchAndRenderRankings();
+        }
+
+        function logout() { auth.signOut().then(() => window.location.href = 'index.html'); }
+
+        function initAuthObserver() {
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    currentUserId = user.uid;
+                    currentUser = user;
+                    db.collection('users').doc(user.uid).onSnapshot(doc => {
+                        if (doc.exists) processAndDisplayUserData(doc.data());
+                    });
+                } else { window.location.href = 'index.html'; }
+            });
+        }
+
+        function closeErrorModal() { document.getElementById('errorModal').classList.add('hidden'); }
+
+        function enableDragScroll(id) {
+            const el = document.getElementById(id);
+            let isDown = false, startX, scrollLeft;
+            el.addEventListener('mousedown', (e) => { isDown = true; startX = e.pageX - el.offsetLeft; scrollLeft = el.scrollLeft; });
+            el.addEventListener('mouseleave', () => isDown = false);
+            el.addEventListener('mouseup', () => isDown = false);
+            el.addEventListener('mousemove', (e) => { if(!isDown) return; const x = e.pageX - el.offsetLeft; el.scrollLeft = scrollLeft - (x - startX)*2; });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initAuthObserver();
+            enableDragScroll('missionCardsContainerWrapper');
+            enableDragScroll('votedSongsContainerWrapper');
+        });
+    </script>
+</body>
+</html>
