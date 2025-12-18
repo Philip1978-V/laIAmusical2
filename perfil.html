@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Usuario - La IA Musical</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #0f172a; 
+            background: linear-gradient(180deg, #0f172a 0%, #0d9488 100%);
+            min-height: 100vh;
+            color: white;
+            padding-bottom: 3rem; 
+        }
+
+        .scroll-container {
+            cursor: grab;
+            user-select: none;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .activity-card {
+            transition: all 0.3s ease;
+        }
+        .activity-card:hover {
+            transform: translateX(8px);
+            background: rgba(45, 212, 191, 0.1);
+        }
+
+        .btn-claim {
+            background: linear-gradient(45deg, #0d9488, #2dd4bf);
+            transition: all 0.3s ease;
+        }
+        .btn-claim:hover:not(:disabled) {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="p-4 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 shadow-lg border-b border-teal-800">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <a href="temas.html" class="text-xl font-bold tracking-wide text-white hover:text-teal-200 transition-colors">
+                La IA Musical
+            </a>
+            
+            <div class="flex gap-3">
+                <button onclick="openResetModal()" class="text-red-400 hover:text-red-300 transition flex items-center gap-2 py-1 px-3 rounded-md bg-slate-800 hover:bg-red-900/20 border border-red-900/30">
+                    <i class="fas fa-sync-alt"></i> Reset Total
+                </button>
+                <button onclick="logout()" class="text-gray-400 hover:text-white transition flex items-center gap-2 py-1 px-3 rounded-md bg-slate-800 hover:bg-slate-700">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 mt-6">
+
+        <div class="bg-slate-800 p-6 rounded-xl shadow-2xl border border-teal-700 mb-8">
+            <div class="flex flex-col md:flex-row items-center gap-6">
+                <div class="flex-grow w-full">
+                    <h2 id="userNameDisplay" class="text-3xl font-bold text-teal-200 mb-1 text-center md:text-left">Cargando...</h2>
+                    <p id="userEmailDisplay" class="text-gray-400 text-sm mb-4 text-center md:text-left">...</p>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-900 p-4 rounded-lg border border-teal-800">
+                        <div class="text-center">
+                            <i class="fas fa-star text-yellow-400 text-2xl"></i>
+                            <p id="userStarsDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-[10px] text-gray-400 uppercase">Estrellas</span>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-gem text-blue-400 text-2xl"></i>
+                            <p id="userDiamondsDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-[10px] text-gray-400 uppercase">Diamantes</span>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-coins text-amber-500 text-2xl"></i>
+                            <p id="userCoinsDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-[10px] text-gray-400 uppercase">Monedas</span>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-vote-yea text-teal-400 text-2xl"></i>
+                            <p id="votesRemainingDisplay" class="text-xl font-bold mt-1">0/5</p>
+                            <span class="text-[10px] text-gray-400 uppercase">Votos</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-center bg-slate-900/50 p-5 rounded-xl border-2 border-dashed border-teal-600 min-w-[200px]">
+                    <div class="relative">
+                        <i class="fas fa-coins text-4xl text-amber-500 mb-2"></i>
+                        <i class="fas fa-calendar-alt absolute -top-1 -right-1 text-xs text-teal-300"></i>
+                    </div>
+                    <p class="text-xs font-bold text-gray-300 mb-3">Bono Diario</p>
+                    <button id="dailyRewardBtn" onclick="claimDailyReward()" class="btn-claim text-white font-bold py-2 px-6 rounded-full shadow-lg text-sm disabled:opacity-50 disabled:grayscale">
+                        RECLAMAR 10
+                    </button>
+                    <p id="dailyRewardTimer" class="text-[10px] mt-2 text-teal-400 font-mono hidden">MAÑANA MÁS</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-8">
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center gap-2">
+                        <i class="fas fa-clone"></i> Mis Cartas Semanales
+                    </h3>
+                    <div id="votedSongsContainerWrapper" class="scroll-container flex gap-4 p-2 pb-4 overflow-x-auto min-h-[180px]">
+                        </div>
+                </section>
+
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center gap-2">
+                        <i class="fas fa-history"></i> Actividad Diaria
+                    </h3>
+                    <div id="activityLogContainer" class="bg-slate-800/50 rounded-xl p-4 border border-teal-900 space-y-3">
+                        </div>
+                </section>
+            </div>
+
+            <div class="lg:col-span-1 space-y-8">
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center gap-2">
+                        <i class="fas fa-medal"></i> Mi Rango
+                    </h3>
+                    <div id="userRankContainer" class="bg-slate-800 p-5 rounded-xl border border-teal-700 shadow-xl">
+                        </div>
+                </section>
+
+                <section>
+                    <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-5 rounded-xl border border-amber-600/30">
+                        <h4 class="font-bold text-amber-500 mb-4 flex items-center gap-2">
+                            <i class="fas fa-exchange-alt"></i> Intercambio
+                        </h4>
+                        <button onclick="exchangeCoinsForStars()" class="w-full bg-slate-900/80 border border-slate-700 p-4 rounded-xl flex justify-between items-center hover:border-amber-500 transition-all group">
+                            <span class="text-sm">10 Monedas por 100 Estrellas</span>
+                            <i class="fas fa-arrow-right text-amber-500 group-hover:translate-x-1 transition-transform"></i>
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <div id="resetModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-slate-800 p-8 rounded-2xl border border-red-600 max-w-sm w-full shadow-2xl text-center">
+            <div class="w-16 h-16 bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-exclamation-triangle text-red-500 text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-white">¿Reiniciar todo?</h3>
+            <p class="text-gray-400 mb-6 text-sm leading-relaxed">Se borrarán tus votos del reproductor, monedas, estrellas y progreso de Quizzes. <strong>Esta acción es irreversible.</strong></p>
+            <div class="flex gap-3">
+                <button onclick="closeResetModal()" class="flex-1 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-bold transition">Cancelar</button>
+                <button onclick="executeReset()" class="flex-1 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold transition">RESETEAR</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+            authDomain: "laiamusical-4fba7.firebaseapp.com",
+            projectId: "laiamusical-4fba7",
+            storageBucket: "laiamusical-4fba7.firebasestorage.app",
+            messagingSenderId: "49783369602",
+            appId: "1:49783369602:web:91e287c094a8f2403d699b",
+            measurementId: "G-WC2JT6DRF4"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let userProfileData = {};
+
+        // Sincronización de canciones
+        const songsList = [
+            { id: 1, title: "Sinfonía del Nuevo Mundo", author: "Antonín Dvořák", cover: "https://picsum.photos/id/10/300/300" },
+            { id: 2, title: "La muerte del amor", author: "Richard Wagner", cover: "https://picsum.photos/id/11/300/300" },
+            { id: 5, title: "El lenguaje del mundo", author: "Paulo Coelho", cover: "https://picsum.photos/id/20/300/300" },
+            { id: 6, title: "El ciclo de Macondo", author: "Gabriel García Márquez", cover: "https://picsum.photos/id/21/300/300" },
+            { id: 7, title: "El ojo que todo lo ve", author: "George Orwell", cover: "https://picsum.photos/id/22/300/300" },
+            { id: 8, title: "Crimen y castigo", author: "Fyodor Dostoevsky", cover: "https://picsum.photos/id/23/300/300" },
+            { id: 9, title: "Pequeña serenata nocturna", author: "W.A. Mozart", cover: "https://picsum.photos/id/27/300/300" },
+            { id: 10, title: "La Reina de la Noche", author: "W.A. Mozart", cover: "https://picsum.photos/id/32/300/300" },
+            { id: 11, title: "Nessun Dorma", author: "Giacomo Puccini", cover: "https://picsum.photos/id/33/300/300" },
+            { id: 12, title: "Va, pensamiento", author: "Giuseppe Verdi", cover: "https://picsum.photos/id/34/300/300" },
+            { id: 13, title: "Royale with Cheese", author: "Quentin Tarantino", cover: "https://picsum.photos/id/28/300/300" },
+            { id: 14, title: "La oferta que no pudo rechazar", author: "F.F. Coppola", cover: "https://picsum.photos/id/29/300/300" }
+        ];
+
+        function getSongData(id) { return songsList.find(s => s.id == id); }
+
+        function renderVotedSongs(voteLog, activityLog) {
+            const container = document.getElementById('votedSongsContainerWrapper');
+            const songIds = Object.keys(voteLog || {});
+            if (songIds.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 italic text-sm py-10 w-full text-center">No has votado cartas esta semana.</p>';
+                return;
+            }
+            container.innerHTML = '';
+            songIds.forEach(id => {
+                const song = getSongData(id);
+                if (song) {
+                    const quizPoints = (activityLog || [])
+                        .filter(a => a.type === 'quiz' && a.songId == id)
+                        .reduce((acc, curr) => acc + (curr.score || 0), 0);
+
+                    const card = document.createElement('div');
+                    card.className = 'w-40 flex-shrink-0 bg-slate-900 rounded-xl overflow-hidden border border-teal-800 shadow-xl';
+                    card.innerHTML = `
+                        <img src="${song.cover}" class="w-full h-24 object-cover opacity-80">
+                        <div class="p-3">
+                            <h4 class="text-[10px] font-bold truncate text-white mb-2 uppercase">${song.title}</h4>
+                            <div class="space-y-1">
+                                <div class="flex justify-between items-center text-[9px] bg-slate-800 p-1 rounded">
+                                    <span class="text-gray-400">Voto:</span>
+                                    <span class="text-yellow-400 font-bold">${voteLog[id]} ★</span>
+                                </div>
+                                <div class="flex justify-between items-center text-[9px] bg-slate-800 p-1 rounded">
+                                    <span class="text-gray-400">Quiz:</span>
+                                    <span class="text-blue-400 font-bold">${quizPoints} pts</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                }
+            });
+        }
+
+        function renderActivityLog(log) {
+            const container = document.getElementById('activityLogContainer');
+            container.innerHTML = '';
+            if (!log || log.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4 text-xs">Sin actividad.</p>';
+                return;
+            }
+            const config = {
+                quiz: { icon: 'fa-brain', color: 'text-purple-400', bg: 'bg-purple-400/10' },
+                vote: { icon: 'fa-star', color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+                reward: { icon: 'fa-coins', color: 'text-teal-400', bg: 'bg-teal-400/10' },
+                exchange: { icon: 'fa-sync', color: 'text-amber-500', bg: 'bg-amber-500/10' }
+            };
+            [...log].reverse().slice(0, 5).forEach(entry => {
+                const conf = config[entry.type] || { icon: 'fa-info-circle', color: 'text-blue-400', bg: 'bg-blue-400/10' };
+                const div = document.createElement('div');
+                div.className = `activity-card flex items-center p-3 rounded-xl border border-slate-700/50 ${conf.bg}`;
+                div.innerHTML = `
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center ${conf.color} bg-slate-900 mr-3 border border-slate-700">
+                        <i class="fas ${conf.icon} text-xs"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <p class="text-[10px] font-bold text-gray-200 capitalize">${entry.type}</p>
+                        <p class="text-[9px] text-gray-400">${entry.description || 'Tarea completada'}</p>
+                    </div>
+                    <span class="text-[8px] text-gray-600 font-mono">${new Date(entry.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // FUNCIONES DE RESET
+        function openResetModal() { document.getElementById('resetModal').classList.remove('hidden'); }
+        function closeResetModal() { document.getElementById('resetModal').classList.add('hidden'); }
+        
+        async function executeReset() {
+            if (!auth.currentUser) return;
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+            try {
+                await userRef.update({
+                    userStars: 0,
+                    userCoins: 0,
+                    userDiamonds: 0,
+                    votesRemaining: 5,
+                    voteLog: {}, // Esto resetea los votos en reproductor.html
+                    activityLog: [], // Esto resetea el historial y marca de quizzes
+                    lastClaimDate: "",
+                    missionsClaimed: {}
+                });
+                closeResetModal();
+                alert("¡Perfil reiniciado! Puedes volver a votar y jugar Quizzes.");
+            } catch (e) { alert("Error al reiniciar."); }
+        }
+
+        async function claimDailyReward() {
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+            const today = new Date().toISOString().split('T')[0];
+            if (userProfileData.lastClaimDate === today) return;
+            try {
+                await userRef.update({
+                    userCoins: (userProfileData.userCoins || 0) + 10,
+                    lastClaimDate: today,
+                    activityLog: firebase.firestore.FieldValue.arrayUnion({
+                        type: 'reward',
+                        description: 'Bono diario (+10 monedas)',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function exchangeCoinsForStars() {
+            if ((userProfileData.userCoins || 0) < 10) { alert("Faltan monedas."); return; }
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+            await userRef.update({
+                userCoins: userProfileData.userCoins - 10,
+                userStars: (userProfileData.userStars || 0) + 100,
+                activityLog: firebase.firestore.FieldValue.arrayUnion({
+                    type: 'exchange',
+                    description: 'Canje de 10 monedas por 100 estrellas',
+                    timestamp: new Date().toISOString()
+                })
+            });
+        }
+
+        function updateUI(data) {
+            userProfileData = data;
+            document.getElementById('userNameDisplay').textContent = data.username || "Músico";
+            document.getElementById('userEmailDisplay').textContent = auth.currentUser.email;
+            document.getElementById('userStarsDisplay').textContent = (data.userStars || 0).toLocaleString();
+            document.getElementById('userDiamondsDisplay').textContent = data.userDiamonds || 0;
+            document.getElementById('userCoinsDisplay').textContent = data.userCoins || 0;
+            document.getElementById('votesRemainingDisplay').textContent = `${data.votesRemaining || 0}/5`;
+
+            const today = new Date().toISOString().split('T')[0];
+            const btn = document.getElementById('dailyRewardBtn');
+            const timer = document.getElementById('dailyRewardTimer');
+            if (data.lastClaimDate === today) {
+                btn.disabled = true; btn.innerText = "RECLAMADO"; timer.classList.remove('hidden');
+            } else {
+                btn.disabled = false; btn.innerText = "RECLAMAR 10"; timer.classList.add('hidden');
+            }
+
+            renderVotedSongs(data.voteLog, data.activityLog);
+            renderActivityLog(data.activityLog);
+            
+            const stars = data.userStars || 0;
+            const progress = Math.min((stars / 1000) * 100, 100);
+            document.getElementById('userRankContainer').innerHTML = `
+                <div class="flex justify-between text-[10px] mb-2 font-bold uppercase tracking-widest text-teal-400">
+                    <span>Nivel Actual</span>
+                    <span>${stars} / 1000 ★</span>
+                </div>
+                <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-700">
+                    <div class="bg-gradient-to-r from-teal-600 to-teal-400 h-full transition-all duration-1000" style="width: ${progress}%"></div>
+                </div>`;
+        }
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                db.collection('users').doc(user.uid).onSnapshot(doc => {
+                    if (doc.exists) updateUI(doc.data());
+                });
+            } else { window.location.href = 'index.html'; }
+        });
+
+        function logout() { auth.signOut(); }
+    </script>
+</body>
+</html>
