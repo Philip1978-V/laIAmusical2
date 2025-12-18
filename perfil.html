@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Usuario - La IA Musical</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #0f172a; 
+            background: linear-gradient(180deg, #0f172a 0%, #0d9488 100%);
+            min-height: 100vh;
+            color: white;
+            padding-bottom: 3rem; 
+        }
+
+        .scroll-container {
+            cursor: grab;
+            user-select: none;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .activity-card {
+            transition: transform 0.2s;
+        }
+        .activity-card:hover {
+            transform: translateX(5px);
+        }
+
+        .song-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid #134e4a;
+            transition: all 0.3s ease;
+        }
+        .song-card:hover {
+            border-color: #2dd4bf;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="p-4 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 shadow-lg border-b border-teal-800">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <a href="temas.html" class="text-xl font-bold tracking-wide text-white hover:text-teal-200 transition-colors">
+                    La IA Musical
+                </a>
+            </div>
+            <button onclick="logout()" class="text-gray-400 hover:text-white transition flex items-center gap-2 py-1 px-3 rounded-md bg-slate-800 hover:bg-slate-700">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 mt-6">
+
+        <div class="bg-slate-800 p-6 rounded-xl shadow-2xl border border-teal-700 mb-8">
+            <div class="flex flex-col md:flex-row items-center gap-6">
+                <div class="flex-grow text-center md:text-left">
+                    <h2 id="userNameDisplay" class="text-3xl font-bold text-teal-200 mb-1">Cargando...</h2>
+                    <p id="userEmailDisplay" class="text-gray-400 text-sm mb-4">...</p>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-900 p-4 rounded-lg border border-teal-800">
+                        <div class="text-center">
+                            <i class="fas fa-star text-yellow-400 text-2xl"></i>
+                            <p id="userStarsDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-xs text-gray-400 uppercase tracking-tighter">Estrellas</span>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-gem text-blue-400 text-2xl"></i>
+                            <p id="userDiamondsDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-xs text-gray-400 uppercase tracking-tighter">Diamantes</span>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-coins text-amber-500 text-2xl"></i>
+                            <p id="userCoinsDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-xs text-gray-400 uppercase tracking-tighter">Monedas</span>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-vote-yea text-teal-400 text-2xl"></i>
+                            <p id="votesRemainingDisplay" class="text-xl font-bold mt-1">0/5</p>
+                            <span class="text-xs text-gray-400 uppercase tracking-tighter">Votos</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full md:w-auto flex flex-col items-center bg-slate-900/50 p-4 rounded-xl border border-dashed border-teal-600">
+                    <i class="fas fa-calendar-check text-3xl text-teal-400 mb-2"></i>
+                    <p class="text-xs text-center text-gray-300 mb-3">Recompensa Diaria</p>
+                    <button id="dailyRewardBtn" onclick="claimDailyReward()" class="bg-teal-600 hover:bg-teal-500 disabled:bg-gray-600 text-white font-bold py-2 px-6 rounded-full transition-all shadow-lg text-sm whitespace-nowrap">
+                        RECLAMAR 10 <i class="fas fa-coins text-yellow-400 ml-1"></i>
+                    </button>
+                    <p id="dailyRewardTimer" class="text-[10px] mt-2 text-teal-400 hidden">Vuelve mañana</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-8">
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center">
+                        <i class="fas fa-layer-group mr-2"></i> Mis Cartas (Ciclo Actual)
+                    </h3>
+                    <div id="votedSongsContainerWrapper" class="scroll-container flex gap-4 p-2 min-h-[180px]">
+                        </div>
+                </section>
+
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center">
+                        <i class="fas fa-history mr-2"></i> Actividad Reciente
+                    </h3>
+                    <div id="activityLogContainer" class="space-y-3"></div>
+                </section>
+            </div>
+
+            <div class="lg:col-span-1 space-y-8">
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center"><i class="fas fa-medal mr-2"></i> Mi Rango</h3>
+                    <div id="userRankContainer" class="bg-slate-800 p-4 rounded-xl border border-teal-700"></div>
+                </section>
+
+                <section>
+                    <div class="bg-slate-800 p-4 rounded-xl border border-amber-600/30">
+                        <h4 class="font-bold text-amber-500 mb-2 flex items-center"><i class="fas fa-sync-alt mr-2"></i> Casa de Cambio</h4>
+                        <button onclick="exchangeCoinsForStars()" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg flex justify-between items-center hover:bg-slate-700 transition">
+                            <span class="text-sm">10 Monedas <i class="fas fa-arrow-right mx-1 text-gray-500"></i> 100 Estrellas</span>
+                            <i class="fas fa-exchange-alt text-amber-500"></i>
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // CONFIGURACIÓN FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+            authDomain: "laiamusical-4fba7.firebaseapp.com",
+            projectId: "laiamusical-4fba7",
+            storageBucket: "laiamusical-4fba7.firebasestorage.app",
+            messagingSenderId: "49783369602",
+            appId: "1:49783369602:web:91e287c094a8f2403d699b",
+            measurementId: "G-WC2JT6DRF4"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let userProfileData = {};
+
+        // Listado de canciones (debe coincidir con las del reproductor)
+        const songs = [
+            { id: 1, title: "Sinfonía del Nuevo Mundo", author: "Antonín Dvořák", cover: "https://picsum.photos/id/10/300/300" },
+            { id: 5, title: "El lenguaje del mundo", author: "Paulo Coelho", cover: "https://picsum.photos/id/20/300/300" },
+            { id: 6, title: "El ciclo de Macondo", author: "Gabriel García Márquez", cover: "https://picsum.photos/id/21/300/300" },
+            { id: 10, title: "La Reina de la Noche", author: "Mozart", cover: "https://picsum.photos/id/32/300/300" },
+            { id: 14, title: "La oferta que no pudo rechazar", author: "Francis Ford Coppola", cover: "https://picsum.photos/id/29/300/300" }
+        ];
+
+        function getSongById(id) { return songs.find(s => s.id == id); }
+
+        async function renderVotedSongs(voteLog, activityLog) {
+            const container = document.getElementById('votedSongsContainerWrapper');
+            const votedIds = Object.keys(voteLog);
+            
+            if (votedIds.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 italic text-sm py-4">Aún no has votado por ninguna carta esta semana.</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            
+            // Procesamos cada canción votada
+            for (const songId of votedIds) {
+                const song = getSongById(songId);
+                if (song) {
+                    // 1. Estrellas que el usuario ha dado a ESTA carta
+                    const userStarsToSong = voteLog[songId];
+
+                    // 2. Calcular estrellas ganadas en Quizzes para esta canción
+                    const quizStars = (activityLog || [])
+                        .filter(a => a.type === 'quiz' && a.songId == songId)
+                        .reduce((sum, current) => sum + (current.score || 0), 0);
+                    
+                    // 3. Obtener Votos Globales desde la colección songs_stats
+                    let globalVotes = 0;
+                    try {
+                        const songDoc = await db.collection('songs_stats').doc(songId.toString()).get();
+                        if (songDoc.exists) {
+                            globalVotes = songDoc.data().totalVotes || 0;
+                        }
+                    } catch (e) { console.warn("Error votos globales canción " + songId); }
+
+                    // Crear elemento visual
+                    const card = document.createElement('div');
+                    card.className = 'w-44 flex-shrink-0 song-card rounded-xl overflow-hidden shadow-lg';
+                    card.innerHTML = `
+                        <img src="${song.cover}" class="w-full h-24 object-cover border-b border-teal-900/50">
+                        <div class="p-3">
+                            <h4 class="text-[11px] font-bold truncate text-white mb-2 uppercase">${song.title}</h4>
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between items-center text-[10px] bg-slate-800/50 p-1.5 rounded">
+                                    <span class="text-gray-400">Tus Votos:</span>
+                                    <span class="text-yellow-400 font-black">${userStarsToSong} <i class="fas fa-star text-[8px]"></i></span>
+                                </div>
+                                <div class="flex justify-between items-center text-[10px] bg-teal-900/20 p-1.5 rounded border border-teal-800/30">
+                                    <span class="text-gray-400">Global:</span>
+                                    <span class="text-teal-400 font-bold">${globalVotes}</span>
+                                </div>
+                                <div class="flex justify-between items-center text-[10px] bg-indigo-900/20 p-1.5 rounded">
+                                    <span class="text-gray-400">Quiz Stars:</span>
+                                    <span class="text-blue-300 font-bold">${quizStars} pts</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                }
+            }
+        }
+
+        function renderActivityLog(log) {
+            const container = document.getElementById('activityLogContainer');
+            container.innerHTML = '';
+            if (!log || log.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4 text-sm">Sin actividad reciente.</p>';
+                return;
+            }
+
+            log.slice(-6).reverse().forEach(entry => {
+                let icon = 'fa-info-circle', color = 'text-blue-400', bg = 'bg-blue-400/10';
+                if(entry.type === 'quiz') { icon = 'fa-brain'; color = 'text-purple-400'; bg = 'bg-purple-400/10'; }
+                else if(entry.type === 'vote') { icon = 'fa-star'; color = 'text-yellow-400'; bg = 'bg-yellow-400/10'; }
+                else if(entry.type === 'reward') { icon = 'fa-gift'; color = 'text-teal-400'; bg = 'bg-teal-400/10'; }
+                else if(entry.type === 'exchange') { icon = 'fa-sync-alt'; color = 'text-amber-400'; bg = 'bg-amber-400/10'; }
+
+                const div = document.createElement('div');
+                div.className = `activity-card flex items-center p-3 rounded-xl border border-slate-700 ${bg}`;
+                div.innerHTML = `
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center ${color} bg-slate-900 mr-3 shadow-inner text-xs">
+                        <i class="fas ${icon}"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <p class="text-[11px] font-bold text-gray-200 capitalize">${entry.type}</p>
+                        <p class="text-[10px] text-gray-400">${entry.description || 'Actividad completada'}</p>
+                    </div>
+                    <span class="text-[9px] text-gray-500 italic">${new Date(entry.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function claimDailyReward() {
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+
+            if (userProfileData.lastClaimDate === todayStr) return;
+
+            try {
+                await userRef.update({
+                    userCoins: (userProfileData.userCoins || 0) + 10,
+                    lastClaimDate: todayStr,
+                    activityLog: firebase.firestore.FieldValue.arrayUnion({
+                        type: 'reward',
+                        description: 'Recogiste tu recompensa diaria (+10 Monedas)',
+                        timestamp: now.toISOString()
+                    })
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        function checkDailyButton(lastDate) {
+            const btn = document.getElementById('dailyRewardBtn');
+            const timer = document.getElementById('dailyRewardTimer');
+            const today = new Date().toISOString().split('T')[0];
+
+            if (lastDate === today) {
+                btn.disabled = true;
+                btn.classList.replace('bg-teal-600', 'bg-slate-700');
+                btn.innerHTML = 'RECLAMADO';
+                timer.classList.remove('hidden');
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = 'RECLAMAR 10 <i class="fas fa-coins text-yellow-400 ml-1"></i>';
+                timer.classList.add('hidden');
+            }
+        }
+
+        async function exchangeCoinsForStars() {
+            if ((userProfileData.userCoins || 0) < 10) {
+                alert("Necesitas 10 monedas.");
+                return;
+            }
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+            await userRef.update({
+                userCoins: userProfileData.userCoins - 10,
+                userStars: (userProfileData.userStars || 0) + 100,
+                activityLog: firebase.firestore.FieldValue.arrayUnion({
+                    type: 'exchange',
+                    description: 'Canje de 10 monedas por 100 estrellas',
+                    timestamp: new Date().toISOString()
+                })
+            });
+        }
+
+        function renderUserRankBar(stars) {
+            const container = document.getElementById('userRankContainer');
+            const nextLevel = 500;
+            const progress = Math.min((stars / nextLevel) * 100, 100);
+            container.innerHTML = `
+                <div class="flex justify-between text-[10px] mb-1 uppercase font-bold">
+                    <span class="text-teal-400">Músico Novato</span>
+                    <span class="text-gray-500">${stars} / ${nextLevel} ★</span>
+                </div>
+                <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-700">
+                    <div class="bg-teal-500 h-full transition-all duration-700" style="width: ${progress}%"></div>
+                </div>
+            `;
+        }
+
+        function updateUI(data) {
+            userProfileData = data;
+            document.getElementById('userNameDisplay').textContent = data.username || "Usuario";
+            document.getElementById('userEmailDisplay').textContent = auth.currentUser.email;
+            document.getElementById('userStarsDisplay').textContent = data.userStars || 0;
+            document.getElementById('userDiamondsDisplay').textContent = data.userDiamonds || 0;
+            document.getElementById('userCoinsDisplay').textContent = data.userCoins || 0;
+            document.getElementById('votesRemainingDisplay').textContent = `${data.votesRemaining || 0}/5`;
+
+            checkDailyButton(data.lastClaimDate);
+            renderVotedSongs(data.voteLog || {}, data.activityLog || []);
+            renderActivityLog(data.activityLog || []);
+            renderUserRankBar(data.userStars || 0);
+        }
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                db.collection('users').doc(user.uid).onSnapshot(doc => {
+                    if (doc.exists) updateUI(doc.data());
+                });
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        function logout() { auth.signOut(); }
+    </script>
+</body>
+</html>
