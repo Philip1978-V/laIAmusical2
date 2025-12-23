@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reproductor IA Musical</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: url('images/fondo.png') no-repeat center center fixed; 
+            background-size: cover;
+            background-color: #2c7a7b;
+            min-height: 100vh;
+            color: white;
+        }
+        /* Estilo para el botón de play en el centro de la carta */
+        .play-btn-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: rgba(72, 187, 120, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .song-card:hover .play-btn-overlay {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+        .play-btn-overlay i {
+            color: white;
+            font-size: 24px;
+            margin-left: 3px;
+        }
+        .song-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-bar-custom {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #475569;
+            outline: none;
+            border-radius: 2px;
+        }
+        .progress-bar-custom::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #14b8a6;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .progress-bar-custom::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #14b8a6;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
+    </style>
+   
+    <script type="module">
+        // --- IMPORTS DE FIREBASE (Módulos para consistencia con index.html) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, query, where, getDocs, getDoc, updateDoc, Timestamp, FieldValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        // --- CONFIGURACIÓN FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+            authDomain: "laiamusical-4fba7.firebaseapp.com",
+            projectId: "laiamusical-4fba7",
+            storageBucket: "laiamusical-4fba7.firebasestorage.app",
+            messagingSenderId: "49783369602",
+            appId: "1:49783369602:web:91e287c094a8f2403d699b",
+            measurementId: "G-WC2JT6DRF4"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        // --- 2. CONSTANTES GLOBALES ---
+        const maxVotes = 5;
+        const WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000; 
+        const DAY_IN_MS = 24 * 60 * 60 * 1000;
+        const BONUS_STARS_PERFECT_SCORE = 10;
+        
+        // --- 3. VARIABLES DE ESTADO (Se sincronizan con Firebase) ---
+        let currentUser = null;
+        let currentUserId = null;
+        let userStars = 0; 
+        let userDiamonds = 0; 
+        let userCoins = 0;
+        let votesRemaining = maxVotes;
+        let userQuizLog = {}; 
+        let userVoteLog = {}; 
+        let lastStarsResetDate = null; // Para la lógica del ranking
+        let selectedSongIdForVote = null;
+        let selectedStarsForVote = 0;
+        let activeQuizSongId = null;
+        let currentQuestionIndex = 0;
+        let correctQuizAnswers = 0;
+        let currentTopic = localStorage.getItem('currentTopic') || 'Literatura'; 
+        currentTopic = currentTopic.charAt(0).toUpperCase() + currentTopic.slice(1);
+        // --- NUEVAS VARIABLES GLOBALES PARA EL REPRODUCTOR ---
+        let currentAudio = new Audio();
+        let currentSongId = null;
+        let isPlaying = false;
+        // Referencias a los elementos del reproductor (se inicializan en setupAudioPlayer)
+        let playPauseBtn;
+        let progressBar;
+        let currentTimeDisplay;
+        let durationDisplay;
+        let volumeControl;
+        
+        // --- 4. DATOS MOCK DE CANCIONES (totalStars se inicializa en 0 y se actualiza desde Firestore) ---
+        const songs = [
+            // --- CANCIONES DE LITERATURA ---
+            { id: 5, title: "El lenguaje del mundo", originalTitle: "El Alquimista", author: "Paulo Coelho", year: 1988, category: "AVENTURA", topic: "Literatura", totalStars: 0, cover: "./imagenportada/lit_alquimista.png", audio: "./audio/lit_alquimista.mp3",
+                synopsis: "Un joven pastor andaluz viaja a Egipto en busca de un tesoro, aprendiendo sobre su Leyenda Personal y el lenguaje universal del mundo.",
+                lyrics: "En el vasto desierto de arena dorada, camina Santiago con su alma cansada, buscando tesoros que brillen eternal,en el lenguaje universal...\n\nLa Leyenda Personal lo guía,\nA través de noches y días,\nEl Alquimista le enseñará,\nQue el tesoro en su corazón está...",
+                quiz: [
+                    { q: "¿Qué busca Santiago?", a: ["Un tesoro en Egipto", "El amor", "Un rebaño más grande", "El sentido de la vida"], correct: 0 },
+                    { q: "¿Quién le enseña sobre el Lenguaje del Mundo?", a: ["El mercader", "Melquíades", "El Alquimista", "Fátima"], correct: 2 },
+                    { q: "¿En qué lugar encuentra su tesoro?", a: ["Egipto", "Un oasis", "La pirámedes", "Bajo un árbol"], correct: 3 },
+                    { q: "¿Cuál es el concepto central de la obra?", a: ["Luchar por la riqueza", "La Leyenda Personal", "El camino fácil", "El amor eterno"], correct: 1 },
+                    { q: "¿A qué autor pertenece la obra?", a: ["García Márquez", "Hesse", "Coelho", "Borges"], correct: 2 },
+                    { q: "¿Qué representa el desierto en la obra?", a: ["Un obstáculo", "El lugar de prueba", "Un lugar vacío", "Solo arena"], correct: 1 },
+                    { q: "¿Cómo se llama la mujer del oasis?", a: ["Carmen", "Fátima", "Esperanza", "María"], correct: 1 }
+                ]
+            },
+            
+            // Reemplazo del original de Cien Años de Soledad para asegurar nuevo ID
+            { id: 21, title: "El ciclo de Macondo", originalTitle: "Cien años de soledad", author: "Gabriel García Márquez", year: 1967, category: "REALISMO MÁGICO", topic: "Literatura", totalStars: 0, cover: "./imagenportada/lit_macondo.png", audio: "./audio/lit_macondo.mp3",
+                synopsis: "La saga de la familia Buendía a lo largo de siete generaciones en el pueblo de Macondo, marcada por la soledad y la profecía.",
+                lyrics: "En Macondo donde los espejos mienten,\nViven los Buendía por siete generaciones,\nJosé Arcadio fundó este lugar,\nDonde la soledad vino a caminar...\n\nÚrsula cuida la casa con desvelo,\nMelquíades trae su magia del cielo,\nY en los pergaminos está la verdad,\nDe una familia marcada por la soledad...",
+                quiz: [
+                    { q: "¿Cuál es el nombre del patriarca?", a: ["Aureliano Buendía", "José Arcadio Buendía", "Arcadio", "Cien años de soledad"], correct: 1 },
+                    { q: "¿Cuántas generaciones abarca la novela?", a: ["5", "6", "7", "8"], correct: 2 },
+                    { q: "¿Qué invento trae Melquíades al pueblo?", a: ["Telégrafo", "Máquina de escribir", "Imán", "Cine"], correct: 2 },
+                    { q: "¿Por qué tienen miedo al incesto?", a: ["La peste", "El nacimiento de un niño con cola de cerdo", "Un hechizo", "Una profecía"], correct: 1 },
+                    { q: "¿Cómo muere Úrsula?", a: ["De tristeza", "Fusilada", "Ciega y de vejez", "De fiebre"], correct: 2 },
+                    { q: "¿Qué representa el hielo en la obra?", a: ["La modernidad", "La muerte", "El progreso", "La memoria"], correct: 0 },
+                    { q: "¿Cómo se llama la matriarca?", a: ["Úrsula Iguarán", "Fernanda del Carpio", "Pilar Ternera", "Petra Cotes"], correct: 0 }
+                ]
+            },
+            { id: 7, title: "El ojo que todo lo ve", originalTitle: "1984", author: "George Orwell", year: 1949, category: "DISTOPÍA", topic: "Literatura", totalStars: 0, cover: "./imagenportada/lit_1984.png", audio: "./audio/lit_1984.mp3",
+                synopsis: "En la super-estado de Oceanía, el protagonista Winston Smith intenta rebelarse contra el Partido y la vigilancia constante del Gran Hermano.",
+                quiz: [
+                    { q: "¿Cómo se llama el protagonista?", a: ["Smith Jones", "Winston Smith", "George Orwell", "Big Brother"], correct: 1 },
+                    { q: "¿Qué lema no pertenece al Partido?", a: ["La guerra es paz", "El amor es ignorancia", "La ignorancia es fuerza", "La libertad es esclavitud"], correct: 1 },
+                    { q: "¿Qué representa la Habitación 101?", a: ["La Sala de tortura", "El Ministerio del Amor", "El miedo individual", "La oficina de Winston"], correct: 2 },
+                    { q: "¿Cuál es la función del 'doble-pensar'?", a: ["Creer en dos ideas opuestas a la vez", "Pensar dos veces antes de hablar", "Hablar en doble sentido", "Escribir en doble columna"], correct: 0 },
+                    { q: "¿Qué es el 'Gran Hermano'?", a: ["Un hermano de Winston", "Un personaje de ficción", "El líder omnipresente del Partido", "Un programa de TV"], correct: 2 },
+                    { q: "¿Qué ministerio controla la verdad?", a: ["Ministerio del Amor", "Ministerio de la Verdad", "Ministerio de la Paz", "Ministerio de la Abundancia"], correct: 1 },
+                    { q: "¿Cómo se llama la amante de Winston?", a: ["Julia", "O'Brien", "Syme", "Parsons"], correct: 0 }
+                ]
+            },
+            { id: 8, title: "Crimen y castigo", originalTitle: "Crimen y castigo", author: "Fyodor Dostoevsky", year: 1866, category: "PSICOLÓGICA", topic: "Literatura", totalStars: 0, cover: "./imagenportada/lit_crimen.png", audio: "./audio/lit_crimen.mp3",
+                synopsis: "El estudiante Raskólnikov asesina a una anciana prestamista para justificar su teoría del 'hombre superior', sumergiéndose en una espiral de culpa y redención.",
+                quiz: [
+                    { q: "¿Qué roba Raskólnikov?", a: ["Joyas", "Dinero", "Un reloj", "Una Biblia"], correct: 0 },
+                    { q: "¿A quién asesina?", a: ["Su madre", "La prestamista", "Un policía", "Su jefe"], correct: 1 },
+                    { q: "¿Cuál es el argumento central de su teoría?", a: ["El hombre superior", "El nihilismo", "La revolución", "La pobreza"], correct: 0 },
+                    { q: "¿Qué personaje representa la redención moral?", a: ["Luzhin", "Marmeládov", "Sonia", "Dunia"], correct: 2 },
+                    { q: "¿En qué ciudad se desarrolla la acción?", a: ["Moscú", "San Petersburgo", "Kiev", "París"], correct: 1 },
+                    { q: "¿Qué herramienta usa para el crimen?", a: ["Un cuchillo", "Un hacha", "Una pistola", "Veneno"], correct: 1 },
+                    { q: "¿Cómo se llama el inspector?", a: ["Porfiri", "Luzhin", "Svidrigailov", "Razumijin"], correct: 0 }
+                ]
+            },
+            { id: 17, title: "El inquilino monstruoso", originalTitle: "La Metamorfosis", author: "Franz Kafka", year: 1915, category: "FICCIÓN FILOSÓFICA", topic: "Literatura", totalStars: 0, cover: "./imagenportada/lit_metamorfosis.png", audio: "./audio/17.mp3",
+                synopsis: "Una mañana, Gregorio Samsa se despierta y se encuentra transformado en un insecto gigantesco, lo que altera radicalmente la dinámica de su familia y su propia existencia.",
+                quiz: [
+                    { q: "¿Cómo se llama el protagonista?", a: ["Kafka", "Gregor Samsa", "K.", "Joseph K."], correct: 1 },
+                    { q: "¿En qué animal se transforma?", a: ["Cucaracha", "Escarabajo", "Insecto monstruoso", "Araña"], correct: 2 },
+                    { q: "¿Cuál era la profesión de Gregor?", a: ["Abogado", "Viajante de comercio", "Músico", "Empleado de banca"], correct: 1 },
+                    { q: "¿Quién se encarga de alimentarlo al principio?", a: ["Su padre", "Su madre", "Su hermana Grete", "La asistenta"], correct: 2 },
+                    { q: "¿Qué instrumento toca su hermana?", a: ["Piano", "Violín", "Flauta", "Chelo"], correct: 1 },
+                    { q: "¿Cómo reacciona la familia al principio?", a: ["Alegría", "Miedo", "Indiferencia", "Tristeza"], correct: 1 },
+                    { q: "¿Qué decide la familia al final?", a: ["Mudarse", "Aceptarlo", "Liberarlo", "Ignorarlo"], correct: 0 }
+                ]
+            },
+            { id: 18, title: "La maldición de la belleza", originalTitle: "El retrato de Dorian Gray", author: "Oscar Wilde", year: 1890, category: "GÓTICO", topic: "Literatura", totalStars: 0, cover: "./imagenportada/lit_doriangray.png", audio: "./audio/18.mp3",
+                synopsis: "Dorian Gray desea que un retrato envejezca y refleje su corrupción moral en su lugar, permitiéndole vivir una vida de hedonismo sin consecuencias físicas.",
+                quiz: [
+                    { q: "¿Qué objeto absorbe el deterioro de Dorian?", a: ["Un espejo", "Un joya", "Un retrato", "Un libro"], correct: 2 },
+                    { q: "¿Cuál es el vicio principal de Dorian?", a: ["Avaricia", "Pereza", "Orgullo/Hedonismo", "Mentira"], correct: 2 },
+                    { q: "¿Quién pinta el retrato?", a: ["Lord Henry", "Basil Hallward", "James Vane", "Sybil Vane"], correct: 1 },
+                    { q: "¿Cómo intenta destruir el retrato?", a: ["Quemarlo", "Rasgarlo", "Apuñalarlo", "Venderlo"], correct: 2 },
+                    { q: "¿Qué género se asocia a Oscar Wilde?", a: ["Realismo", "Esteticismo", "Neoclasicismo", "Teatro del absurdo"], correct: 1 },
+                    { q: "¿Qué libro influye en Dorian?", a: ["La Biblia", "El retrato de Dorian Gray", "El príncipe", "El extraño caso"], correct: 2 },
+                    { q: "¿Qué sucede con el retrato al final?", a: ["Se quema", "Se vende", "Se pierde", "Se restaura"], correct: 0 }
+                ]
+            },
+            
+            // --- NUEVAS CANCIONES DE LITERATURA ---
+            { id: 22, title: "Los fantasmas de La Mancha", originalTitle: "Don Quijote de la Mancha", author: "Miguel de Cervantes", year: 1605, category: "SATÍRICA/AVENTURA", topic: "Literatura", totalStars: 0, cover: "./imagenportada/lit_quijote.png", audio: "./audio/lit_quijote.mp3",
+                synopsis: "Un hidalgo enloquece leyendo libros de caballerías, se nombra caballero andante y sale a recorrer España con su escudero, luchando contra molinos de viento.",
+                quiz: [
+                    { q: "¿Cómo se llama el escudero de Don Quijote?", a: ["Alonso Quijano", "Rocinante", "Sancho Panza", "Dulcinea"], correct: 2 },
+                    { q: "¿Con qué confunde Don Quijote a los molinos de viento?", a: ["Gigantes", "Castillos", "Dragones", "Bandidos"], correct: 0 },
+                    { q: "¿Cuál es el nombre real del protagonista?", a: ["El Caballero de la Triste Figura", "Don Quijote", "Alonso Quijano", "Cide Hamete Benengeli"], correct: 2 },
+                    { q: "¿Cuál es el género principal de la obra?", a: ["Épico", "Lírico", "Novela moderna/Parodia", "Teatro"], correct: 2 },
+                    { q: "¿Qué animal es Rocinante?", a: ["Un burro", "Un caballo", "Un perro", "Un cabrito"], correct: 1 },
+                    { q: "¿Qué lee Don Quijote que lo vuelve loco?", a: ["Libros de historia", "Libros de caballerías", "La Biblia", "Poemas"], correct: 1 },
+                    { q: "¿En qué siglo se publicó la obra?", a: ["Siglo XVI", "Siglo XVII", "Siglo XV", "Siglo XVIII"], correct: 1 }
+                ]
+            },
+            { id: 23, title: "El largo regreso a Ítaca", originalTitle: "La Odisea", author: "Homero", year: -800, category: "ÉPICA", topic: "Literatura", totalStars: 0, cover: "./imagenportada/lit_odisea.png", audio: "./audio/lit_odisea.mp3",
+                synopsis: "El viaje del héroe griego Odiseo (Ulises) para regresar a casa, a Ítaca, después de la Guerra de Troya, enfrentándose a cíclopes, sirenas y dioses iracundos.",
+                quiz: [
+                    { q: "¿Qué evento precede el viaje de Odiseo?", a: ["La fundación de Roma", "La Guerra de Troya", "El viaje de los Argonautas", "El exilio de Tebas"], correct: 1 },
+                    { q: "¿Qué dios es su principal antagonista?", a: ["Zeus", "Atenea", "Poseidón", "Hades"], correct: 2 },
+                    { q: "¿Cómo se llama su esposa?", a: ["Elena", "Calipso", "Penélope", "Circe"], correct: 2 },
+                    { q: "¿Qué usa Odiseo para escapar del cíclope Polifemo?", a: ["Un arco", "El vino y el engaño", "Un caballo de madera", "Su fuerza"], correct: 1 },
+                    { q: "¿Qué son las Sirenas?", a: ["Pájaros gigantes", "Mujeres hermosas", "Monstruos marinos", "Criaturas que atraen marineros con su canto"], correct: 3 },
+                    { q: "¿Cuántos años dura el viaje de Odiseo?", a: ["5 años", "10 años", "20 años", "30 años"], correct: 1 },
+                    { q: "¿Qué isla es el hogar de Odiseo?", a: ["Ítaca", "Creta", "Lesbos", "Rodas"], correct: 0 }
+                ]
+            },
+
+            // --- PELÍCULAS DE CINE ---
+            { id: 13, title: "El baile de la muerte", originalTitle: "Pulp Fiction", author: "Quentin Tarantino", year: 1994, category: "DRAMA/CRIMEN", topic: "Cine", totalStars: 0, cover: "./imagenportada/cine_pulpfiction.png", audio: "./audio/cine_pulpfiction.mp3",
+                synopsis: "Varias historias entrelazadas de crimen, redención y violencia en Los Ángeles, protagonizadas por Vincent Vega, Jules Winnfield y otros personajes memorables.",
+                lyrics: "En las calles de Los Ángeles, baila la muerte con su guadaña,\nVincent y Jules en su viaje loco,\nUna maleta misteriosa, un Big Kahuna Burger...\n\nMia Wallace en su overdose,\nJimmie Dimmick y su esposa,\nEl limpiador Winston Wolfe,\nY el twist final que nos sorprende...",
+                quiz: [
+                    { q: "¿Quién dirige Pulp Fiction?", a: ["Martin Scorsese", "Quentin Tarantino", "Steven Spielberg", "Francis Ford Coppola"], correct: 1 },
+                    { q: "¿Qué contiene la maleta?", a: ["Dinero", "Drogas", "Una cabeza", "No se revela"], correct: 3 },
+                    { q: "¿Cómo se llama el personaje de Samuel L. Jackson?", a: ["Vincent Vega", "Jules Winnfield", "Butch Coolidge", "Pumpkin"], correct: 1 },
+                    { q: "¿Qué bailan Vincent y Mia?", a: ["Twist", "Waltz", "Tango", "No bailan"], correct: 0 },
+                    { q: "¿Qué profesión tiene Butch?", a: ["Boxeador", "Gángster", "Taxista", "Actor"], correct: 0 },
+                    { q: "¿Qué cita bíblica repite Jules?", a: ["Ezequiel 25:17", "Salmo 23", "Juan 3:16", "Mateo 5:5"], correct: 0 },
+                    { q: "¿En qué año se estrenó la película?", a: ["1992", "1994", "1996", "1998"], correct: 1 }
+                ]
+            },
+            { id: 15, title: "Más allá del horizonte", originalTitle: "Interestelar", author: "Christopher Nolan", year: 2014, category: "CIENCIA FICCIÓN", topic: "Cine", totalStars: 0, cover: "./imagenportada/cine_interestelar.png", audio: "./audio/cine_interestelar.mp3",
+                synopsis: "En un futuro donde la Tierra agoniza, un grupo de astronautas viaja a través de un agujero de gusano en busca de un nuevo hogar para la humanidad.",
+                lyrics: "En un mundo donde el polvo cubre todo,\nCooper deja a sus hijos por salvar el futuro,\nUn agujero negro llamado Gargantúa,\nY el amor que trasciende el tiempo...\n\nMurph y su hermano Tom,\nEl robot TARS con su humor,\nPlanetas hostiles y el quinto dimensional,\nLa clave está en la gravedad...",
+                quiz: [
+                    { q: "¿Quién dirige Interestelar?", a: ["James Cameron", "Ridley Scott", "Christopher Nolan", "Steven Spielberg"], correct: 2 },
+                    { q: "¿Cuál es la profesión de Cooper?", a: ["Científico", "Piloto/Agricultor", "Ingeniero", "Militar"], correct: 1 },
+                    { q: "¿Qué planeta es habitable?", a: ["Miller", "Mann", "Edmunds", "Ninguno"], correct: 2 },
+                    { q: "¿Qué representa el polvo en la película?", a: ["Contaminación", "Okies", "Polvo cósmico", "No representa nada"], correct: 1 },
+                    { q: "¿Cómo se llama la hija de Cooper?", a: ["Murph", "Brand", "Amelia", "Lois"], correct: 0 },
+                    { q: "¿Qué teoría científica se explora?", a: ["Teoría de cuerdas", "Relatividad general", "Agujeros negros", "Todas las anteriores"], correct: 3 },
+                    { q: "¿En qué año se estrenó?", a: ["2012", "2014", "2016", "2018"], correct: 1 }
+                ]
+            },
+            { id: 27, title: "El niño de las estrellas", originalTitle: "E.T. el extraterrestre", author: "Steven Spielberg", year: 1982, category: "AVENTURA/FANTASÍA", topic: "Cine", totalStars: 0, cover: "./imagenportada/cine_et.png", audio: "./audio/cine_et.mp3",
+                synopsis: "Un niño llamado Elliott encuentra un extraterrestre varado en la Tierra y decide ayudarlo a regresar a su hogar, formando una profunda amistad.",
+                lyrics: "En una noche estrellada, Elliott encuentra a E.T.,\nUn alienígena perdido en nuestro planeta,\nCon su dedo luminoso y su voz extraña,\n'Reeeady player one' en su bicicleta voladora...\n\nGertie y Michael, la familia entera,\nEl gobierno persiguiendo al pequeño ser,\nY el poder del amor que lo hace volar,\nDe vuelta a casa, a las estrellas...",
+                quiz: [
+                    { q: "¿Quién dirige E.T.?", a: ["George Lucas", "Steven Spielberg", "James Cameron", "Tim Burton"], correct: 1 },
+                    { q: "¿Cómo se llama el niño protagonista?", a: ["Mike", "Elliott", "Greg", "Steve"], correct: 1 },
+                    { q: "¿Qué come E.T. para emborracharse?", a: ["Cerveza", "Vino", "Reese's Pieces", "M&M's"], correct: 2 },
+                    { q: "¿Qué frase dice E.T.?", a: ["E.T. phone home", "May the force be with you", "Hasta la vista, baby", "I'm the king of the world"], correct: 0 },
+                    { q: "¿Cómo viajan en bicicleta?", a: ["Con cuerdas", "Con magia", "Con el pensamiento", "No vuelan"], correct: 0 },
+                    { q: "¿Qué representa E.T.?", a: ["Un invasor", "La amistad", "La tecnología", "El miedo"], correct: 1 },
+                    { q: "¿En qué año se estrenó?", a: ["1980", "1982", "1984", "1986"], correct: 1 }
+                ]
+            },
+            { id: 14, title: "La familia Corleone", originalTitle: "El padrino", author: "Francis Ford Coppola", year: 1972, category: "DRAMA/CRIMEN", topic: "Cine", totalStars: 0, cover: "./imagenportada/cine_padrino.png", audio: "./audio/cine_padrino.mp3",
+                synopsis: "La historia de la familia mafiosa Corleone, liderada por Vito Corleone, y la sucesión de su hijo Michael en el mundo del crimen organizado.",
+                lyrics: "En las sombras de Nueva York, Vito Corleone reina,\n'Oferta que no puedes rechazar' es su ley,\nMichael el hijo, el que no quería ser,\nPero el destino lo lleva al trono...\n\nClemenza y Tessio, los capos leales,\nLuca Brasi duerme con los peces,\nLa venganza por el atentado,\nQue cambia el curso de la familia...",
+                quiz: [
+                    { q: "¿Quién dirige El padrino?", a: ["Martin Scorsese", "Francis Ford Coppola", "Sergio Leone", "Brian De Palma"], correct: 1 },
+                    { q: "¿Cómo se llama el patriarca?", a: ["Michael Corleone", "Vito Corleone", "Sonny Corleone", "Fredo Corleone"], correct: 1 },
+                    { q: "¿Qué profesión tiene Vito?", a: ["Policía", "Político", "Jefe mafioso", "Abogado"], correct: 2 },
+                    { q: "¿Qué le ofrecen a Vito?", a: ["Dinero", "Poder", "Drogas", "Protección"], correct: 3 },
+                    { q: "¿Cómo muere Sonny?", a: ["En una guerra", "En un atentado", "En un tiroteo", "De enfermedad"], correct: 1 },
+                    { q: "¿Qué representa la película?", a: ["La mafia italiana", "La inmigración", "El poder", "Todas las anteriores"], correct: 3 },
+                    { q: "¿En qué año se estrenó?", a: ["1970", "1972", "1974", "1976"], correct: 1 }
+                ]
+            },
+            { id: 26, title: "La ciudad de los marginados", originalTitle: "Cidade de Deus", author: "Fernando Meirelles", year: 2002, category: "DRAMA/CRIMEN", topic: "Cine", totalStars: 0, cover: "./imagenportada/cine_ciudaddedios.png", audio: "./audio/cine_ciudaddedios.mp3",
+                synopsis: "La vida en las favelas de Río de Janeiro, siguiendo la historia de Buscapé y Zé Pequeno en su ascenso en el mundo del narcotráfico.",
+                lyrics: "En las favelas de Río, donde el sol brilla pero la vida es dura,\nBuscapé sueña con ser fotógrafo,\nZé Pequeno y Li'l Zé reinan con violencia...\n\nLa guerra entre bandas, el tráfico de drogas,\nLa pobreza y la esperanza en un lugar olvidado,\nY el ciclo de violencia que parece eterno,\nEn Ciudad de Deus...",
+                quiz: [
+                    { q: "¿Quién dirige Ciudad de Deus?", a: ["Walter Salles", "Fernando Meirelles", "José Padilha", "Afonso Poyart"], correct: 1 },
+                    { q: "¿En qué país se desarrolla?", a: ["Argentina", "Brasil", "México", "Colombia"], correct: 1 },
+                    { q: "¿Cómo se llama el protagonista?", a: ["Zé Pequeno", "Buscapé", "Bené", "Cenoura"], correct: 1 },
+                    { q: "¿Qué profesión quiere Buscapé?", a: ["Fotógrafo", "Policía", "Narco", "Músico"], correct: 0 },
+                    { q: "¿Qué representa la película?", a: ["El turismo", "La violencia urbana", "La samba", "El fútbol"], correct: 1 },
+                    { q: "¿Cómo se llama el lugar?", a: ["Rocinha", "Cidade de Deus", "Vidigal", "Complexo do Alemão"], correct: 1 },
+                    { q: "¿En qué año se estrenó?", a: ["2000", "2002", "2004", "2006"], correct: 1 }
+                ]
+            },
+            { id: 20, title: "La furia del camino", originalTitle: "Mad Max", author: "George Miller", year: 1979, category: "ACCIÓN", topic: "Cine", totalStars: 0, cover: "./imagenportada/cine_madmax.png", audio: "./audio/cine_madmax.mp3",
+                synopsis: "En un futuro post-apocalíptico, Max Rockatansky, un policía perseguido por una banda de motoristas, busca venganza por la muerte de su familia.",
+                lyrics: "En un mundo sin ley, donde el combustible es oro,\nMax el policía, con su interceptor negro,\nToecutter y su banda de locos,\nPersiguiendo al último de los V8...\n\nLa venganza por Jessie y Sprog,\nEl desierto australiano como escenario,\nY la furia que impulsa a Max,\nEn la carretera hacia la locura...",
+                quiz: [
+                    { q: "¿Quién dirige Mad Max?", a: ["George Miller", "Mad Max", "Mel Gibson", "Hugh Keays-Byrne"], correct: 0 },
+                    { q: "¿En qué país se filma?", a: ["EEUU", "Australia", "Canadá", "Nueva Zelanda"], correct: 1 },
+                    { q: "¿Qué profesión tiene Max?", a: ["Bandido", "Policía", "Mecánico", "Piloto"], correct: 1 },
+                    { q: "¿Cómo se llama el líder de la banda?", a: ["Nightrider", "Toecutter", "Buzzsaw", "Cundalini"], correct: 1 },
+                    { q: "¿Qué representa la película?", a: ["El futuro", "La anarquía", "La venganza", "Todas las anteriores"], correct: 3 },
+                    { q: "¿Qué vehículo conduce Max?", a: ["Ford Falcon", "Interceptor", "Mustang", "Camaro"], correct: 1 },
+                    { q: "¿En qué año se estrenó?", a: ["1977", "1979", "1981", "1983"], correct: 1 }
+                ]
+            },
+            { id: 16, title: "Esperanza en la prisión", originalTitle: "Cadena perpetua", author: "Frank Darabont", year: 1994, category: "DRAMA", topic: "Cine", totalStars: 0, cover: "./imagenportada/cine_cadenaperpetua.png", audio: "./audio/cine_cadenaperpetua.mp3",
+                synopsis: "Andy Dufresne, condenado injustamente por asesinato, encuentra esperanza y redención en la prisión de Shawshank a través de la amistad y la perseverancia.",
+                lyrics: "En las paredes grises de Shawshank,\nAndy Dufresne llega con su inocencia,\nRed el narrador, Brooks el cuervo,\nY la esperanza que nunca muere...\n\nLa biblioteca como refugio,\nLa cerveza en el techo, la música de Mozart,\nY el túnel de esperanza excavado con paciencia,\nHacia la libertad...",
+                quiz: [
+                    { q: "¿Quién dirige Cadena perpetua?", a: ["Stephen King", "Frank Darabont", "Rob Reiner", "Tim Robbins"], correct: 1 },
+                    { q: "¿Cómo se llama el protagonista?", a: ["Ellis Redding", "Andy Dufresne", "Brooks Hatlen", "Warden Norton"], correct: 1 },
+                    { q: "¿Por qué está Andy en prisión?", a: ["Robo", "Asesinato", "Fraude", "Es inocente"], correct: 3 },
+                    { q: "¿Qué representa la esperanza?", a: ["Un pájaro", "Una carta", "Un túnel", "Todas las anteriores"], correct: 3 },
+                    { q: "¿Cómo se llama el amigo de Andy?", a: ["Red", "Brooks", "Tommy", "Heywood"], correct: 0 },
+                    { q: "¿Qué profesión tiene Andy?", a: ["Banquero", "Abogado", "Contador", "Ingeniero"], correct: 0 },
+                    { q: "¿En qué año se estrenó?", a: ["1992", "1994", "1996", "1998"], correct: 1 }
+                ]
+            },
+            { id: 28, title: "La guerra de las galaxias", originalTitle: "Star Wars", author: "George Lucas", year: 1977, category: "CIENCIA FICCIÓN/AVENTURA", topic: "Cine", totalStars: 0, cover: "./imagenportada/cine_starwars.png", audio: "./audio/cine_starwars.mp3",
+                synopsis: "Luke Skywalker se une a la Alianza Rebelde para derrotar al Imperio Galáctico y aprender los caminos de la Fuerza junto a Obi-Wan y Yoda.",
+                lyrics: "Hace mucho tiempo, en una galaxia lejana,\nLuke Skywalker encuentra a Obi-Wan,\nLa princesa Leia, Han Solo y Chewbacca,\nContra Darth Vader y el Emperador...\n\nLa Fuerza que nos rodea,\nEl lado luminoso y el oscuro,\nY la batalla por la libertad,\nEn Star Wars, la saga comienza...",
+                quiz: [
+                    { q: "¿Quién crea Star Wars?", a: ["Steven Spielberg", "George Lucas", "James Cameron", "Ridley Scott"], correct: 1 },
+                    { q: "¿Cómo se llama el protagonista?", a: ["Han Solo", "Luke Skywalker", "Obi-Wan", "Darth Vader"], correct: 1 },
+                    { q: "¿Qué es la Fuerza?", a: ["Un arma", "Una energía", "Un planeta", "Un ejército"], correct: 1 },
+                    { q: "¿Cómo se llama el maestro Jedi?", a: ["Yoda", "Qui-Gon", "Mace Windu", "Anakin"], correct: 0 },
+                    { q: "¿Qué representa el Imperio?", a: ["La democracia", "La tiranía", "La paz", "La libertad"], correct: 1 },
+                    { q: "¿Qué nave pilotea Han Solo?", a: ["X-Wing", "TIE Fighter", "Millennium Falcon", "Star Destroyer"], correct: 2 },
+                    { q: "¿En qué año se estrenó?", a: ["1975", "1977", "1979", "1981"], correct: 1 }
+                ]
+            }
+        ];
+
+        /**
+         * Calcula el próximo lunes a medianoche.
+         */
+        function getNextMondayMidnight() {
+            const now = new Date();
+            const dayOfWeek = now.getDay(); // 0 = Domingo, 1 = Lunes, ...
+            const daysUntilMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
+            const nextMonday = new Date(now.getTime() + daysUntilMonday * DAY_IN_MS);
+            nextMonday.setHours(0, 0, 0, 0); // Medianoche
+            return Timestamp.fromDate(nextMonday);
+        }
+
+        /**
+         * Inicializa las estrellas de las canciones usando datos reales de Firestore.
+         * Es llamada una sola vez después de que el usuario se autentique.
+         */
+        async function initializeRankingStars() {
+            try {
+                console.log("Inicializando puntuación de canciones desde Firestore...");
+                const songsRef = collection(db, 'songs');
+                const songDocs = await getDocs(songsRef);
+                
+                if (!songDocs.empty) {
+                    songDocs.forEach((doc) => {
+                        const firestoreData = doc.data();
+                        const songId = parseInt(doc.id);
+                        
+                        // Buscar la canción en el array local
+                        const localSong = songs.find(s => s.id === songId);
+                        if (localSong) {
+                            localSong.totalStars = firestoreData.totalStars || 0;
+                            console.log(`Canción ${localSong.title}: ${localSong.totalStars} estrellas`);
+                        }
+                    });
+                } else {
+                    console.log("No hay datos de canciones en Firestore. Usando valores predeterminados (0).");
+                }
+            } catch (error) {
+                console.error("Error al cargar estrellas desde Firestore:", error);
+            }
+        }
+        window.initializeRankingStars = initializeRankingStars;
+
+        /**
+         * Carga los datos del usuario desde Firestore, aplica la lógica de reseteo diario/semanal
+         * y los sincroniza con las variables de estado locales.
+         */
+        async function loadUserData() {
+            if (!currentUserId) return;
+            try {
+                console.log("Cargando datos de usuario...");
+                const userRef = doc(db, 'users', currentUserId);
+                const docSnap = await getDoc(userRef);
+                const now = Timestamp.now();
+                const nowTime = now.toMillis();
+                const updateData = {}; // Objeto para almacenar los cambios a guardar en Firebase
+                
+                // Si el documento no existe, crear uno con valores iniciales
+                if (!docSnap.exists()) {
+                    console.log("Creando documento de usuario inicial...");
+                    await setDoc(userRef, {
+                        userStars: 0,
+                        userDiamonds: 0,
+                        userCoins: 0,
+                        votesRemaining: maxVotes,
+                        quizLog: {},
+                        voteLog: {},
+                        lastQuizLogResetDate: now,
+                        weeklyVotesResetDate: getNextMondayMidnight(),
+                        lastVoteLogResetDate: now,
+                        createdAt: now
+                    });
+                    // Recargar después de crear
+                    return loadUserData();
+                }
+
+                const data = docSnap.data();
+                // 1. CARGA INICIAL DE DATOS
+                userStars = data.userStars || 0;
+                userDiamonds = data.userDiamonds || 0;
+                userCoins = data.userCoins || 0;
+                votesRemaining = data.votesRemaining !== undefined ? data.votesRemaining : maxVotes;
+                userQuizLog = data.quizLog || {};
+                userVoteLog = data.voteLog || {};
+                // 2. MONEDAS DIARIAS AHORA SE MANEJAN SOLO DESDE PERFIL.HTML
+                // No hay lógica automática de monedas diarias en el reproductor
+                // 3. LÓGICA DE RESET SEMANAL DE QUIZ LOG
+                const lastQuizLogReset = data.lastQuizLogResetDate ? data.lastQuizLogResetDate.toDate().getTime() : 0;
+                if (nowTime - lastQuizLogReset >= WEEK_IN_MS) {
+                    console.log("Reiniciando quiz log semanal...");
+                    userQuizLog = {};
+                    updateData.quizLog = {};
+                    updateData.lastQuizLogResetDate = now;
+                }
+                // 4. LÓGICA DE RESET SEMANAL DE VOTOS
+                const weeklyVotesResetDate = data.weeklyVotesResetDate ? data.weeklyVotesResetDate.toDate().getTime() : 0;
+                if (nowTime >= weeklyVotesResetDate) {
+                    console.log("Reiniciando votos semanales...");
+                    votesRemaining = maxVotes;
+                    userVoteLog = {};
+                    updateData.votesRemaining = maxVotes;
+                    updateData.voteLog = {};
+                    updateData.lastVoteLogResetDate = now;
+                    updateData.weeklyVotesResetDate = getNextMondayMidnight();
+                }
+                // 5. ACTUALIZAR FIREBASE SI HAY CAMBIOS
+                if (Object.keys(updateData).length > 0) {
+                    console.log("Actualizando datos de reseteo en Firebase...", updateData);
+                    await updateDoc(userRef, updateData);
+                }
+                console.log("Estado del usuario actualizado:", {
+                    userStars, userDiamonds, userCoins, votesRemaining,
+                    quizLogCount: Object.keys(userQuizLog).length,
+                    voteLogCount: Object.keys(userVoteLog).length
+                });
+                // Actualizar UI
+                updateHeaderDisplays();
+                
+            } catch (error) {
+                console.error('Error al cargar datos de usuario:', error);
+                console.log("Error de conexión. Usando valores predeterminados.");
+            }
+        }
+        window.loadUserData = loadUserData;
+
+        /**
+         * Función que maneja el cierre de sesión del usuario
+         */
+        function logout() {
+            signOut(auth).then(() => {
+                console.log("Usuario desconectado");
+                window.location.href = 'index.html';
+            }).catch((error) => {
+                console.error("Error al cerrar sesión:", error);
+            });
+        }
+        window.logout = logout;
+
+        /**
+         * Observador de autenticación. Se ejecuta al cargar la página para mantener la sesión.
+         */
+        function initAuthObserver() {
+            onAuthStateChanged(auth, async (user) => {
+                try {
+                    if (user) {
+                        console.log("Usuario autenticado:", user.uid);
+                        currentUser = user;
+                        currentUserId = user.uid;
+                        
+                        // Cargar datos de usuario y ranking
+                        await loadUserData();
+                        await initializeRankingStars();
+                        
+                        // Renderizar el ranking inicial
+                        renderRanking();
+                        
+                        // Inicializar referencias a elementos DOM
+                        playPauseBtn = document.getElementById('playPauseBtn');
+                        progressBar = document.querySelector('.progress-bar-custom');
+                        currentTimeDisplay = document.getElementById('currentTimeDisplay');
+                        durationDisplay = document.getElementById('durationDisplay');
+                        volumeControl = document.getElementById('volumeControl');
+                        
+                    } else {
+                        console.log("Usuario no autenticado, redirigiendo a login");
+                        window.location.href = 'index.html';
+                    }
+                } catch (error) {
+                    console.error("Error en auth observer:", error);
+                    document.getElementById('songsContainer').innerHTML = '<div class="text-center text-red-400 p-8">Error al cargar datos. Recarga la página o verifica tu conexión.</div>';
+                }
+            });
+        }
+        window.initAuthObserver = initAuthObserver; // Hacerla global
+
+        // --- 7. LÓGICA DEL REPRODUCTOR (Ahora con funcionalidad de audio) ---
+        function formatTime(seconds) {
+            const min = Math.floor(seconds / 60);
+            const sec = Math.floor(seconds % 60);
+            return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+        }
+        // Inicializar el reproductor de audio y sus listeners
+        function setupAudioPlayer() {
+            // Reproducir/Pausar
+            playPauseBtn = document.getElementById('playPauseBtn');
+            progressBar = document.querySelector('.progress-bar-custom');
+            currentTimeDisplay = document.getElementById('currentTimeDisplay');
+            durationDisplay = document.getElementById('durationDisplay');
+            volumeControl = document.getElementById('volumeControl');
+            
+            if (playPauseBtn) {
+                playPauseBtn.onclick = togglePlayPause;
+            }
+            
+            // Actualizar progreso
+            currentAudio.ontimeupdate = () => {
+                if (progressBar && currentAudio.duration) {
+                    const progress = (currentAudio.currentTime / currentAudio.duration) * 100;
+                    progressBar.value = progress;
+                }
+                if (currentTimeDisplay) {
+                    currentTimeDisplay.textContent = formatTime(currentAudio.currentTime);
+                }
+            };
+            
+            // Fin de la canción
+            currentAudio.onended = () => {
+                isPlaying = false;
+                if (playPauseBtn) {
+                    playPauseBtn.innerHTML = '<i class="fas fa-play text-xs"></i>';
+                }
+            };
+            
+            // Carga de metadatos (para obtener duración)
+            currentAudio.onloadedmetadata = () => {
+                if (durationDisplay) {
+                    durationDisplay.textContent = formatTime(currentAudio.duration);
+                }
+            };
+            
+            // Control de barra de progreso (arrastrar)
+            if (progressBar) {
+                progressBar.onchange = () => {
+                    if (currentAudio.duration) {
+                        currentAudio.currentTime = (progressBar.value / 100) * currentAudio.duration;
+                    }
+                };
+            }
+            
+            // Control de volumen
+            if (volumeControl) {
+                volumeControl.onchange = () => {
+                    currentAudio.volume = volumeControl.value / 100;
+                };
+            }
+        }
+
+        function togglePlayPause() {
+            if (isPlaying) {
+                pauseSong();
+            } else {
+                if (currentSongId) {
+                    resumeSong();
+                }
+            }
+        }
+
+        function playSong(songId) {
+            const song = songs.find(s => s.id === songId);
+            if (!song) return;
+            
+            // Si hay una canción reproduciéndose, pararla
+            if (currentSongId !== songId) {
+                currentAudio.pause();
+                currentAudio.src = song.audio;
+                currentAudio.load();
+                currentSongId = songId;
+                
+                // Actualizar info del reproductor en el pie de página
+                const playerCover = document.getElementById('playerCover');
+                const playerTitle = document.getElementById('playerTitle');
+                const playerAuthor = document.getElementById('playerAuthor');
+                
+                if (playerCover) playerCover.style.backgroundImage = `url('${song.cover}')`;
+                if (playerTitle) playerTitle.textContent = song.title;
+                if (playerAuthor) playerAuthor.textContent = song.author;
+            }
+            
+            currentAudio.play();
+            isPlaying = true;
+            if (playPauseBtn) {
+                playPauseBtn.innerHTML = '<i class="fas fa-pause text-xs"></i>';
+            }
+        }
+
+        function pauseSong() {
+            currentAudio.pause();
+            isPlaying = false;
+            if (playPauseBtn) {
+                playPauseBtn.innerHTML = '<i class="fas fa-play text-xs"></i>';
+            }
+        }
+
+        function resumeSong() {
+            currentAudio.play();
+            isPlaying = true;
+            if (playPauseBtn) {
+                playPauseBtn.innerHTML = '<i class="fas fa-pause text-xs"></i>';
+            }
+        }
+
+        // Nueva función para reproducir desde la carta
+        function playFromCard(songId) {
+            playSong(songId);
+        }
+        window.playFromCard = playFromCard;
+        
+        // --- 8. LÓGICA DEL RANKING ---
+        function updateHeaderDisplays() {
+            const starsElement = document.getElementById('starCount');
+            const diamondsElement = document.getElementById('diamondCount');
+            const coinsElement = document.getElementById('coinCount');
+            const votesElement = document.getElementById('voteCount');
+            
+            if (starsElement) starsElement.textContent = userStars;
+            if (diamondsElement) diamondsElement.textContent = userDiamonds;
+            if (coinsElement) coinsElement.textContent = userCoins;
+            if (votesElement) votesElement.textContent = votesRemaining;
+        }
+
+        function renderRanking() {
+            const container = document.getElementById('songsContainer');
+            const topicDisplay = document.getElementById('currentTopicDisplay');
+            
+            if (!container || !topicDisplay) return;
+            
+            // Actualizar el título de la sala
+            topicDisplay.textContent = currentTopic;
+            
+            // Filtrar canciones por el tema actual
+            const topicSongs = songs.filter(song => song.topic === currentTopic);
+            
+            // Ordenar por totalStars (descendente)
+            topicSongs.sort((a, b) => b.totalStars - a.totalStars);
+            
+            let html = '';
+            topicSongs.forEach((song, index) => {
+                const rankClass = index < 3 ? 'border-yellow-500' : 'border-slate-600';
+                const rankIcon = index === 0 ? '👑' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+                
+                // Verificar si se puede hacer quiz (no completado esta semana)
+                const canDoQuiz = !userQuizLog[song.id] || !userQuizLog[song.id].completed;
+                
+                // Verificar si se puede votar (usuario no ha votado por esta canción esta semana)
+                const canVote = !userVoteLog[song.id] && votesRemaining > 0;
+                
+                html += `
+                    <div class="bg-slate-800/90 backdrop-blur border ${rankClass} rounded-xl p-6 hover:bg-slate-700/90 transition-all duration-300 song-card relative">
+                        <!-- Play button overlay -->
+                        <div class="play-btn-overlay" onclick="playFromCard(${song.id})">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        
+                        <div class="flex flex-col lg:flex-row gap-6">
+                            <div class="flex-shrink-0 w-full lg:w-48">
+                                <img src="${song.cover}" alt="${song.title}" class="w-full h-48 lg:h-32 object-cover rounded-lg shadow-md">
+                            </div>
+                            
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="text-2xl">${rankIcon}</span>
+                                            <h3 class="text-xl font-bold text-white">${song.title}</h3>
+                                        </div>
+                                        <p class="text-sm text-gray-400">
+                                            <strong>Obra Original:</strong> ${song.originalTitle} (${song.year})
+                                        </p>
+                                        <p class="text-sm text-gray-400">
+                                            <strong>Autor:</strong> ${song.author} | <strong>Categoría:</strong> ${song.category}
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-1 text-yellow-400">
+                                        <i class="fas fa-star"></i>
+                                        <span class="font-bold text-lg">${song.totalStars}</span>
+                                    </div>
+                                </div>
+                                
+                                <p class="text-gray-300 text-sm mb-4 leading-relaxed">${song.synopsis}</p>
+                                
+                                <div class="flex flex-wrap gap-3">
+                                    ${canDoQuiz ? `
+                                        <button onclick="startQuiz(${song.id})" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                            📝 Quiz (¡Gana estrellas y diamantes!)
+                                        </button>
+                                    ` : `
+                                        <span class="bg-gray-600 px-4 py-2 rounded-lg text-sm text-gray-300">
+                                            ✅ Quiz completado esta semana
+                                        </span>
+                                    `}
+                                    
+                                    ${canVote ? `
+                                        <button onclick="openVoteModal(${song.id})" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                            ⭐ Votar (${votesRemaining} votos restantes)
+                                        </button>
+                                    ` : `
+                                        <span class="bg-gray-600 px-4 py-2 rounded-lg text-sm text-gray-300">
+                                            ${userVoteLog[song.id] ? `✅ Ya votaste: ⭐ ${userVoteLog[song.id].stars}` : '❌ Sin votos restantes'}
+                                        </span>
+                                    `}
+                                    
+                                    <button onclick="showLyrics(${song.id})" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                        🎵 Ver Letra
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        window.renderRanking = renderRanking;
+
+        // --- 9. QUIZ ---
+        function startQuiz(songId) {
+            const song = songs.find(s => s.id === songId);
+            if (!song || !song.quiz) {
+                console.error("Error: Canción no encontrada o sin quiz.");
+                return;
+            }
+            
+            // Reset variables del quiz
+            activeQuizSongId = songId;
+            currentQuestionIndex = 0;
+            correctQuizAnswers = 0;
+            
+            // Mostrar modal del quiz
+            document.getElementById('quizModal').classList.remove('hidden');
+            document.getElementById('quizModal').classList.add('flex');
+            renderQuizQuestion(0);
+        }
+        window.startQuiz = startQuiz;
+
+        function renderQuizQuestion(questionIndex) {
+            const song = songs.find(s => s.id === activeQuizSongId);
+            if (!song || !song.quiz[questionIndex]) return;
+            
+            const currentQ = song.quiz[questionIndex];
+            const totalQuestions = song.quiz.length;
+            
+            // Actualizar contenido del modal
+            document.getElementById('quizSongTitle').textContent = song.title;
+            document.getElementById('quizProgress').textContent = `Pregunta ${questionIndex + 1} de ${totalQuestions}`;
+            document.getElementById('quizQuestion').textContent = currentQ.q;
+            
+            // Renderizar opciones
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+            
+            currentQ.a.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'quiz-option w-full text-left p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors';
+                button.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
+                button.onclick = () => selectAnswer(index);
+                optionsContainer.appendChild(button);
+            });
+            
+            // Reset feedback y botón
+            document.getElementById('quizFeedback').classList.add('hidden');
+            const btn = document.getElementById('verifyAnswerButton');
+            btn.textContent = 'Verificar Respuesta';
+            btn.onclick = verifyAnswer;
+            btn.disabled = true;
+        }
+
+        function selectAnswer(optionIndex) {
+            // Remover selección previa
+            document.querySelectorAll('.quiz-option').forEach(opt => {
+                opt.classList.remove('bg-blue-600', 'bg-slate-600');
+                opt.classList.add('bg-slate-700');
+            });
+            
+            // Marcar la opción seleccionada
+            const selectedOption = document.querySelectorAll('.quiz-option')[optionIndex];
+            selectedOption.classList.remove('bg-slate-700');
+            selectedOption.classList.add('bg-blue-600');
+            
+            // Habilitar el botón
+            document.getElementById('verifyAnswerButton').disabled = false;
+            
+            // Guardar la respuesta seleccionada
+            window.selectedAnswerIndex = optionIndex;
+        }
+
+        function verifyAnswer() {
+            if (window.selectedAnswerIndex === undefined) return;
+            
+            const song = songs.find(s => s.id === activeQuizSongId);
+            const currentQ = song.quiz[currentQuestionIndex];
+            const isCorrect = window.selectedAnswerIndex === currentQ.correct;
+            
+            if (isCorrect) {
+                correctQuizAnswers++;
+            }
+            
+            // Mostrar feedback
+            const feedbackDiv = document.getElementById('quizFeedback');
+            const feedbackText = document.getElementById('quizFeedbackText');
+            
+            if (isCorrect) {
+                feedbackText.textContent = "¡Correcto! 🎉";
+                feedbackText.className = "text-lg font-semibold text-green-400";
+            } else {
+                feedbackText.textContent = "Incorrecto. La respuesta correcta es: " + currentQ.a[currentQ.correct];
+                feedbackText.className = "text-lg font-semibold text-red-400";
+            }
+            feedbackDiv.classList.remove('hidden');
+            
+            // Para la última pregunta, finalizar automáticamente después de 1.5s
+            if (currentQuestionIndex === song.quiz.length - 1) {
+                setTimeout(() => submitQuiz(), 1500);
+            } else {
+                // Cambiar botón a Siguiente
+                const btn = document.getElementById('verifyAnswerButton');
+                btn.textContent = `Siguiente Pregunta (${currentQuestionIndex + 2}/${song.quiz.length})`;
+                btn.onclick = nextQuestion;
+            }
+        }
+        
+        function nextQuestion() {
+            currentQuestionIndex++;
+            renderQuizQuestion(currentQuestionIndex);
+        }
+        
+        async function submitQuiz() {
+            if (!currentUserId) return;
+            const score = correctQuizAnswers;
+            const song = songs.find(s => s.id === activeQuizSongId);
+            const userRef = doc(db, 'users', currentUserId);
+            
+            // 1. Calcular recompensas (Sistema actualizado)
+            const starsEarned = score * 5; // 5 estrellas por respuesta correcta
+            
+            let diamondsEarned = 0;
+            let bonusStars = 0;
+            
+            if (score >= 5) {
+                // Acertando 5+ preguntas: 1 diamante + 10 estrellas bonus
+                diamondsEarned += 1;
+                bonusStars += 10;
+            }
+            
+            if (score === 7) {
+                // Acertando todas (7/7): el doble (1 diamante + 10 estrellas bonus adicionales)
+                diamondsEarned += 1; // +1 diamante adicional = 2 total
+                bonusStars += 10; // +10 estrellas adicionales = 20 total de bonus
+            }
+            
+            const totalStarsGained = starsEarned + bonusStars;
+            
+            // 2. Actualizar estado local (Optimista)
+            userStars += totalStarsGained;
+            userDiamonds += diamondsEarned;
+            
+            // Registrar información detallada del quiz para perfil.html
+            userQuizLog[song.id] = {
+                completed: true,
+                score: score,
+                stars: totalStarsGained,
+                diamonds: diamondsEarned,
+                timestamp: new Date().toISOString()
+            };
+            
+            // 3. Actualizar datos en Firebase PRIMERO
+            try {
+                await updateDoc(userRef, {
+                    userStars: userStars,
+                    userDiamonds: userDiamonds,
+                    quizLog: userQuizLog
+                });
+                console.log("Quiz guardado en Firebase correctamente");
+            } catch (error) {
+                console.error('Error al guardar quiz en Firebase:', error);
+                alert("Error al guardar el quiz. Inténtalo de nuevo.");
+                return; // No continuar si hay error
+            }
+            
+            // 4. Cerrar modal y mostrar recompensas SOLO si se guardó correctamente
+            closeQuizModal();
+            updateHeaderDisplays();
+            renderRanking();
+
+            // Mostrar mensaje de recompensas
+            let rewardMsg = `¡Quiz completado!\\n\\n`;
+            rewardMsg += `📊 Puntuación: ${score}/7\\n`;
+            rewardMsg += `⭐ Estrellas ganadas: ${totalStarsGained}\\n`;
+            if (diamondsEarned > 0) {
+                rewardMsg += `💎 Diamantes ganados: ${diamondsEarned}\\n`;
+            }
+            alert(rewardMsg);
+        }
+        window.submitQuiz = submitQuiz;
+
+        function closeQuizModal() {
+            document.getElementById('quizModal').classList.add('hidden');
+            document.getElementById('quizModal').classList.remove('flex');
+            // Reset
+            activeQuizSongId = null;
+            window.selectedAnswerIndex = undefined;
+        }
+        window.closeQuizModal = closeQuizModal;
+
+        // --- 10. VOTOS ---
+        function openVoteModal(songId) {
+            const song = songs.find(s => s.id === songId);
+            if (!song) return;
+            
+            selectedSongIdForVote = songId;
+            selectedStarsForVote = 1; // Default
+            
+            // Actualizar contenido del modal
+            document.getElementById('voteSongTitle').textContent = song.title;
+            
+            // Generar estrellas
+            const starSelector = document.getElementById('starSelector');
+            starSelector.innerHTML = '';
+            for (let i = 1; i <= 5; i++) {
+                const star = document.createElement('i');
+                star.className = 'fas fa-star text-3xl cursor-pointer';
+                star.dataset.stars = i;
+                star.onclick = () => selectStars(i);
+                starSelector.appendChild(star);
+            }
+            updateStarDisplay();
+            
+            // Mostrar modal
+            document.getElementById('voteModal').classList.remove('hidden');
+            document.getElementById('voteModal').classList.add('flex');
+        }
+        window.openVoteModal = openVoteModal;
+
+        function selectStars(num) {
+            selectedStarsForVote = num;
+            updateStarDisplay();
+        }
+
+        function updateStarDisplay() {
+            const stars = document.querySelectorAll('#starSelector i');
+            stars.forEach((star, index) => {
+                if (index < selectedStarsForVote) {
+                    star.classList.add('text-yellow-400');
+                    star.classList.remove('text-gray-400');
+                } else {
+                    star.classList.add('text-gray-400');
+                    star.classList.remove('text-yellow-400');
+                }
+            });
+        }
+
+        async function submitVote() {
+            if (!currentUserId || !selectedSongIdForVote || selectedStarsForVote < 1) return;
+            
+            // Verificar que el usuario tenga votos disponibles
+            if (votesRemaining <= 0) {
+                alert("No tienes votos restantes esta semana.");
+                return;
+            }
+            
+            const songRef = doc(db, 'songs', selectedSongIdForVote.toString());
+            const userRef = doc(db, 'users', currentUserId);
+            
+            // 1. Actualizar estado local inmediatamente (UI optimista)
+            votesRemaining--;
+            userVoteLog[selectedSongIdForVote] = {
+                stars: selectedStarsForVote,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Actualizar totalStars local
+            const localSong = songs.find(s => s.id === selectedSongIdForVote);
+            if (localSong) {
+                localSong.totalStars += selectedStarsForVote;
+            }
+            
+            // 2. Cerrar modal y actualizar UI inmediatamente
+            closeVoteModal();
+            updateHeaderDisplays();
+            renderRanking();
+            
+            // Mostrar mensaje de confirmación
+            alert(`¡Voto enviado! Has dado ${selectedStarsForVote} estrella${selectedStarsForVote > 1 ? 's' : ''} a esta canción.`);
+            
+            // 3. Actualizar Firebase en background
+            try {
+                // Actualizar estrellas de la canción
+                const songSnap = await getDoc(songRef);
+                if (songSnap.exists()) {
+                    const currentStars = songSnap.data().totalStars || 0;
+                    await updateDoc(songRef, {
+                        totalStars: currentStars + selectedStarsForVote
+                    });
+                } else {
+                    await setDoc(songRef, {
+                        totalStars: selectedStarsForVote
+                    });
+                }
+                
+                // Actualizar datos del usuario
+                await updateDoc(userRef, {
+                    votesRemaining: votesRemaining,
+                    voteLog: userVoteLog
+                });
+                
+                console.log("Voto guardado en Firebase correctamente");
+            } catch (error) {
+                console.error('Error al guardar voto en Firebase:', error);
+                // En caso de error, revertir cambios locales
+                votesRemaining++;
+                delete userVoteLog[selectedSongIdForVote];
+                if (localSong) {
+                    localSong.totalStars -= selectedStarsForVote;
+                }
+                updateHeaderDisplays();
+                renderRanking();
+                alert("Error al enviar el voto. Inténtalo de nuevo.");
+            }
+        }
+        window.submitVote = submitVote;
+
+        function closeVoteModal() {
+            document.getElementById('voteModal').classList.add('hidden');
+            document.getElementById('voteModal').classList.remove('flex');
+            // Reset
+            selectedSongIdForVote = null;
+            selectedStarsForVote = 0;
+        }
+        window.closeVoteModal = closeVoteModal;
+
+        // --- 11. LETRA ---
+        function showLyrics(songId) {
+            const song = songs.find(s => s.id === songId);
+            if (!song) return;
+            
+            document.getElementById('lyricsSongTitle').textContent = song.title;
+            document.getElementById('lyricsContent').innerHTML = song.lyrics.replace(/\n/g, '<br>');
+            
+            document.getElementById('lyricsModal').classList.remove('hidden');
+            document.getElementById('lyricsModal').classList.add('flex');
+        }
+        window.showLyrics = showLyrics;
+
+        function closeLyricsModal() {
+            document.getElementById('lyricsModal').classList.add('hidden');
+            document.getElementById('lyricsModal').classList.remove('flex');
+        }
+        window.closeLyricsModal = closeLyricsModal;
+
+        // --- 12. SURVEY MODAL (Opcional - para feedback) ---
+        function closeSurveyModal() {
+            document.getElementById('surveyModal').classList.add('hidden');
+            document.getElementById('surveyModal').classList.remove('flex');
+        }
+        window.closeSurveyModal = closeSurveyModal;
+        
+        function closeErrorModal() {
+            document.getElementById('errorModal').classList.add('hidden');
+            document.getElementById('errorModal').classList.remove('flex');
+        }
+        window.closeErrorModal = closeErrorModal;
+        
+        // --- INICIALIZACIÓN ---
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("Página cargada, inicializando...");
+            initAuthObserver();
+            setupAudioPlayer();
+        });
+    </script>
+</head>
+<body>
+    <header class="p-4 bg-slate-900/95 backdrop-blur-md sticky top-0 z-50 shadow-lg border-b border-teal-800">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
+            
+            <div class="flex items-center justify-between w-full md:w-auto md:justify-start gap-6">
+                <div class="flex items-center gap-6">
+                    <h1 class="text-2xl font-bold text-white">La IA Musical</h1>
+                    <nav class="hidden md:flex gap-4">
+                        <a href="temas.html" class="text-gray-300 hover:text-white transition-colors">🏠 Inicio</a>
+                        <a href="perfil.html" class="text-gray-300 hover:text-white transition-colors">👤 Perfil</a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Estadísticas del usuario -->
+            <div class="flex items-center gap-4 text-sm">
+                <div class="flex items-center gap-1 bg-slate-800/80 px-3 py-1 rounded-full">
+                    <span class="text-yellow-400">⭐</span>
+                    <span id="starCount" class="font-semibold">0</span>
+                </div>
+                <div class="flex items-center gap-1 bg-slate-800/80 px-3 py-1 rounded-full">
+                    <span class="text-blue-400">💎</span>
+                    <span id="diamondCount" class="font-semibold">0</span>
+                </div>
+                <div class="flex items-center gap-1 bg-slate-800/80 px-3 py-1 rounded-full">
+                    <span class="text-green-400">🪙</span>
+                    <span id="coinCount" class="font-semibold">0</span>
+                </div>
+                <div class="flex items-center gap-1 bg-slate-800/80 px-3 py-1 rounded-full">
+                    <span class="text-purple-400">🗳️</span>
+                    <span id="voteCount" class="font-semibold">0</span>
+                </div>
+
+                <!-- Botón de logout -->
+                <button onclick="logout()" class="bg-red-600/80 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm transition-colors">
+                    Salir
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 mt-6">
+        <h2 class="text-2xl font-bold mb-6 border-l-4 border-teal-500 pl-3">Sala <span id="currentTopicDisplay">Literatura</span></h2>
+        
+        <div id="songsContainer" class="grid grid-cols-1 gap-6">
+            <!-- Las canciones se cargarán aquí dinámicamente -->
+        </div>
+    </main>
+
+    <!-- Reproductor de audio (pie de página) -->
+    <div class="fixed bottom-0 left-0 w-full bg-slate-900/95 border-t border-teal-800 p-3 shadow-2xl z-50">
+        <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
+            <!-- Info de la canción -->
+            <div class="flex items-center gap-3 w-1/4">
+                <div id="playerCover" class="w-12 h-12 bg-slate-700 rounded bg-cover bg-center" style="background-image: url('./imagenportada2/default.jpg');"></div>
+                <div class="overflow-hidden">
+                    <p id="playerTitle" class="text-sm font-semibold text-white truncate">Título</p>
+                    <p id="playerAuthor" class="text-xs text-gray-400 truncate">Autor</p>
+                </div>
+            </div>
+
+            <!-- Controles de reproducción -->
+            <div class="flex flex-col items-center w-1/2">
+                <div class="flex items-center gap-4 mb-2">
+                    <button id="playPauseBtn" class="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center hover:bg-teal-700 transition-colors">
+                        <i class="fas fa-play text-xs"></i>
+                    </button>
+                </div>
+                
+                <!-- Barra de progreso -->
+                <div class="w-full flex items-center gap-2 text-xs text-gray-400">
+                    <span id="currentTimeDisplay">0:00</span>
+                    <input type="range" class="progress-bar-custom flex-1" value="0" max="100">
+                    <span id="durationDisplay">0:00</span>
+                </div>
+            </div>
+
+            <!-- Control de volumen -->
+            <div class="flex items-center gap-2 w-1/4 justify-end">
+                <i class="fas fa-volume-up text-gray-400"></i>
+                <input id="volumeControl" type="range" class="w-20" min="0" max="100" value="50">
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Quiz -->
+    <div id="quizModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center p-4">
+        <div class="bg-slate-800 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-white">Quiz: <span id="quizSongTitle"></span></h3>
+                    <button onclick="closeQuizModal()" class="text-gray-400 hover:text-white">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <p id="quizProgress" class="text-sm text-gray-400 mb-4">Pregunta 1 de 7</p>
+                
+                <div class="mb-6">
+                    <h4 id="quizQuestion" class="text-lg font-semibold text-white mb-4">Pregunta...</h4>
+                    <div id="quizOptions" class="space-y-2">
+                        <!-- Opciones se generan dinámicamente -->
+                    </div>
+                </div>
+                
+                <div id="quizFeedback" class="hidden mb-4 p-4 bg-slate-700 rounded-lg">
+                    <p id="quizFeedbackText" class="text-center font-semibold"></p>
+                </div>
+                
+                <div class="flex justify-center">
+                    <button id="verifyAnswerButton" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        Verificar Respuesta
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Voto -->
+    <div id="voteModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center p-4">
+        <div class="bg-slate-800 rounded-xl max-w-md w-full">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-white">Votar: <span id="voteSongTitle"></span></h3>
+                    <button onclick="closeVoteModal()" class="text-gray-400 hover:text-white">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-300 text-sm font-semibold mb-4">
+                        ¿Cuántas estrellas quieres dar a esta canción?
+                    </label>
+                    <div class="flex justify-center gap-2 mb-4" id="starSelector">
+                        <!-- Estrellas se generan dinámicamente -->
+                    </div>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button onclick="closeVoteModal()" class="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg font-semibold transition-colors">
+                        Cancelar
+                    </button>
+                    <button onclick="submitVote()" class="flex-1 bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-semibold transition-colors">
+                        Enviar Voto
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Letra -->
+    <div id="lyricsModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center p-4">
+        <div class="bg-slate-800 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-white">🎵 <span id="lyricsSongTitle"></span></h3>
+                    <button onclick="closeLyricsModal()" class="text-gray-400 hover:text-white">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="bg-slate-700 p-6 rounded-lg">
+                    <div id="lyricsContent" class="text-gray-200 leading-relaxed whitespace-pre-wrap">
+                        <!-- Letra se carga dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Survey (para feedback opcional) -->
+    <div id="surveyModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center p-4">
+        <div class="bg-slate-800 rounded-xl max-w-md w-full">
+            <div class="p-6 text-center">
+                <h3 class="text-xl font-bold text-white mb-4">¡Gracias por participar!</h3>
+                <p class="text-gray-300 mb-6">Tu feedback es importante para nosotros.</p>
+                <button onclick="closeSurveyModal()" class="bg-teal-600 hover:bg-teal-700 px-6 py-2 rounded-lg font-semibold transition-colors">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Error -->
+    <div id="errorModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center p-4">
+        <div class="bg-slate-800 rounded-xl max-w-md w-full">
+            <div class="p-6 text-center">
+                <div class="text-red-400 text-4xl mb-4">⚠️</div>
+                <h3 class="text-xl font-bold text-white mb-2">Error</h3>
+                <p id="errorMessage" class="text-gray-300 mb-6">Ha ocurrido un error inesperado.</p>
+                <button onclick="closeErrorModal()" class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg font-semibold transition-colors">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .quiz-option:hover {
+            background-color: #475569;
+        }
+        .quiz-option.selected {
+            background-color: #2563eb;
+        }
+        
+        /* Responsive para móviles */
+        @media (max-width: 768px) {
+            .fixed.bottom-0 .max-w-6xl {
+                flex-direction: column;
+                gap: 2px;
+            }
+            .fixed.bottom-0 .w-1\\/4, .fixed.bottom-0 .w-1\\/2 {
+                width: 100%;
+            }
+            #playerCover {
+                width: 40px;
+                height: 40px;
+            }
+        }
+        
+        /* Estilo para scrollbar personalizado */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #0d9488;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #14b8a6;
+        }
+    </style>
+
+</body>
+</html>
