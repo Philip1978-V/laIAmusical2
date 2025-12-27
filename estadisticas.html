@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadísticas - La IA Musical</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(180deg, #0f172a 0%, #0d9488 100%);
+            min-height: 100vh;
+            color: white;
+            padding-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid #0d9488;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(13, 148, 136, 0.3);
+            border-color: #14b8a6;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .chart-container-large {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #0d9488, #14b8a6);
+            height: 8px;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2dd4bf;
+        }
+
+        .ranking-item {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-between;
+            align-items: center;
+        }
+
+        .ranking-item:hover {
+            border-color: #0d9488;
+            transform: translateX(5px);
+        }
+
+        .question-card {
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .question-card:hover {
+            border-color: #fbbf24;
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .loading-skeleton {
+            background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .medal-icon {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+
+        .medal-gold { color: #fbbf24; }
+        .medal-silver { color: #d1d5db; }
+        .medal-bronze { color: #f97316; }
+    </style>
+</head>
+<body>
+
+    <header class="p-4 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 shadow-lg border-b border-teal-800">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <a href="temas.html" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <i class="fas fa-chart-bar text-teal-400 text-2xl"></i>
+                    <h1 class="text-xl font-bold tracking-wide">Estadísticas - La IA Musical</h1>
+                </a>
+            </div>
+            <button onclick="logout()" class="text-gray-400 hover:text-white transition flex items-center gap-2">
+                <i class="fas fa-sign-out-alt"></i> Salir
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 mt-6">
+        
+        <!-- Resumen General -->
+        <section class="mb-8">
+            <h2 class="text-3xl font-bold text-teal-300 mb-6 border-l-4 border-teal-500 pl-3">Resumen Global de la Plataforma</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <div class="stat-card animate-fade-in">
+                    <div class="flex items-center justify-between mb-2">
+                        <i class="fas fa-users text-teal-400 text-2xl"></i>
+                        <span class="text-xs text-gray-400 uppercase">Total</span>
+                    </div>
+                    <div class="stat-number" id="totalUsers">0</div>
+                    <p class="text-sm text-gray-300">Usuarios Registrados</p>
+                </div>
+
+                <div class="stat-card animate-fade-in">
+                    <div class="flex items-center justify-between mb-2">
+                        <i class="fas fa-music text-purple-400 text-2xl"></i>
+                        <span class="text-xs text-gray-400 uppercase">Total</span>
+                    </div>
+                    <div class="stat-number" id="totalSongs">0</div>
+                    <p class="text-sm text-gray-300">Canciones Disponibles</p>
+                </div>
+
+                <div class="stat-card animate-fade-in">
+                    <div class="flex items-center justify-between mb-2">
+                        <i class="fas fa-vote-yea text-amber-400 text-2xl"></i>
+                        <span class="text-xs text-gray-400 uppercase">Total</span>
+                    </div>
+                    <div class="stat-number" id="totalVotes">0</div>
+                    <p class="text-sm text-gray-300">Votos Emitidos</p>
+                </div>
+
+                <div class="stat-card animate-fade-in">
+                    <div class="flex items-center justify-between mb-2">
+                        <i class="fas fa-question-circle text-blue-400 text-2xl"></i>
+                        <span class="text-xs text-gray-400 uppercase">Total</span>
+                    </div>
+                    <div class="stat-number" id="totalQuizzes">0</div>
+                    <p class="text-sm text-gray-300">Quizzes Completados</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gráficos Principales -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            
+            <!-- Top 10 Canciones Más Votadas -->
+            <div class="stat-card">
+                <h3 class="text-xl font-bold text-yellow-400 mb-4 flex items-center">
+                    <i class="fas fa-trophy mr-2"></i> Top 10 Canciones Más Votadas
+                </h3>
+                <div class="chart-container">
+                    <canvas id="topSongsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Ranking por Salas -->
+            <div class="stat-card">
+                <h3 class="text-xl font-bold text-teal-400 mb-4 flex items-center">
+                    <i class="fas fa-door-open mr-2"></i> Ranking de Popularidad por Salas
+                </h3>
+                <div id="roomRankingContainer" class="space-y-2">
+                    <div class="loading-skeleton h-8"></div>
+                    <div class="loading-skeleton h-8"></div>
+                    <div class="loading-skeleton h-8"></div>
+                </div>
+            </div>
+
+            <!-- Géneros Más Populares -->
+            <div class="stat-card">
+                <h3 class="text-xl font-bold text-purple-400 mb-4 flex items-center">
+                    <i class="fas fa-music mr-2"></i> Géneros Más Populares
+                </h3>
+                <div class="chart-container">
+                    <canvas id="genreChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Actividad por Horas -->
+            <div class="stat-card">
+                <h3 class="text-xl font-bold text-green-400 mb-4 flex items-center">
+                    <i class="fas fa-clock mr-2"></i> Actividad por Horas del Día
+                </h3>
+                <div class="chart-container">
+                    <canvas id="activityHoursChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rankings Detallados -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-bold text-amber-400 mb-6">Rankings Detallados</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Top Usuarios por Estrellas -->
+                <div class="stat-card">
+                    <h3 class="text-lg font-bold text-yellow-400 mb-4 flex items-center">
+                        <i class="fas fa-star mr-2"></i> Top 10 Usuarios por Estrellas
+                    </h3>
+                    <div id="topUsersStars" class="space-y-2 max-h-64 overflow-y-auto">
+                        <div class="loading-skeleton h-6"></div>
+                        <div class="loading-skeleton h-6"></div>
+                        <div class="loading-skeleton h-6"></div>
+                    </div>
+                </div>
+
+                <!-- Top Usuarios por Diamantes -->
+                <div class="stat-card">
+                    <h3 class="text-lg font-bold text-blue-400 mb-4 flex items-center">
+                        <i class="fas fa-gem mr-2"></i> Top 10 Usuarios por Diamantes
+                    </h3>
+                    <div id="topUsersDiamonds" class="space-y-2 max-h-64 overflow-y-auto">
+                        <div class="loading-skeleton h-6"></div>
+                        <div class="loading-skeleton h-6"></div>
+                        <div class="loading-skeleton h-6"></div>
+                    </div>
+                </div>
+
+                <!-- Usuarios Más Activos -->
+                <div class="stat-card">
+                    <h3 class="text-lg font-bold text-green-400 mb-4 flex items-center">
+                        <i class="fas fa-fire mr-2"></i> Top 10 Usuarios Más Activos
+                    </h3>
+                    <div id="topUsersActivity" class="space-y-2 max-h-64 overflow-y-auto">
+                        <div class="loading-skeleton h-6"></div>
+                        <div class="loading-skeleton h-6"></div>
+                        <div class="loading-skeleton h-6"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Estadísticas Avanzadas -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-bold text-purple-400 mb-6">Análisis Avanzado</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- Tendencias Semanales -->
+                <div class="stat-card">
+                    <h3 class="text-xl font-bold text-cyan-400 mb-4 flex items-center">
+                        <i class="fas fa-chart-line mr-2"></i> Tendencias de Actividad (7 días)
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="weeklyTrendsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Distribución de Puntuaciones -->
+                <div class="stat-card">
+                    <h3 class="text-xl font-bold text-orange-400 mb-4 flex items-center">
+                        <i class="fas fa-star-half-alt mr-2"></i> Distribución de Puntuaciones
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="ratingsDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Métricas Detalladas -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-bold text-red-400 mb-6">Métricas Específicas</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <div class="stat-card">
+                    <div class="text-center">
+                        <i class="fas fa-percentage text-teal-400 text-3xl mb-2"></i>
+                        <div class="stat-number text-xl" id="quizSuccessRate">0%</div>
+                        <p class="text-sm text-gray-300">Tasa de Éxito en Quizzes</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="text-center">
+                        <i class="fas fa-heart text-red-400 text-3xl mb-2"></i>
+                        <div class="stat-number text-xl" id="averageRating">0.0</div>
+                        <p class="text-sm text-gray-300">Puntuación Promedio</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="text-center">
+                        <i class="fas fa-calendar-day text-purple-400 text-3xl mb-2"></i>
+                        <div class="stat-number text-xl" id="dailyActiveUsers">0</div>
+                        <p class="text-sm text-gray-300">Usuarios Activos Hoy</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="text-center">
+                        <i class="fas fa-trophy text-yellow-400 text-3xl mb-2"></i>
+                        <div class="stat-number text-xl" id="perfectQuizzes">0</div>
+                        <p class="text-sm text-gray-300">Quizzes Perfectos</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Análisis de Preguntas Específicas -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-bold text-yellow-400 mb-6 flex items-center">
+                <i class="fas fa-question-circle mr-2"></i> Preguntas de Análisis
+            </h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Pregunta 1 -->
+                <div class="question-card">
+                    <h3 class="text-lg font-bold text-amber-400 mb-3 flex items-center">
+                        <i class="fas fa-chart-pie mr-2"></i> ¿Qué sala temática votan más los usuarios?
+                    </h3>
+                    <div id="questionAnswer1" class="text-white text-lg font-semibold">
+                        Cargando análisis...
+                    </div>
+                    <div class="mt-2 text-gray-300 text-sm" id="questionDetail1">
+                        Analizando votos por salas...
+                    </div>
+                </div>
+
+                <!-- Pregunta 2 -->
+                <div class="question-card">
+                    <h3 class="text-lg font-bold text-amber-400 mb-3 flex items-center">
+                        <i class="fas fa-music mr-2"></i> ¿Cuál es el género que más gusta a los usuarios?
+                    </h3>
+                    <div id="questionAnswer2" class="text-white text-lg font-semibold">
+                        Cargando análisis...
+                    </div>
+                    <div class="mt-2 text-gray-300 text-sm" id="questionDetail2">
+                        Analizando preferencias por género...
+                    </div>
+                </div>
+
+                <!-- Pregunta 3 -->
+                <div class="question-card">
+                    <h3 class="text-lg font-bold text-amber-400 mb-3 flex items-center">
+                        <i class="fas fa-clock mr-2"></i> ¿En qué momento del día son más activos?
+                    </h3>
+                    <div id="questionAnswer3" class="text-white text-lg font-semibold">
+                        Cargando análisis...
+                    </div>
+                    <div class="mt-2 text-gray-300 text-sm" id="questionDetail3">
+                        Analizando actividad por horas...
+                    </div>
+                </div>
+
+                <!-- Pregunta 4 -->
+                <div class="question-card">
+                    <h3 class="text-lg font-bold text-amber-400 mb-3 flex items-center">
+                        <i class="fas fa-brain mr-2"></i> ¿Qué nivel de dificultad prefieren en quizzes?
+                    </h3>
+                    <div id="questionAnswer4" class="text-white text-lg font-semibold">
+                        Cargando análisis...
+                    </div>
+                    <div class="mt-2 text-gray-300 text-sm" id="questionDetail4">
+                        Analizando resultados de quizzes...
+                    </div>
+                </div>
+
+                <!-- Pregunta 5 -->
+                <div class="question-card">
+                    <h3 class="text-lg font-bold text-amber-400 mb-3 flex items-center">
+                        <i class="fas fa-star mr-2"></i> ¿Qué puntuación dan más frecuentemente?
+                    </h3>
+                    <div id="questionAnswer5" class="text-white text-lg font-semibold">
+                        Cargando análisis...
+                    </div>
+                    <div class="mt-2 text-gray-300 text-sm" id="questionDetail5">
+                        Analizando distribución de votos...
+                    </div>
+                </div>
+
+                <!-- Pregunta 6 -->
+                <div class="question-card">
+                    <h3 class="text-lg font-bold text-amber-400 mb-3 flex items-center">
+                        <i class="fas fa-calendar-alt mr-2"></i> ¿Qué época histórica prefieren?
+                    </h3>
+                    <div id="questionAnswer6" class="text-white text-lg font-semibold">
+                        Cargando análisis...
+                    </div>
+                    <div class="mt-2 text-gray-300 text-sm" id="questionDetail6">
+                        Analizando preferencias por épocas...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Estadísticas por Autor/Año -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-bold text-indigo-400 mb-6">Preferencias de Contenido</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- Top Autores -->
+                <div class="stat-card">
+                    <h3 class="text-xl font-bold text-pink-400 mb-4 flex items-center">
+                        <i class="fas fa-pen mr-2"></i> Top 10 Autores Más Populares
+                    </h3>
+                    <div id="topAuthors" class="space-y-3 max-h-80 overflow-y-auto">
+                        <div class="loading-skeleton h-8"></div>
+                        <div class="loading-skeleton h-8"></div>
+                        <div class="loading-skeleton h-8"></div>
+                    </div>
+                </div>
+
+                <!-- Distribución por Décadas -->
+                <div class="stat-card">
+                    <h3 class="text-xl font-bold text-emerald-400 mb-4 flex items-center">
+                        <i class="fas fa-calendar-alt mr-2"></i> Popularidad por Época
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="decadesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Estadísticas de Economía -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-bold text-green-400 mb-6">Economía de la Plataforma</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <div class="stat-card">
+                    <div class="text-center">
+                        <i class="fas fa-coins text-amber-500 text-3xl mb-2"></i>
+                        <div class="stat-number text-xl" id="totalCoins">0</div>
+                        <p class="text-sm text-gray-300">Monedas en Circulación</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="text-center">
+                        <i class="fas fa-shopping-cart text-purple-400 text-3xl mb-2"></i>
+                        <div class="stat-number text-xl" id="totalPurchases">0</div>
+                        <p class="text-sm text-gray-300">Cartas Compradas</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="text-center">
+                        <i class="fas fa-exchange-alt text-blue-400 text-3xl mb-2"></i>
+                        <div class="stat-number text-xl" id="totalExchanges">0</div>
+                        <p class="text-sm text-gray-300">Intercambios Realizados</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="text-center">
+                        <i class="fas fa-gift text-red-400 text-3xl mb-2"></i>
+                        <div class="stat-number text-xl" id="totalRewards">0</div>
+                        <p class="text-sm text-gray-300">Premios Reclamados</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-16 py-8 bg-slate-900/90 border-t border-teal-700">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="text-center space-y-4">
+                <p class="text-gray-300 text-sm">
+                    Contacta con nosotros: 
+                    <a href="mailto:contact@hotmail.com" class="text-teal-400 hover:text-teal-300 underline transition-colors">
+                        La IA Musical
+                    </a>
+                </p>
+                <p class="text-gray-400 text-xs">
+                    © 2024 La IA Musical. Todos los derechos reservados.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- CONFIGURACIÓN FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+            authDomain: "laiamusical-4fba7.firebaseapp.com",
+            projectId: "laiamusical-4fba7",
+            storageBucket: "laiamusical-4fba7.firebasestorage.app",
+            messagingSenderId: "49783369602",
+            appId: "1:49783369602:web:91e287c094a8f2403d699b",
+            measurementId: "G-WC2JT6DRF4"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // --- VARIABLES GLOBALES ---
+        let currentUser = null;
+        let statisticsData = {};
+
+        // Base de datos de canciones completa (sincronizada con reproductor.html)
+        const songs = [
+            // Literatura
+            { id: 5, title: "El lenguaje del mundo", author: "Paulo Coelho", year: 1988, category: "AVENTURA", topic: "Literatura" },
+            { id: 21, title: "El ciclo de Macondo", author: "Gabriel García Márquez", year: 1967, category: "REALISMO MÁGICO", topic: "Literatura" },
+            { id: 7, title: "El ojo que todo lo ve", author: "George Orwell", year: 1949, category: "DISTOPÍA", topic: "Literatura" },
+            { id: 8, title: "Crimen y castigo", author: "Fyodor Dostoevsky", year: 1866, category: "PSICOLÓGICA", topic: "Literatura" },
+            { id: 17, title: "El inquilino monstruoso", author: "Franz Kafka", year: 1915, category: "FICCIÓN FILOSÓFICA", topic: "Literatura" },
+            { id: 18, title: "La maldición de la belleza", author: "Oscar Wilde", year: 1890, category: "GÓTICO", topic: "Literatura" },
+            { id: 22, title: "Los fantasmas de La Mancha", author: "Miguel de Cervantes", year: 1605, category: "SATÍRICA/AVENTURA", topic: "Literatura" },
+            { id: 23, title: "El largo regreso a Ítaca", author: "Homero", year: -800, category: "ÉPICA", topic: "Literatura" },
+            { id: 24, title: "El matrimonio Bennet", author: "Jane Austen", year: 1813, category: "ROMÁNTICA", topic: "Literatura" },
+            
+            // Ópera y conciertos
+            { id: 1, title: "Sinfonía del Nuevo Mundo", author: "Antonín Dvořák", year: 1893, category: "CLÁSICA", topic: "Ópera y conciertos" },
+            { id: 2, title: "La muerte del amor", author: "Richard Wagner", year: 1859, category: "ÓPERA", topic: "Ópera y conciertos" },
+            { id: 100, title: "La Traviata - Libiamo", author: "Giuseppe Verdi", year: 1853, category: "ÓPERA", topic: "Ópera y conciertos" },
+            { id: 101, title: "Las Cuatro Estaciones", author: "Antonio Vivaldi", year: 1725, category: "CONCIERTO BARROCO", topic: "Ópera y conciertos" },
+            { id: 102, title: "Nessun dorma", author: "Giacomo Puccini", year: 1926, category: "ÓPERA", topic: "Ópera y conciertos" },
+            { id: 103, title: "Concierto de Aranjuez", author: "Joaquín Rodrigo", year: 1939, category: "CONCIERTO GUITARRA", topic: "Ópera y conciertos" },
+            { id: 104, title: "Carmen - Habanera", author: "Georges Bizet", year: 1875, category: "ÓPERA", topic: "Ópera y conciertos" },
+            
+            // Cine
+            { id: 13, title: "Royale with Cheese", author: "Quentin Tarantino", year: 1994, category: "CRIMEN", topic: "Cine" },
+            { id: 14, title: "La oferta que no pudo rechazar", author: "Francis Ford Coppola", year: 1972, category: "DRAMA", topic: "Cine" },
+            { id: 15, title: "Estrellas en la deriva", author: "Christopher Nolan", year: 2014, category: "CIENCIA FICCIÓN", topic: "Cine" },
+            { id: 16, title: "20 años de pico y póster", author: "Frank Darabont", year: 1994, category: "DRAMA", topic: "Cine" },
+            { id: 19, title: "El Elegido", author: "Lana Wachowski", year: 1999, category: "CIENCIA FICCIÓN", topic: "Cine" },
+            { id: 20, title: "Furia en el Camino", author: "George Miller", year: 2015, category: "ACCIÓN", topic: "Cine" },
+            { id: 25, title: "El viaje del sin rostro", author: "Hayao Miyazaki", year: 2001, category: "FANTASÍA", topic: "Cine" },
+            { id: 26, title: "Un futuro en el asfalto", author: "Fernando Meirelles", year: 2002, category: "DRAMA/CRIMEN", topic: "Cine" },
+            { id: 27, title: "El dedo de luz", author: "Steven Spielberg", year: 1982, category: "CIENCIA FICCIÓN", topic: "Cine" },
+            { id: 28, title: "El Destino del Jedi", author: "George Lucas", year: 1977, category: "ÓPERA ESPACIAL", topic: "Cine" },
+            { id: 29, title: "El grito en el espacio", author: "Ridley Scott", year: 1979, category: "CIENCIA FICCIÓN", topic: "Cine" },
+            
+            // Dibujos animados
+            { id: 3, title: "Rugrats Adventure Theme", author: "Klasky Csupo", year: 1991, category: "INFANTIL", topic: "Dibujos animados" },
+            { id: 4, title: "Pokémon Opening Theme", author: "Satoshi Tajiri", year: 1996, category: "ANIME/INFANTIL", topic: "Dibujos animados" },
+            { id: 200, title: "El Rey León - Hakuna Matata", author: "Elton John", year: 1994, category: "MUSICAL DISNEY", topic: "Dibujos animados" },
+            { id: 201, title: "Frozen - Let It Go", author: "Kristen Anderson-Lopez", year: 2013, category: "MUSICAL DISNEY", topic: "Dibujos animados" },
+            { id: 202, title: "Moana - How Far I'll Go", author: "Lin-Manuel Miranda", year: 2016, category: "MUSICAL DISNEY", topic: "Dibujos animados" },
+            { id: 203, title: "Coco - Remember Me", author: "Kristen Anderson-Lopez", year: 2017, category: "MUSICAL DISNEY", topic: "Dibujos animados" },
+            { id: 204, title: "Shrek - I'm a Believer", author: "Neil Diamond", year: 2001, category: "COMEDIA MUSICAL", topic: "Dibujos animados" },
+            { id: 205, title: "Toy Story - You've Got a Friend", author: "Randy Newman", year: 1995, category: "MUSICAL PIXAR", topic: "Dibujos animados" },
+            { id: 206, title: "Los Increíbles - The Incredits", author: "Michael Giacchino", year: 2004, category: "ACCIÓN FAMILIAR", topic: "Dibujos animados" },
+            
+            // Teatro y musicales
+            { id: 9, title: "Memory Lane Musical", author: "Andrew Lloyd Webber", year: 1981, category: "MUSICAL", topic: "Teatro y musicales" },
+            { id: 300, title: "Los Miserables - Do You Hear", author: "Claude-Michel Schönberg", year: 1980, category: "MUSICAL ÉPICO", topic: "Teatro y musicales" },
+            { id: 301, title: "El Fantasma de la Ópera", author: "Andrew Lloyd Webber", year: 1986, category: "MUSICAL GÓTICO", topic: "Teatro y musicales" },
+            { id: 302, title: "Hamilton - Alexander Hamilton", author: "Lin-Manuel Miranda", year: 2015, category: "MUSICAL HIP-HOP", topic: "Teatro y musicales" },
+            { id: 303, title: "Chicago - All That Jazz", author: "John Kander", year: 1975, category: "MUSICAL JAZZ", topic: "Teatro y musicales" },
+            { id: 304, title: "Rent - Seasons of Love", author: "Jonathan Larson", year: 1996, category: "MUSICAL CONTEMPORÁNEO", topic: "Teatro y musicales" },
+            { id: 305, title: "West Side Story - Maria", author: "Leonard Bernstein", year: 1957, category: "MUSICAL CLÁSICO", topic: "Teatro y musicales" },
+            { id: 306, title: "Cats - Memory", author: "Andrew Lloyd Webber", year: 1981, category: "MUSICAL FANTÁSTICO", topic: "Teatro y musicales" },
+            
+            // Series
+            { id: 10, title: "Breaking Bad Theme", author: "Vince Gilligan", year: 2008, category: "DRAMA/THRILLER", topic: "Series" },
+            { id: 400, title: "Game of Thrones Main Theme", author: "Ramin Djawadi", year: 2011, category: "FANTASÍA ÉPICA", topic: "Series" },
+            { id: 401, title: "Stranger Things Theme", author: "Kyle Dixon", year: 2016, category: "SCI-FI HORROR", topic: "Series" },
+            { id: 402, title: "Breaking Bad - Main Title", author: "Dave Porter", year: 2008, category: "DRAMA CRIMINAL", topic: "Series" },
+            { id: 403, title: "The Office Theme", author: "Jay Ferguson", year: 2005, category: "COMEDIA", topic: "Series" },
+            { id: 404, title: "Sherlock Theme", author: "David Arnold", year: 2010, category: "MISTERIO", topic: "Series" },
+            { id: 405, title: "Friends - I'll Be There", author: "The Rembrandts", year: 1994, category: "SITCOM", topic: "Series" },
+            { id: 406, title: "The Mandalorian Theme", author: "Ludwig Göransson", year: 2019, category: "SPACE WESTERN", topic: "Series" },
+            
+            // Anime
+            { id: 11, title: "One Piece Opening 1", author: "Eiichiro Oda", year: 1999, category: "SHONEN", topic: "Anime" },
+            { id: 500, title: "Attack on Titan", author: "Linked Horizon", year: 2013, category: "SHOUNEN", topic: "Anime" },
+            { id: 501, title: "Demon Slayer - Gurenge", author: "LiSA", year: 2019, category: "SHOUNEN", topic: "Anime" },
+            { id: 502, title: "One Piece - We Are!", author: "Hiroshi Kitadani", year: 1999, category: "SHOUNEN", topic: "Anime" },
+            { id: 503, title: "Naruto - Blue Bird", author: "Ikimono Gakari", year: 2008, category: "SHOUNEN", topic: "Anime" },
+            { id: 504, title: "My Hero Academia - The Day", author: "Porno Graffitti", year: 2016, category: "SUPERHÉROES", topic: "Anime" },
+            { id: 505, title: "Jujutsu Kaisen", author: "Eve", year: 2020, category: "SUPERNATURAL", topic: "Anime" },
+            { id: 506, title: "Death Note - The World", author: "Nightmare", year: 2006, category: "PSYCHOLOGICAL THRILLER", topic: "Anime" },
+            
+            // Extra y documentales
+            { id: 12, title: "Cosmos: A Space Odyssey", author: "Carl Sagan", year: 1980, category: "CIENCIA", topic: "Extra y documentales" },
+            { id: 600, title: "Planet Earth - Main Theme", author: "George Fenton", year: 2006, category: "NATURALEZA", topic: "Extra y documentales" },
+            { id: 601, title: "March of the Penguins", author: "Émilie Simon", year: 2005, category: "WILDLIFE", topic: "Extra y documentales" },
+            { id: 602, title: "Free Solo - Main Theme", author: "Marco Beltrami", year: 2018, category: "AVENTURA EXTREMA", topic: "Extra y documentales" },
+            { id: 603, title: "Won't You Be My Neighbor?", author: "Jonathan Kirkscey", year: 2018, category: "BIOGRAFÍA", topic: "Extra y documentales" },
+            { id: 604, title: "Blackfish - Main Theme", author: "Jeff Beal", year: 2013, category: "ACTIVISMO", topic: "Extra y documentales" },
+            { id: 605, title: "The Social Dilemma", author: "Mark Crawford", year: 2020, category: "TECNOLOGÍA", topic: "Extra y documentales" },
+            
+            // Usuarios
+            { id: 20, title: "Mi Historia Personal", author: "Usuario Anónimo", year: 2024, category: "PERSONAL", topic: "Usuarios" }
+        ];
+
+        // --- AUTENTICACIÓN ---
+        function initAuthObserver() {
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    currentUser = user;
+                    loadStatistics();
+                } else {
+                    window.location.href = 'index.html';
+                }
+            });
+        }
+
+        function logout() {
+            auth.signOut().then(() => {
+                window.location.href = 'index.html';
+            });
+        }
+
+        // --- CARGA DE DATOS ---
+        async function loadStatistics() {
+            try {
+                console.log("Cargando estadísticas desde Firebase...");
+                
+                await Promise.all([
+                    loadUserStatistics(),
+                    loadSongStatistics(),
+                    loadVoteStatisticsFromFirebase(),
+                    loadQuizStatisticsFromFirebase(),
+                    loadEconomyStatistics()
+                ]);
+
+                console.log("Datos cargados:", statisticsData);
+                await generateAllStatistics();
+                
+            } catch (error) {
+                console.error("Error cargando estadísticas:", error);
+            }
+        }
+
+        async function loadUserStatistics() {
+            try {
+                const usersSnapshot = await db.collection('users').get();
+                const users = [];
+                
+                usersSnapshot.forEach(doc => {
+                    const userData = doc.data();
+                    users.push({
+                        id: doc.id,
+                        ...userData,
+                        totalStars: userData.userStars || 0,
+                        totalDiamonds: userData.userDiamonds || 0,
+                        totalCoins: userData.userCoins || 0,
+                        activityCount: (userData.activityLog || []).length,
+                        lastActiveDate: userData.lastVoteDate || userData.createdAt
+                    });
+                });
+
+                statisticsData.users = users;
+                document.getElementById('totalUsers').textContent = users.length;
+
+                const today = new Date().toDateString();
+                const activeToday = users.filter(user => {
+                    if (!user.lastActiveDate) return false;
+                    const userDate = user.lastActiveDate.toDate ? user.lastActiveDate.toDate().toDateString() : new Date(user.lastActiveDate).toDateString();
+                    return userDate === today;
+                }).length;
+                
+                document.getElementById('dailyActiveUsers').textContent = activeToday;
+                
+            } catch (error) {
+                console.error("Error cargando usuarios:", error);
+            }
+        }
+
+        async function loadSongStatistics() {
+            try {
+                const songsSnapshot = await db.collection('songs').get();
+                const songStats = {};
+                
+                songsSnapshot.forEach(doc => {
+                    songStats[doc.id] = doc.data();
+                });
+
+                statisticsData.songStats = songStats;
+                document.getElementById('totalSongs').textContent = songs.length;
+                
+            } catch (error) {
+                console.error("Error cargando canciones:", error);
+                document.getElementById('totalSongs').textContent = songs.length;
+            }
+        }
+
+        async function loadVoteStatisticsFromFirebase() {
+            try {
+                console.log("Cargando votos desde Firebase...");
+                
+                const usersSnapshot = await db.collection('users').get();
+                const votes = [];
+                let totalVotes = 0;
+                let totalRating = 0;
+                
+                usersSnapshot.forEach(doc => {
+                    const userData = doc.data();
+                    if (userData.voteLog) {
+                        Object.entries(userData.voteLog).forEach(([songId, voteData]) => {
+                            if (voteData && (voteData.starsGiven !== undefined || voteData.stars !== undefined)) {
+                                const stars = voteData.starsGiven || voteData.stars || 0;
+                                votes.push({
+                                    userId: doc.id,
+                                    songId: parseInt(songId),
+                                    stars: stars,
+                                    timestamp: voteData.timestamp || new Date()
+                                });
+                                totalVotes++;
+                                totalRating += stars;
+                            }
+                        });
+                    }
+                });
+
+                console.log(`Votos encontrados: ${totalVotes}`);
+                
+                statisticsData.votes = votes;
+                document.getElementById('totalVotes').textContent = totalVotes;
+                document.getElementById('averageRating').textContent = totalVotes > 0 ? (totalRating / totalVotes).toFixed(1) : '0.0';
+                
+            } catch (error) {
+                console.error("Error cargando estadísticas de votos:", error);
+                document.getElementById('totalVotes').textContent = '0';
+                document.getElementById('averageRating').textContent = '0.0';
+            }
+        }
+
+        async function loadQuizStatisticsFromFirebase() {
+            try {
+                console.log("Cargando quizzes desde Firebase...");
+                
+                const usersSnapshot = await db.collection('users').get();
+                const quizzes = [];
+                let totalQuizzes = 0;
+                let perfectQuizzes = 0;
+                let totalCorrect = 0;
+                let totalQuestions = 0;
+                
+                usersSnapshot.forEach(doc => {
+                    const userData = doc.data();
+                    if (userData.quizLog) {
+                        Object.entries(userData.quizLog).forEach(([songId, quizData]) => {
+                            if (quizData && (quizData.score !== undefined || quizData.correctAnswers !== undefined)) {
+                                const score = quizData.score !== undefined ? quizData.score : quizData.correctAnswers;
+                                quizzes.push({
+                                    userId: doc.id,
+                                    songId: parseInt(songId),
+                                    correctAnswers: score,
+                                    score: score,
+                                    timestamp: quizData.timestamp || new Date()
+                                });
+                                
+                                totalQuizzes++;
+                                if (score === 5) perfectQuizzes++;
+                                totalCorrect += score;
+                                totalQuestions += 5;
+                            }
+                        });
+                    }
+                });
+
+                console.log(`Quizzes encontrados: ${totalQuizzes}`);
+
+                statisticsData.quizzes = quizzes;
+                document.getElementById('totalQuizzes').textContent = totalQuizzes;
+                document.getElementById('perfectQuizzes').textContent = perfectQuizzes;
+                
+                const successRate = totalQuestions > 0 ? ((totalCorrect / totalQuestions) * 100).toFixed(1) : 0;
+                document.getElementById('quizSuccessRate').textContent = successRate + '%';
+                
+            } catch (error) {
+                console.error("Error cargando estadísticas de quizzes:", error);
+                document.getElementById('totalQuizzes').textContent = '0';
+                document.getElementById('perfectQuizzes').textContent = '0';
+                document.getElementById('quizSuccessRate').textContent = '0%';
+            }
+        }
+
+        async function loadEconomyStatistics() {
+            try {
+                const usersSnapshot = await db.collection('users').get();
+                let totalCoins = 0;
+                let totalPurchases = 0;
+                let totalExchanges = 0;
+                let totalRewards = 0;
+                
+                usersSnapshot.forEach(doc => {
+                    const userData = doc.data();
+                    totalCoins += userData.userCoins || 0;
+                    totalPurchases += (userData.purchasedCards || []).length;
+                    
+                    if (userData.activityLog) {
+                        userData.activityLog.forEach(activity => {
+                            if (activity.type === 'exchange') totalExchanges++;
+                            if (activity.type === 'reward') totalRewards++;
+                        });
+                    }
+                });
+
+                document.getElementById('totalCoins').textContent = totalCoins;
+                document.getElementById('totalPurchases').textContent = totalPurchases;
+                document.getElementById('totalExchanges').textContent = totalExchanges;
+                document.getElementById('totalRewards').textContent = totalRewards;
+                
+            } catch (error) {
+                console.error("Error cargando estadísticas de economía:", error);
+            }
+        }
+
+        // --- GENERACIÓN DE ESTADÍSTICAS ---
+        async function generateAllStatistics() {
+            console.log("Generando estadísticas...");
+            generateTopSongsChart();
+            generateRoomRanking();
+            generateGenreChart();
+            generateActivityHoursChart();
+            generateUserRankings();
+            generateWeeklyTrendsChart();
+            generateRatingsDistributionChart();
+            generateTopAuthors();
+            generateDecadesChart();
+            generateQuestionAnalysis();
+        }
+
+        function generateTopSongsChart() {
+            const votes = statisticsData.votes || [];
+            const songVotes = {};
+            
+            votes.forEach(vote => {
+                const songId = vote.songId;
+                if (!songVotes[songId]) {
+                    songVotes[songId] = { votes: 0, totalStars: 0 };
+                }
+                songVotes[songId].votes++;
+                songVotes[songId].totalStars += vote.stars || 0;
+            });
+
+            const sortedSongs = Object.entries(songVotes)
+                .map(([songId, data]) => ({
+                    songId: parseInt(songId),
+                    ...data,
+                    avgRating: data.votes > 0 ? (data.totalStars / data.votes).toFixed(1) : 0
+                }))
+                .sort((a, b) => b.totalStars - a.totalStars)
+                .slice(0, 10);
+
+            const songTitles = sortedSongs.map(item => {
+                const song = songs.find(s => s.id === item.songId);
+                return song ? song.title.substring(0, 30) : `Canción ${item.songId}`;
+            });
+
+            const votesCounts = sortedSongs.map(item => item.totalStars);
+
+            const ctx = document.getElementById('topSongsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: songTitles,
+                    datasets: [{
+                        label: 'Estrellas Totales',
+                        data: votesCounts,
+                        backgroundColor: 'rgba(13, 148, 136, 0.8)',
+                        borderColor: 'rgba(13, 148, 136, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: '#0d9488',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        },
+                        y: {
+                            ticks: { 
+                                color: '#94a3b8',
+                                font: { size: 10 }
+                            },
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateRoomRanking() {
+            const votes = statisticsData.votes || [];
+            const roomStats = {};
+            const rooms = ['Literatura', 'Cine', 'Dibujos animados', 'Ópera y conciertos', 'Teatro y musicales', 'Series', 'Anime', 'Extra y documentales', 'Usuarios'];
+            
+            rooms.forEach(room => roomStats[room] = 0);
+            
+            votes.forEach(vote => {
+                const song = songs.find(s => s.id === vote.songId);
+                if (song && song.topic) {
+                    roomStats[song.topic]++;
+                }
+            });
+
+            const sortedRooms = Object.entries(roomStats).sort(([,a], [,b]) => b - a);
+            const container = document.getElementById('roomRankingContainer');
+            
+            container.innerHTML = '';
+            
+            sortedRooms.forEach((entry, index) => {
+                const [room, count] = entry;
+                const item = document.createElement('div');
+                item.className = 'ranking-item';
+                
+                let medalIcon = '';
+                if (index === 0) medalIcon = '<i class="fas fa-medal medal-icon medal-gold"></i>';
+                else if (index === 1) medalIcon = '<i class="fas fa-medal medal-icon medal-silver"></i>';
+                else if (index === 2) medalIcon = '<i class="fas fa-medal medal-icon medal-bronze"></i>';
+                
+                item.innerHTML = `
+                    <div class="flex items-center">
+                        ${medalIcon}
+                        <span class="text-white font-medium">${index + 1}. ${room}</span>
+                    </div>
+                    <span class="text-teal-400 font-bold">${count} votos</span>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+
+        function generateGenreChart() {
+            const votes = statisticsData.votes || [];
+            const genreStats = {};
+            
+            votes.forEach(vote => {
+                const song = songs.find(s => s.id === vote.songId);
+                if (song && song.category) {
+                    genreStats[song.category] = (genreStats[song.category] || 0) + 1;
+                }
+            });
+
+            const sortedGenres = Object.entries(genreStats).sort(([,a], [,b]) => b - a).slice(0, 8);
+            
+            const ctx = document.getElementById('genreChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: sortedGenres.map(([genre]) => genre),
+                    datasets: [{
+                        data: sortedGenres.map(([,votes]) => votes),
+                        backgroundColor: [
+                            '#f59e0b', '#8b5cf6', '#ef4444', '#10b981',
+                            '#3b82f6', '#f97316', '#ec4899', '#6366f1'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#0f172a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#94a3b8',
+                                padding: 15,
+                                font: { size: 10 }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: '#0d9488',
+                            borderWidth: 1
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateActivityHoursChart() {
+            const votes = statisticsData.votes || [];
+            const quizzes = statisticsData.quizzes || [];
+            const hourStats = Array(24).fill(0);
+            
+            [...votes, ...quizzes].forEach(activity => {
+                if (activity.timestamp) {
+                    let hour;
+                    if (activity.timestamp.getHours) {
+                        hour = activity.timestamp.getHours();
+                    } else if (activity.timestamp.toDate) {
+                        hour = activity.timestamp.toDate().getHours();
+                    } else if (typeof activity.timestamp === 'string') {
+                        hour = new Date(activity.timestamp).getHours();
+                    }
+                    if (hour !== undefined && !isNaN(hour)) {
+                        hourStats[hour]++;
+                    }
+                }
+            });
+
+            const ctx = document.getElementById('activityHoursChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    datasets: [{
+                        label: 'Actividad',
+                        data: hourStats,
+                        borderColor: '#0d9488',
+                        backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: '#0d9488',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateUserRankings() {
+            const users = statisticsData.users || [];
+            
+            const usersByStars = [...users].sort((a, b) => b.totalStars - a.totalStars).slice(0, 10);
+            const starsContainer = document.getElementById('topUsersStars');
+            starsContainer.innerHTML = usersByStars.map((user, index) => `
+                <div class="flex justify-between items-center p-2 bg-slate-700 rounded">
+                    <span class="text-white">${index + 1}. ${user.username || user.email || 'Usuario'}</span>
+                    <span class="text-yellow-400 font-bold">${user.totalStars || 0} ⭐</span>
+                </div>
+            `).join('');
+
+            const usersByDiamonds = [...users].sort((a, b) => b.totalDiamonds - a.totalDiamonds).slice(0, 10);
+            const diamondsContainer = document.getElementById('topUsersDiamonds');
+            diamondsContainer.innerHTML = usersByDiamonds.map((user, index) => `
+                <div class="flex justify-between items-center p-2 bg-slate-700 rounded">
+                    <span class="text-white">${index + 1}. ${user.username || user.email || 'Usuario'}</span>
+                    <span class="text-blue-400 font-bold">${user.totalDiamonds || 0} 💎</span>
+                </div>
+            `).join('');
+
+            const usersByActivity = [...users].sort((a, b) => b.activityCount - a.activityCount).slice(0, 10);
+            const activityContainer = document.getElementById('topUsersActivity');
+            activityContainer.innerHTML = usersByActivity.map((user, index) => `
+                <div class="flex justify-between items-center p-2 bg-slate-700 rounded">
+                    <span class="text-white">${index + 1}. ${user.username || user.email || 'Usuario'}</span>
+                    <span class="text-green-400 font-bold">${user.activityCount} acciones</span>
+                </div>
+            `).join('');
+        }
+
+        function generateWeeklyTrendsChart() {
+            const votes = statisticsData.votes || [];
+            const quizzes = statisticsData.quizzes || [];
+            const last7Days = Array(7).fill(0).map((_, i) => {
+                const date = new Date();
+                date.setDate(date.getDate() - (6 - i));
+                return date;
+            });
+
+            const dailyActivity = last7Days.map(date => {
+                return [...votes, ...quizzes].filter(activity => {
+                    if (!activity.timestamp) return false;
+                    let activityDate;
+                    if (activity.timestamp.toDate) {
+                        activityDate = activity.timestamp.toDate();
+                    } else if (typeof activity.timestamp === 'string') {
+                        activityDate = new Date(activity.timestamp);
+                    } else {
+                        activityDate = activity.timestamp;
+                    }
+                    return activityDate.toDateString() === date.toDateString();
+                }).length;
+            });
+
+            const ctx = document.getElementById('weeklyTrendsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: last7Days.map(date => date.toLocaleDateString('es', { weekday: 'short' })),
+                    datasets: [{
+                        label: 'Actividad por día',
+                        data: dailyActivity,
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: '#06b6d4',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateRatingsDistributionChart() {
+            const votes = statisticsData.votes || [];
+            const ratingDistribution = [0, 0, 0, 0, 0];
+            
+            votes.forEach(vote => {
+                if (vote.stars >= 1 && vote.stars <= 5) {
+                    ratingDistribution[vote.stars - 1]++;
+                }
+            });
+
+            const ctx = document.getElementById('ratingsDistributionChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['1⭐', '2⭐', '3⭐', '4⭐', '5⭐'],
+                    datasets: [{
+                        label: 'Número de votos',
+                        data: ratingDistribution,
+                        backgroundColor: [
+                            '#ef4444', '#f97316', '#f59e0b', '#10b981', '#22c55e'
+                        ],
+                        borderWidth: 1,
+                        borderColor: '#0f172a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: '#f97316',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateTopAuthors() {
+            const votes = statisticsData.votes || [];
+            const authorStats = {};
+            
+            votes.forEach(vote => {
+                const song = songs.find(s => s.id === vote.songId);
+                if (song && song.author) {
+                    authorStats[song.author] = (authorStats[song.author] || 0) + 1;
+                }
+            });
+
+            const sortedAuthors = Object.entries(authorStats).sort(([,a], [,b]) => b - a).slice(0, 10);
+            const container = document.getElementById('topAuthors');
+            
+            container.innerHTML = sortedAuthors.map(([author, votes], index) => `
+                <div class="ranking-item">
+                    <div class="flex items-center">
+                        <span class="w-6 h-6 rounded-full bg-pink-500 text-white text-xs flex items-center justify-center mr-3">${index + 1}</span>
+                        <span class="text-white font-medium">${author}</span>
+                    </div>
+                    <span class="text-pink-400 font-bold">${votes} votos</span>
+                </div>
+            `).join('');
+        }
+
+        function generateDecadesChart() {
+            const votes = statisticsData.votes || [];
+            const decadeStats = {};
+            
+            votes.forEach(vote => {
+                const song = songs.find(s => s.id === vote.songId);
+                if (song && song.year) {
+                    let decade;
+                    if (song.year < 0) decade = 'Antiguo';
+                    else if (song.year < 1800) decade = 'Clásico';
+                    else if (song.year < 1900) decade = 'S. XIX';
+                    else if (song.year < 1950) decade = '1900-1949';
+                    else if (song.year < 2000) decade = '1950-1999';
+                    else decade = 'S. XXI';
+                    
+                    decadeStats[decade] = (decadeStats[decade] || 0) + 1;
+                }
+            });
+
+            const sortedDecades = Object.entries(decadeStats).sort(([,a], [,b]) => b - a);
+            
+            const ctx = document.getElementById('decadesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: sortedDecades.map(([decade]) => decade),
+                    datasets: [{
+                        data: sortedDecades.map(([,votes]) => votes),
+                        backgroundColor: [
+                            '#10b981', '#3b82f6', '#8b5cf6', '#f59e0b',
+                            '#ef4444', '#ec4899', '#6366f1', '#14b8a6'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#0f172a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#94a3b8',
+                                padding: 15,
+                                font: { size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: '#10b981',
+                            borderWidth: 1
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateQuestionAnalysis() {
+            const votes = statisticsData.votes || [];
+            const quizzes = statisticsData.quizzes || [];
+            
+            // Pregunta 1: ¿Qué sala temática votan más los usuarios?
+            const roomStats = {};
+            const rooms = ['Literatura', 'Cine', 'Dibujos animados', 'Ópera y conciertos', 'Teatro y musicales', 'Series', 'Anime', 'Extra y documentales', 'Usuarios'];
+            rooms.forEach(room => roomStats[room] = 0);
+            
+            votes.forEach(vote => {
+                const song = songs.find(s => s.id === vote.songId);
+                if (song && song.topic) {
+                    roomStats[song.topic]++;
+                }
+            });
+            
+            const topRoom = Object.entries(roomStats).sort(([,a], [,b]) => b - a)[0];
+            document.getElementById('questionAnswer1').textContent = topRoom ? `${topRoom[0]}` : 'Sin datos';
+            document.getElementById('questionDetail1').textContent = topRoom ? `${topRoom[1]} votos totales (${votes.length > 0 ? ((topRoom[1] / votes.length) * 100).toFixed(1) : 0}% del total)` : 'No hay votos registrados';
+
+            // Pregunta 2: ¿Cuál es el género que más gusta a los usuarios?
+            const genreStats = {};
+            votes.forEach(vote => {
+                const song = songs.find(s => s.id === vote.songId);
+                if (song && song.category) {
+                    genreStats[song.category] = (genreStats[song.category] || 0) + 1;
+                }
+            });
+            
+            const topGenre = Object.entries(genreStats).sort(([,a], [,b]) => b - a)[0];
+            document.getElementById('questionAnswer2').textContent = topGenre ? `${topGenre[0]}` : 'Sin datos';
+            document.getElementById('questionDetail2').textContent = topGenre ? `${topGenre[1]} votos (${votes.length > 0 ? ((topGenre[1] / votes.length) * 100).toFixed(1) : 0}% del total)` : 'No hay votos registrados';
+
+            // Pregunta 3: ¿En qué momento del día son más activos?
+            const hourStats = Array(24).fill(0);
+            [...votes, ...quizzes].forEach(activity => {
+                if (activity.timestamp) {
+                    let hour;
+                    if (activity.timestamp.getHours) {
+                        hour = activity.timestamp.getHours();
+                    } else if (activity.timestamp.toDate) {
+                        hour = activity.timestamp.toDate().getHours();
+                    } else if (typeof activity.timestamp === 'string') {
+                        hour = new Date(activity.timestamp).getHours();
+                    }
+                    if (hour !== undefined && !isNaN(hour)) {
+                        hourStats[hour]++;
+                    }
+                }
+            });
+            
+            const peakHour = hourStats.indexOf(Math.max(...hourStats));
+            const peakActivity = Math.max(...hourStats);
+            document.getElementById('questionAnswer3').textContent = peakActivity > 0 ? `${peakHour}:00 - ${peakHour + 1}:00` : 'Sin datos';
+            document.getElementById('questionDetail3').textContent = peakActivity > 0 ? `${peakActivity} actividades en la hora pico` : 'No hay actividad registrada';
+
+            // Pregunta 4: ¿Qué nivel de dificultad prefieren en quizzes?
+            let totalCorrect = 0;
+            let totalQuestions = quizzes.length * 5;
+            quizzes.forEach(quiz => {
+                totalCorrect += quiz.correctAnswers || 0;
+            });
+            
+            const successRate = totalQuestions > 0 ? (totalCorrect / totalQuestions) * 100 : 0;
+            let difficultyPreference = '';
+            
+            if (successRate >= 80) difficultyPreference = 'Fácil - Alta tasa de éxito';
+            else if (successRate >= 60) difficultyPreference = 'Moderado - Tasa de éxito media';
+            else if (successRate >= 40) difficultyPreference = 'Difícil - Tasa de éxito baja';
+            else difficultyPreference = 'Muy difícil - Tasa de éxito muy baja';
+            
+            document.getElementById('questionAnswer4').textContent = quizzes.length > 0 ? difficultyPreference : 'Sin datos';
+            document.getElementById('questionDetail4').textContent = quizzes.length > 0 ? `Tasa de éxito promedio: ${successRate.toFixed(1)}% (${totalCorrect}/${totalQuestions})` : 'No hay quizzes registrados';
+
+            // Pregunta 5: ¿Qué puntuación dan más frecuentemente?
+            const ratingStats = [0, 0, 0, 0, 0];
+            votes.forEach(vote => {
+                if (vote.stars >= 1 && vote.stars <= 5) {
+                    ratingStats[vote.stars - 1]++;
+                }
+            });
+            
+            const mostFrequentRating = ratingStats.indexOf(Math.max(...ratingStats)) + 1;
+            const mostFrequentCount = Math.max(...ratingStats);
+            document.getElementById('questionAnswer5').textContent = mostFrequentCount > 0 ? `${mostFrequentRating} Estrellas` : 'Sin datos';
+            document.getElementById('questionDetail5').textContent = mostFrequentCount > 0 ? `${mostFrequentCount} votos con ${mostFrequentRating}⭐ (${votes.length > 0 ? ((mostFrequentCount / votes.length) * 100).toFixed(1) : 0}% del total)` : 'No hay votos registrados';
+
+            // Pregunta 6: ¿Qué época histórica prefieren?
+            const decadeStats = {};
+            votes.forEach(vote => {
+                const song = songs.find(s => s.id === vote.songId);
+                if (song && song.year) {
+                    let decade;
+                    if (song.year < 0) decade = 'Antiguo';
+                    else if (song.year < 1800) decade = 'Clásico';
+                    else if (song.year < 1900) decade = 'S. XIX';
+                    else if (song.year < 1950) decade = '1900-1949';
+                    else if (song.year < 2000) decade = '1950-1999';
+                    else decade = 'S. XXI';
+                    
+                    decadeStats[decade] = (decadeStats[decade] || 0) + 1;
+                }
+            });
+            
+            const topDecade = Object.entries(decadeStats).sort(([,a], [,b]) => b - a)[0];
+            document.getElementById('questionAnswer6').textContent = topDecade ? `${topDecade[0]}` : 'Sin datos';
+            document.getElementById('questionDetail6').textContent = topDecade ? `${topDecade[1]} votos (${votes.length > 0 ? ((topDecade[1] / votes.length) * 100).toFixed(1) : 0}% del total)` : 'No hay votos registrados';
+        }
+
+        // --- INICIALIZACIÓN ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initAuthObserver();
+        });
+    </script>
+</body>
+</html>
