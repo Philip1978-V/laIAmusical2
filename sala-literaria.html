@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sala Literaria 📚 - Votación</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> 
+
+    <style>
+        :root {
+            --primary-brown: #A0522D;
+            --dark-brown: #8B4513;
+            --light-tan: #D2B48C;
+            --star-gold: #ffc107;
+            --bg-light: #f8f8f8;
+            --disabled-grey: #ccc;
+            --ia-blue: #007bff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: var(--bg-light);
+            color: #333;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: var(--primary-brown);
+            text-align: center;
+            border-bottom: 3px solid var(--primary-brown);
+            padding-bottom: 15px;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        
+        .header-links {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .back-link { text-decoration: none; color: #007bff; font-weight: bold; }
+
+        .temas-btn {
+            background-color: #BEF264;
+            color: #1a1a1a;
+            padding: 10px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            border: 1px solid #a7e555;
+        }
+
+        .info-panel {
+            background: #fff8e1;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid #ffe082;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .ia-notice {
+            display: block;
+            margin-top: 10px;
+            color: #856404;
+            font-size: 0.95em;
+            border-top: 1px solid #ffe082;
+            padding-top: 10px;
+        }
+
+        .entrada-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 1px solid #eee;
+            background-color: #fff;
+        }
+
+        .titulo-autor { flex-grow: 1; text-align: left; }
+        .titulo-original { font-size: 1.1em; font-weight: bold; color: #444; }
+        .autor { font-size: 0.9em; color: #777; font-style: italic; }
+        .titulo-ia { 
+            font-size: 1.15em; 
+            font-weight: 800; 
+            color: var(--ia-blue); 
+            margin-top: 6px;
+            display: block;
+        }
+
+        .controles-votacion {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            min-width: 250px;
+            justify-content: flex-end;
+        }
+        
+        .vote-btn {
+            background: var(--primary-brown); 
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .vote-btn:disabled { background: var(--disabled-grey); cursor: not-allowed; }
+
+        .vote-stats {
+            display: flex;
+            flex-direction: column;
+            font-size: 0.85em;
+            background: #f0f7ff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #d0e0f0;
+        }
+        
+        .rating-avg { color: var(--star-gold); font-weight: 800; }
+        .genre-top { color: var(--ia-blue); font-weight: 600; }
+
+        /* ESTRELLAS DEL MODAL */
+        .stars-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 30px 0;
+            flex-direction: row-reverse; /* Para que el hover funcione de izquierda a derecha en CSS */
+        }
+
+        .stars-container i {
+            font-size: 3em;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .stars-container i:hover,
+        .stars-container i:hover ~ i {
+            color: var(--star-gold);
+        }
+
+        /* Modales */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
+        .modal-content { background: #fff; margin: 10vh auto; padding: 40px; width: 90%; max-width: 500px; border-radius: 20px; text-align: center; position: relative; }
+        .close { position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #aaa; }
+        .genre-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 20px; }
+        .genre-btn { padding: 10px; border: 2px solid var(--primary-brown); border-radius: 8px; background: none; cursor: pointer; font-weight: bold; }
+        .genre-btn:hover { background: var(--primary-brown); color: #fff; }
+
+        @media (max-width: 600px) {
+            .entrada-item { flex-direction: column; text-align: center; }
+            .controles-votacion { margin-top: 15px; width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-links">
+        <a href="biblioteca.html" class="back-link">← Atras</a>
+        <a href="temas.html" class="temas-btn">Volver a Temas</a>
+    </div>
+
+    <h1>Sala Literaria 📚</h1>
+    
+    <div class="info-panel">
+        <div id="votos-info">Cargando disponibilidad...</div>
+        <span class="ia-notice">
+            Al finalizar la semana, se añadirá un título creado por la IA a las 3 canciones más votadas.
+        </span>
+    </div>
+
+    <div id="lista-entradas"></div>
+</div>
+
+<div id="voteModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModals()">&times;</span>
+        <h2 id="vote-title" style="color:var(--primary-brown)">Califica este título</h2>
+        <div class="stars-container">
+            <i class="fas fa-star" onclick="selectStar(5)"></i>
+            <i class="fas fa-star" onclick="selectStar(4)"></i>
+            <i class="fas fa-star" onclick="selectStar(3)"></i>
+            <i class="fas fa-star" onclick="selectStar(2)"></i>
+            <i class="fas fa-star" onclick="selectStar(1)"></i>
+        </div>
+        <p>Selecciona de 1 a 5 estrellas</p>
+    </div>
+</div>
+
+<div id="genreModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModals()">&times;</span>
+        <h2 style="color:var(--primary-brown)">Elige un género musical</h2>
+        <div class="genre-grid">
+            <button class="genre-btn" onclick="finishVote('Rock')">Rock</button>
+            <button class="genre-btn" onclick="finishVote('Pop')">Pop</button>
+            <button class="genre-btn" onclick="finishVote('Jazz')">Jazz</button>
+            <button class="genre-btn" onclick="finishVote('Clásica')">Clásica</button>
+            <button class="genre-btn" onclick="finishVote('Reggaetón')">Reggaetón</button>
+            <button class="genre-btn" onclick="finishVote('Electrónica')">Electrónica</button>
+            <button class="genre-btn" onclick="finishVote('Salsa')">Salsa</button>
+            <button class="genre-btn" onclick="finishVote('Flamenco')">Flamenco</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+        authDomain: "laiamusical-4fba7.firebaseapp.com",
+        projectId: "laiamusical-4fba7",
+        storageBucket: "laiamusical-4fba7.firebasestorage.app",
+        messagingSenderId: "49783369602",
+        appId: "1:49783369602:web:91e287c094a8f2403d699b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+    let userVotesCount = 0;
+    let userVotedTitles = [];
+    let currentItemIndex = null;
+    let selectedRating = 0;
+
+    const entradasBase = [
+        { id: "quijote", titulo: "Don Quijote de la Mancha", autor: "Miguel de Cervantes" },
+        { id: "soledad", titulo: "Cien años de soledad", autor: "Gabriel García Márquez" },
+        { id: "aleph", titulo: "El Aleph", autor: "Jorge Luis Borges" },
+        { id: "rayuela", titulo: "Rayuela", autor: "Julio Cortázar" },
+        { id: "pedro_paramo", titulo: "Pedro Páramo", autor: "Juan Rulfo" },
+        { id: "bodas_sangre", titulo: "Bodas de Sangre", autor: "Federico García Lorca" },
+        { id: "ficciones", titulo: "Ficciones", autor: "Jorge Luis Borges" },
+        { id: "tunel", titulo: "El Túnel", autor: "Ernesto Sabato" },
+        { id: "niebla", titulo: "Niebla", autor: "Miguel de Unamuno" },
+        { id: "aura", titulo: "Aura", autor: "Carlos Fuentes" },
+        { id: "casa_espiritus", titulo: "La casa de los espíritus", autor: "Isabel Allende" },
+        { id: "ciudad_perros", titulo: "La ciudad y los perros", autor: "Mario Vargas Llosa" },
+        { id: "laberinto", titulo: "El laberinto de la soledad", autor: "Octavio Paz" },
+        { id: "rimas", titulo: "Rimas y Leyendas", autor: "Gustavo Adolfo Bécquer" },
+        { id: "platero", titulo: "Platero y yo", autor: "Juan Ramón Jiménez" },
+        { id: "altazor", titulo: "Altazor", autor: "Vicente Huidobro" },
+        { id: "desolacion", titulo: "Desolación", autor: "Gabriela Mistral" },
+        { id: "veinte_poemas", titulo: "Veinte poemas de amor", autor: "Pablo Neruda" },
+        { id: "cronica_muerte", titulo: "Crónica de una muerte anunciada", autor: "Gabriel García Márquez" },
+        { id: "rosa", titulo: "A una rosa", autor: "Sor Juana Inés de la Cruz" },
+        { id: "pirata", titulo: "Canción del Pirata", autor: "José de Espronceda" },
+        { id: "elegia", titulo: "Elegía", autor: "Miguel Hernández" },
+        { id: "luces_bohemia", titulo: "Luces de Bohemia", autor: "Ramón del Valle-Inclán" },
+        { id: "molinos", titulo: "Contra molinos y gigantes", autor: "Miguel de Cervantes" },
+        { id: "princesa_triste", titulo: "La princesa está triste", autor: "Rubén Darío" },
+        { id: "hacedor", titulo: "El Hacedor", autor: "Jorge Luis Borges" },
+        { id: "muerte_artemio", titulo: "La muerte de Artemio Cruz", autor: "Carlos Fuentes" },
+        { id: "residencia_tierra", titulo: "Residencia en la tierra", autor: "Pablo Neruda" },
+        { id: "adolescencia", titulo: "Adolescencia", autor: "Juan Ramón Jiménez" },
+        { id: "amor_constante", titulo: "Amor constante más allá de la muerte", autor: "Francisco de Quevedo" }
+    ].sort((a, b) => a.titulo.localeCompare(b.titulo));
+
+    window.openVoteModal = (index) => {
+        if (userVotesCount >= 3) return alert("Límite de 3 votos alcanzado.");
+        currentItemIndex = index;
+        document.getElementById('vote-title').innerText = `¿Calificar "${entradasBase[index].titulo}"?`;
+        document.getElementById('voteModal').style.display = 'block';
+    };
+
+    window.selectStar = (rating) => {
+        selectedRating = rating;
+        document.getElementById('voteModal').style.display = 'none';
+        document.getElementById('genreModal').style.display = 'block';
+    };
+
+    window.closeModals = () => {
+        document.getElementById('voteModal').style.display = 'none';
+        document.getElementById('genreModal').style.display = 'none';
+    };
+
+    window.finishVote = async (genre) => {
+        const item = entradasBase[currentItemIndex];
+        const now = new Date();
+        const monday = new Date(now.setDate(now.getDate() - (now.getDay() || 7) + 1));
+        monday.setHours(0,0,0,0);
+        const weekId = `week-${monday.getTime()}`;
+
+        try {
+            const globalRef = doc(db, "global_votes", item.id);
+            
+            // Actualizamos: Sumamos el rating, incrementamos contador de votos y sumamos al género
+            await setDoc(globalRef, { 
+                totalRating: increment(selectedRating),
+                voteCount: increment(1),
+                [`genres.${genre}`]: increment(1)
+            }, { merge: true });
+
+            const userDocRef = doc(db, "users", currentUser.uid, "weekly_stats", weekId);
+            userVotedTitles.push(item.id);
+            userVotesCount++;
+
+            await setDoc(userDocRef, { count: userVotesCount, voted_ids: userVotedTitles }, { merge: true });
+
+            closeModals();
+            await checkUserVoteStatus();
+            renderList();
+            alert("¡Calificación guardada!");
+        } catch (e) { console.error(e); }
+    };
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) { 
+            currentUser = user; 
+            await checkUserVoteStatus(); 
+            renderList(); 
+            onSnapshot(collection(db, "global_votes"), () => renderList());
+        } else { window.location.href = 'index.html'; }
+    });
+
+    async function checkUserVoteStatus() {
+        const now = new Date();
+        const monday = new Date(now.setDate(now.getDate() - (now.getDay() || 7) + 1));
+        monday.setHours(0,0,0,0);
+        const weekId = `week-${monday.getTime()}`;
+        
+        const docSnap = await getDoc(doc(db, "users", currentUser.uid, "weekly_stats", weekId));
+        if (docSnap.exists()) {
+            userVotesCount = docSnap.data().count || 0;
+            userVotedTitles = docSnap.data().voted_ids || [];
+        }
+        document.getElementById('votos-info').innerText = `Votos realizados esta semana: ${userVotesCount}/3`;
+    }
+
+    async function renderList() {
+        const contenedor = document.getElementById('lista-entradas');
+        const querySnapshot = await getDocs(collection(db, "global_votes"));
+        const globalData = {};
+        querySnapshot.forEach(d => globalData[d.id] = d.data());
+
+        contenedor.innerHTML = ''; 
+
+        entradasBase.forEach((e, i) => {
+            const data = globalData[e.id] || { totalRating: 0, voteCount: 0, genres: {} };
+            
+            // Cálculo de media de estrellas
+            const avg = data.voteCount > 0 ? (data.totalRating / data.voteCount).toFixed(1) : "0.0";
+            
+            let topGenre = "";
+            let maxVotes = 0;
+            for (const g in data.genres) {
+                if (data.genres[g] > maxVotes) { maxVotes = data.genres[g]; topGenre = g; }
+            }
+
+            const tituloIA = maxVotes > 0 ? `${e.titulo} (${topGenre})` : "";
+            const yaVoto = userVotedTitles.includes(e.id);
+
+            const div = document.createElement('div');
+            div.className = 'entrada-item';
+            div.innerHTML = `
+                <div class="titulo-autor">
+                    <span class="titulo-original">📖 ${e.titulo}</span><br>
+                    <span class="autor">✍️ ${e.autor}</span><br>
+                    <span class="titulo-ia">✨ Título IA: ${tituloIA}</span>
+                </div>
+                <div class="controles-votacion">
+                    <div class="vote-stats">
+                        <span class="rating-avg"><i class="fas fa-star"></i> ${avg}</span>
+                        <span class="genre-top"><i class="fas fa-music"></i> ${topGenre || "Ninguno"}</span>
+                    </div>
+                    <button class="vote-btn" ${yaVoto || userVotesCount >= 3 ? 'disabled' : ''} onclick="window.openVoteModal(${i})">
+                        ${yaVoto ? 'Votado' : 'Votar'}
+                    </button>
+                </div>
+            `;
+            contenedor.appendChild(div);
+        });
+    }
+</script>
+</body>
+</html>
