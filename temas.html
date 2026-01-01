@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salas de Temas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: url('images/fondo.png') no-repeat center center fixed; 
+            background-size: cover;
+            background-color: #2c7a7b;
+            min-height: 100vh;
+            color: white;
+        }
+
+        /* Contenedor Principal */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 1rem;
+        }
+        @media (min-width: 1024px) {
+            .main-content {
+                grid-template-columns: 300px 1fr; 
+            }
+        }
+
+        /* --- AJUSTES DEL MENÚ HAMBURGUESA Y SIDEBAR --- */
+        
+        /* Botón hamburguesa visible siempre encima del menú */
+        #hamburger-button {
+            position: relative;
+            z-index: 70; /* Mayor que el sidebar (60) y overlay (55) */
+            transition: transform 0.3s ease;
+        }
+
+        /* Estilo de la barra lateral (Sidebar) */
+        .sidebar {
+            background-color: rgba(15, 23, 42, 1); /* slate-900 */
+            padding: 1.5rem;
+            /* Añadimos padding extra arriba en móvil para que el botón no tape el contenido */
+            padding-top: 90px; 
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid #14b8a6; /* teal-500 */
+            align-self: start; 
+            
+            /* Posicionamiento Móvil */
+            position: fixed; 
+            top: 0;
+            left: 0;
+            width: 85%; /* Un poco más ancho para comodidad */
+            max-width: 320px; 
+            height: 100%;
+            z-index: 60; 
+            transform: translateX(-100%); 
+            transition: transform 0.3s ease-in-out;
+            overflow-y: auto; 
+        }
+        
+        .sidebar.open {
+            transform: translateX(0); 
+        }
+
+        /* Overlay oscuro */
+        #mobile-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 55;
+            transition: opacity 0.3s;
+        }
+
+        /* Estilos específicos para Desktop */
+        @media (min-width: 1024px) {
+            .sidebar {
+                position: sticky; 
+                top: 100px; 
+                width: auto;
+                max-width: none;
+                transform: translateX(0); 
+                height: auto;
+                grid-column: 1; 
+                padding-top: 1.5rem; /* Restaurar padding normal en PC */
+                z-index: 10;
+            }
+            #mobile-menu-overlay, #hamburger-button {
+                display: none;
+            }
+        }
+
+        /* Avatar de Perfil */
+        .profile-avatar-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin-right: 1rem;
+            border-radius: 50%;
+            border: 3px solid #14b8a6; 
+            overflow: hidden;
+            flex-shrink: 0;
+            transition: transform 0.3s;
+        }
+
+        .profile-avatar-container:hover {
+            transform: scale(1.05);
+            border-color: #2dd4bf; 
+        }
+
+        .profile-avatar-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-text-content {
+             display: flex;
+             flex-direction: column;
+             justify-content: center;
+        }
+
+        /* Tarjetas de Sala */
+        .sala-cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .sala-card {
+            background-color: rgba(30, 41, 59, 0.9); 
+            padding: 1rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            border: 1px solid transparent;
+            text-align: center;
+        }
+
+        .sala-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 25px rgba(20, 184, 166, 0.2); 
+            border-color: #14b8a6; 
+        }
+
+        .sala-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+        }
+
+        .sala-card h3 {
+            font-size: 1.125rem;
+            font-weight: bold;
+            margin-top: 0.75rem;
+            color: #2dd4bf; 
+        }
+
+        .sala-card p {
+            font-size: 0.875rem;
+            color: #94a3b8; 
+            margin-top: 0.5rem;
+        }
+        
+        /* Chat Global */
+        .chat-box {
+            background-color: rgba(15, 23, 42, 0.9);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid #14b8a6;
+            display: flex;
+            flex-direction: column;
+            max-height: 400px; 
+            min-height: 400px; 
+            position: relative;
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            border-bottom: 1px solid #475569; 
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .chat-messages::-webkit-scrollbar { width: 6px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: #0d9488; border-radius: 3px; }
+
+        .chat-message {
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+        .chat-message-header {
+            font-weight: bold;
+            color: #2dd4bf; 
+            font-size: 0.875rem;
+        }
+        .chat-message-text {
+            font-size: 0.9rem;
+            color: #e2e8f0; 
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="p-4 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 shadow-lg border-b border-teal-800">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            
+            <div class="flex items-center gap-3">
+                <button id="hamburger-button" onclick="toggleSidebar()" class="text-teal-400 text-2xl lg:hidden focus:outline-none w-8 h-8 flex items-center justify-center">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <i class="fas fa-music text-teal-400 text-2xl"></i>
+                <h1 class="text-xl font-bold tracking-wide">La IA Musical</h1>
+            </div>
+
+            <div class="flex items-center gap-6 text-sm">
+                <span id="alertMessage" class="text-yellow-400 font-bold animate-pulse">En pruebas. Próximamente empezaremos</span>
+                <span id="headerUsername" class="text-teal-300 font-medium hidden md:block">Usuario</span>
+                <button onclick="logout()" class="text-gray-400 hover:text-white transition">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <div id="mobile-menu-overlay" class="hidden" onclick="closeSidebar()"></div>
+
+    <div class="main-content">
+        <div id="sidebar-menu" class="sidebar">
+            
+            <div onclick="window.location.href='perfil.html'" 
+                 class="flex items-center gap-4 mb-4 text-teal-300 border-b border-teal-700 pb-4 cursor-pointer hover:text-teal-500 transition duration-300">
+                
+                <div id="profile-avatar" class="profile-avatar-container">
+                    <img src="images/suno.png" alt="Mi Avatar de Perfil">
+                </div>
+                
+                <div class="profile-text-content">
+                    <div class="text-2xl font-bold">
+                        Mi Perfil
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-2 mb-6">
+                <button onclick="window.location.href='biblioteca.html'" class="w-full text-left py-2 px-3 rounded text-sm hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fas fa-book-open text-orange-400"></i> Biblioteca
+                </button>
+                <button onclick="window.location.href='estadisticas.html'" class="w-full text-left py-2 px-3 rounded text-sm hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fas fa-chart-line text-blue-400"></i> Estadísticas
+                </button>
+                <button onclick="window.location.href='podcast.html'" class="w-full text-left py-2 px-3 rounded text-sm hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fas fa-podcast text-green-400"></i> Podcast IA
+                </button>
+                <button onclick="alert('Abrir Spotify')" class="w-full text-left py-2 px-3 rounded text-sm hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fab fa-spotify text-green-500"></i> Spotify
+                </button>
+                <button onclick="alert('Abrir TikTok')" class="w-full text-left py-2 px-3 rounded text-sm hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fab fa-tiktok text-pink-400"></i> Tik Tok
+                </button>
+                <button onclick="window.open('https://youtube.com/@laliteraturamusical?si=OpqvLWsxJnHJtlTf')" class="w-full text-left py-2 px-3 rounded text-sm hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fab fa-youtube text-red-500"></i> ir al canal de youtube
+                </button>
+            </div>
+
+            <div class="space-y-2 border-t border-teal-700 pt-4">
+            <button onclick="openInfoModal()" class="w-full text-left py-2 px-3 rounded text-sm hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fas fa-info-circle text-blue-400"></i> Información
+                </button>
+                <button onclick="openRulesModal()" class="w-full text-left py-2 px-3 rounded text-sm hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fas fa-scroll text-yellow-500"></i> Sistema de puntos
+                </button>
+                <button onclick="openMissionModal()" class="w-full text-left py-2 px-3 rounded text-sm hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fas fa-brain text-purple-400"></i> Misión de la IA
+                </button>
+            </div>
+        </div>
+
+        <div class="lg:col-span-1 space-y-6">
+            <section>
+                <h2 class="text-3xl font-bold text-teal-300 mb-6 border-b-2 border-teal-700 pb-2">Explora las Salas de Temas</h2>
+                
+                <div class="sala-cards-container">
+                    
+                    <div class="sala-card" onclick="goToRanking('Literatura')"> 
+                        <img src="images/literatura.png" alt="Portada de Sala Literatura" class="mb-3 rounded-md">
+                        <h3>Sala Literatura</h3>
+                        <p>Música inspirada en los grandes autores, poemas y novelas de todos los tiempos.</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Cine')">
+                        <img src="images/cine.png" alt="Portada de Sala Cine" class="mb-3 rounded-md">
+                        <h3>Sala Cine</h3>
+                        <p>Bandas sonoras épicas, temas icónicos y música de películas inolvidables.</p>
+                    </div>
+                    
+                    <div class="sala-card" onclick="goToRanking('Dibujos animados')"> 
+                        <img src="images/dibujosanimados.png" alt="Portada de Sala Dibujos Animados" class="mb-3 rounded-md">
+                        <h3>Sala animación y dibujos animados</h3> 
+                        <p>Composiciones vibrantes y clásicas del mundo de la animación infantil.</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Ópera y conciertos')"> 
+                        <img src="images/operayconciertos.png" alt="Portada de Sala Ópera y Conciertos" class="mb-3 rounded-md">
+                        <h3>Sala ópera y conciertos</h3> 
+                        <p>Obras majestuosas, arias famosas y música clásica en vivo.</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Teatro y musicales')"> 
+                        <img src="images/teatroymusicales.png" alt="Portada de Sala Teatro y Musicales" class="mb-3 rounded-md">
+                        <h3>Sala teatro y musicales</h3>
+                        <p>Música escénica, Broadway y piezas dramáticas de grandes compositores.</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Series')"> 
+                        <img src="images/series.png" alt="Portada de Sala Series" class="mb-3 rounded-md">
+                        <h3>Sala series</h3> 
+                        <p>Bandas sonoras y temas principales de tus series de televisión favoritas.</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Anime')"> 
+                        <img src="images/anime.png" alt="Portada de Sala Anime" class="mb-3 rounded-md">
+                        <h3>Sala anime</h3> 
+                        <p>Openings, endings y música incidental de la animación japonesa.</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Extra y documentales')"> 
+                        <img src="images/extras.png" alt="Portada de Sala Extra y Documentales" class="mb-3 rounded-md">
+                        <h3>Sala extra y documentales</h3> 
+                        <p>Composiciones para explorar el espacio, la naturaleza y temas históricos.</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Usuarios')"> 
+                        <img src="images/usuarios.png" alt="Portada de Sala Amigos" class="mb-3 rounded-md">
+                        <h3>Sala Usuarios</h3> 
+                        <p>Música generada por el usuario interesado en participar.</p>
+                    </div>
+
+                </div>
+            </section>
+
+            <div class="chat-box">
+                <h3 class="text-xl font-bold mb-4 text-white flex items-center justify-between border-b border-teal-700 pb-2">
+                    <span class="flex items-center gap-2">
+                        <i class="fas fa-comments text-teal-400"></i> Chat Global
+                    </span>
+                    <button onclick="openChatRulesModal()" class="text-xs bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-1 px-2 rounded transition">
+                        Normas del chat
+                    </button>
+                </h3>
+                <div id="chatMessages" class="chat-messages space-y-3">
+                    </div>
+                <div class="flex gap-2 mt-auto">
+                    <button onclick="toggleEmojiPicker()" id="emojiButton" class="bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-2 px-3 rounded-lg transition">
+                        😊
+                    </button>
+                    <input type="text" id="commentInput" placeholder="Escribe tu comentario..." 
+                           class="flex-grow p-2 rounded-lg bg-slate-700 text-white placeholder-slate-400 border border-slate-600 focus:border-teal-500 focus:ring-1 focus:ring-teal-500">
+                    <button onclick="submitGlobalComment()" id="sendCommentButton"
+                            class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-4 rounded-lg transition disabled:opacity-50">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                
+                <!-- Emoji Picker -->
+                <div id="emojiPicker" class="hidden absolute bg-slate-800 border border-slate-600 rounded-lg p-3 mt-2 z-50 shadow-lg">
+                    <div class="grid grid-cols-6 gap-2 max-w-xs">
+                        <button onclick="insertEmoji('😊')" class="text-2xl hover:bg-slate-700 p-1 rounded">😊</button>
+                        <button onclick="insertEmoji('😂')" class="text-2xl hover:bg-slate-700 p-1 rounded">😂</button>
+                        <button onclick="insertEmoji('❤️')" class="text-2xl hover:bg-slate-700 p-1 rounded">❤️</button>
+                        <button onclick="insertEmoji('👍')" class="text-2xl hover:bg-slate-700 p-1 rounded">👍</button>
+                        <button onclick="insertEmoji('👎')" class="text-2xl hover:bg-slate-700 p-1 rounded">👎</button>
+                        <button onclick="insertEmoji('🔥')" class="text-2xl hover:bg-slate-700 p-1 rounded">🔥</button>
+                        <button onclick="insertEmoji('🎵')" class="text-2xl hover:bg-slate-700 p-1 rounded">🎵</button>
+                        <button onclick="insertEmoji('🎶')" class="text-2xl hover:bg-slate-700 p-1 rounded">🎶</button>
+                        <button onclick="insertEmoji('🎸')" class="text-2xl hover:bg-slate-700 p-1 rounded">🎸</button>
+                        <button onclick="insertEmoji('🎤')" class="text-2xl hover:bg-slate-700 p-1 rounded">🎤</button>
+                        <button onclick="insertEmoji('🎧')" class="text-2xl hover:bg-slate-700 p-1 rounded">🎧</button>
+                        <button onclick="insertEmoji('🎹')" class="text-2xl hover:bg-slate-700 p-1 rounded">🎹</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-16 py-8 bg-slate-900/90 border-t border-teal-700">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="text-center space-y-4">
+                <p class="text-gray-300 text-sm">
+                    Contacta con nosotros: 
+                    <a href="mailto:contact@hotmail.com" class="text-teal-400 hover:text-teal-300 underline transition-colors">
+                        La IA Musical
+                    </a>
+                </p>
+                <p class="text-gray-400 text-xs">
+                    © 2024 La IA Musical. Todos los derechos reservados.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <div id="rulesModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm">
+        <div class="bg-slate-800 p-8 rounded-xl border border-teal-700 max-w-lg w-full shadow-2xl">
+            <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center gap-2"><i class="fas fa-scroll text-yellow-400"></i> Reglas</h3>
+            <p class="text-gray-300 mb-4 font-semibold border-b border-slate-700 pb-2">Información de la Economía y Clasificación:</p>
+            <div class="space-y-4 text-sm text-gray-400 pl-2">
+                
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-vote-yea text-blue-400 text-xl pt-1"></i>
+                    <div>
+                        <span class="font-bold text-teal-200">Votos:</span> Valora las canciones hasta 5 estrellas. Tienes 5 votos gratuitos diarios que se resetean a medianoche. Los votos extra se compran con Estrellas. Cuando votas una carta inmediatamente se envía a tu perfil en la sección de "Mis cartas votadas esta semana" (5 cartas semanales). En tu perfil aparecerá esa carta con sus respectivos puntos.
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-star text-yellow-400 text-xl pt-1"></i>
+                    <div>
+                        <span class="font-bold text-teal-200">Estrellas:</span> Se consiguen al realizar los Quizzes, en la clasificación del Top 3 semanal, realizando misones y otros premios.
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-gem text-purple-400 text-xl pt-1"></i>
+                    <div>
+                        <span class="font-bold text-teal-200">Diamantes:</span> Se consiguen al completar todas las preguntas del Quiz correctamente (100% de acierto). En el top 3 semanal, realizando misiones y otros premios.
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-coins text-orange-400 text-xl pt-1"></i>
+                    <div>
+                        <span class="font-bold text-teal-200">Monedas:</span> Se consiguen intercambiando Estrellas en la sección del mercado de tu perfil y en premio diario.
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-chart-bar text-green-400 text-xl pt-1"></i>
+                    <div>
+                        <span class="font-bold text-teal-200">Rango:</span> Es tu nivel mostrado en la barra de progreso mostrado en tu perfil que está relacionado con las estrellas que se consiguen.
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeRulesModal()" class="mt-6 w-full py-2 rounded bg-teal-600 hover:bg-teal-500 text-white font-bold transition">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="missionModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm">
+        <div class="bg-slate-800 p-8 rounded-xl border border-teal-700 max-w-lg w-full shadow-2xl">
+            <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center gap-2"><i class="fas fa-brain text-purple-400"></i> Nuestra Misión Principal</h3>
+            
+            <ul class="list-disc list-inside space-y-3 text-gray-300 text-sm pl-4">
+                <li>Buscamos crear una **biblioteca musical** con letras inspiradas en literatura, cine, arte, etc.</li>
+                <li>Animamos a recoger todas estas herramientas para que **inspire y motive** a cada persona a explorar este vasto universo que nos trae la IA.</li>
+                <li>Utilizamos la música como puente para facilitar la **memorización, la comprensión** y, sobre todo, la apreciación de las obras clásicas y modernas.</li>
+                <li>Rejuvenecer la apreciación por los grandes autores y sus textos, el cine y arte creativo.</li>
+                <li>Ofrecer una **experiencia sensorial única** que complemente la lectura con la música gracias a que estamos a favor de que la IA lo lleve a buen término.</li>
+                <li>Crear una **comunidad de votación** donde los usuarios decidan qué adaptaciones merecen estar en la cima.</li>
+                <li>A través de Quizzes interactivos, un sistema de rangos y rankings competitivos, buscamos convertir el aprendizaje en una **experiencia lúdica y profundamente gratificante**, preparando a las personas para su desarrollo personal y cultural.</li>
+            </ul>
+            <button onclick="closeMissionModal()" class="mt-6 w-full py-2 rounded bg-teal-600 hover:bg-teal-500 text-white font-bold transition">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="infoModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm">
+        <div class="bg-slate-800 p-8 rounded-xl border border-teal-700 max-w-lg w-full shadow-2xl">
+            <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center gap-2"><i class="fas fa-info-circle text-blue-400"></i> Información</h3>
+            
+            <ol class="list-decimal list-inside space-y-3 text-gray-300 text-sm pl-4">
+                <li>Explora y entra en una sala.</li>
+                <li>Dale al play y escucha la canción que la IA ha creado.</li>
+                <li>Realiza el Quiz.</li>
+                <li>Vota por el top 3 de la semana.</li>
+                <li>Sube de rango hasta alcanzar la cima.</li>
+            </ol>
+            <button onclick="closeInfoModal()" class="mt-6 w-full py-2 rounded bg-teal-600 hover:bg-teal-500 text-white font-bold transition">Cerrar</button>
+        </div>
+    </div>
+    
+    <div id="errorModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm">
+        <div class="bg-slate-800 p-8 rounded-xl border border-red-700 max-w-sm w-full shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 text-red-400 flex items-center gap-2"><i class="fas fa-exclamation-triangle"></i> Error</h3>
+            <p id="errorDetails" class="text-gray-300 mb-4 text-sm">Ha ocurrido un error inesperado.</p>
+            <button onclick="closeErrorModal()" class="mt-4 w-full py-2 rounded bg-red-600 hover:bg-red-500 text-white font-bold transition">Aceptar</button>
+        </div>
+    </div>
+
+    <div id="chatRulesModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm">
+        <div class="bg-slate-800 p-8 rounded-xl border border-yellow-700 max-w-3xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-2xl font-bold mb-4 text-yellow-400 flex items-center gap-2">
+                <i class="fas fa-scroll"> </i> Normas del Chat
+</h3>
+<div class="space-y-4 text-sm text-gray-300">
+<div class="border-b border-slate-600 pb-4">
+<p class="text-yellow-300 font-semibold mb-2">Comportamientos que conllevarán la moderación de uno o varios mensajes y la sanción correspondiente a los usuarios responsables de los mismos.</p>
+</div><div class="space-y-4">
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Prohibido hacer SPAM</h4>
+                    <p>El SPAM se define básicamente como el envío de las mismas respuestas una y otra vez en el mismo hilo o en otro hilo diferente. También se puede considerar SPAM estar publicando el mismo hilo con el mismo contenido varias veces en las mismas secciones o en secciones diferentes. Otra opción que se considera SPAM son las respuestas irrelevantes para el tema del hilo o enlaces a otras webs sin ninguna relación con el tema tratado o para beneficio personal del remitente.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Prohibido publicar contenido relacionado con desnudos, racismo, violencia, religión, política y menores.</h4>
+                    <p>Se tomarán medidas estrictas en su contra, si encontramos algún tipo de desnudez y/o racismo, temas políticos o religiosos por parte de cualquiera de los usuarios, así como fotografías con menores o imágenes violentas.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Prohibido escribir mensajes fuera del tema en cuestión</h4>
+                    <p>Las respuestas que no estén relacionadas con el asunto tratado se considerarán como respuestas fuera de tema y será motivo de moderación si se hace de forma reiterada.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Prohibido insultar, acosar, difamar o molestar a los demás usuarios</h4>
+                    <p>La participación en el foro con ánimo de insultar, acosar, difamar, molestar a otros usuarios o colaboradores será motivo de expulsión.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Prohibido entrar en discusiones en bucle</h4>
+                    <p>No se deben utilizar los chats públicos para entrar en discusiones en bucle entre dos usuarios. Menos si van acompañadas de subidas de tono. Para continuar el debate, una vez planteadas las posturas, posiciones, y réplicas razonables, si se quiere seguir discutiendo deben hacerlo a través de un chat directo.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Phohibido utilizar palabras obscenas de forma reiterada</h4>
+                    <p>Mientras animamos a los usuarios a ser abiertos y compartir sus opiniones, el uso de palabras obscenas de forma reiterada no está permitido. No está permitido faltar al respeto a otros usuarios.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Prohibido discriminar, amenazar o hacer ataques personales.</h4>
+                    <p>La cortesía es la mejor política. Entendemos que hay veces en que no estemos de acuerdo con alguien o quizás hayamos tenido un mal día, pero esto no justifica ningún uso de discriminación, amenazas o ataques personales. Cualquier usuario que se dirija de forma impropia será amonestado. Es responsabilidad de todos convertir la comunidad en un lugar agradable y acogedor.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Prohibido publicar información personal</h4>
+                    <p>No es legal publicar la información personal de alguien o publicar enlaces a información personal. Esto incluye enlaces a páginas públicas de Facebook u otras redes sociales y capturas de pantalla de páginas de Facebook u otras redes sociales con los nombres aún legibles. Al publicar capturas de pantalla, asegúrate de editar cualquier información de identificación personal para evitar que se oponga a esta regla.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Prohibido suplantar la identidad de otra persona</h4>
+                    <p>Suplantar o usar la identidad de otra persona de manera engañosa no está permitido. Si esto sucediera el usuario podrá ser expulsado de nuestro foro permanentemente.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Prohibido utilizar varias cuentas(Se controlará estos límites)</h4>
+                    <p>Utilizar varias cuentas e identidades para participar en los foros no está permitido y será motivo de expulsión. Un simple análisis por IP permite identificar a usuarios con cuentas múltiples.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-orange-400 font-bold mb-2">Sobre las sanciones</h4>
+                    <p>La sanción podrá ir, en función de la gravedad, desde la eliminación del mensaje y aviso, a una expulsión temporal, o incluso una expulsión indefinida. La acumulación de mensajes moderados y sanciones podrá endurecer las sanciones siguientes por su reiteración.</p>
+                </div>
+            </div>
+        </div>
+        <button onclick="closeChatRulesModal()" class="mt-6 w-full py-2 rounded bg-yellow-600 hover:bg-yellow-500 text-white font-bold transition">Cerrar</button>
+    </div>
+</div>
+
+
+<script>
+    // CONFIGURACIÓN FIREBASE
+    const firebaseConfig = {
+        apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+        authDomain: "laiamusical-4fba7.firebaseapp.com",
+        projectId: "laiamusical-4fba7",
+        storageBucket: "laiamusical-4fba7.firebasestorage.app",
+        messagingSenderId: "49783369602",
+        appId: "1:49783369602:web:91e287c094a8f2403d699b",
+        measurementId: "G-WC2JT6DRF4"
+    };
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // VARIABLES DE ESTADO
+    let currentUser = null;
+    let username = 'Usuario'; 
+    const maxVotes = 5; 
+
+    // --- FUNCIONES PARA EL MENÚ HAMBURGUESA MODIFICADAS ---
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar-menu');
+        const overlay = document.getElementById('mobile-menu-overlay');
+        const icon = document.querySelector('#hamburger-button i');
+        
+        if (sidebar.classList.contains('open')) {
+            closeSidebar();
+        } else {
+            sidebar.classList.add('open');
+            overlay.classList.remove('hidden');
+            // Cambiar icono a X
+            icon.classList.remove('fa-bars');
+            icon.classList.add('fa-times');
+        }
+    }
+    window.toggleSidebar = toggleSidebar; 
+    
+    function closeSidebar() {
+        const sidebar = document.getElementById('sidebar-menu');
+        const overlay = document.getElementById('mobile-menu-overlay');
+        const icon = document.querySelector('#hamburger-button i');
+        
+        sidebar.classList.remove('open');
+        setTimeout(() => {
+             overlay.classList.add('hidden');
+        }, 300);
+        
+        // Restaurar icono a Barras
+        icon.classList.remove('fa-times');
+        icon.classList.add('fa-bars');
+    }
+    window.closeSidebar = closeSidebar;
+
+
+    // --- MANEJO DE VISTAS ---
+    function goToRanking(topicName) {
+        console.log(`Intentando ir a la sala: ${topicName}`);
+        localStorage.setItem('currentTopic', topicName);
+        // CERRAR EL MENÚ después de la navegación en móvil
+        if (window.innerWidth < 1024) {
+             closeSidebar();
+        }
+        window.location.href = 'reproductor.html';
+    }
+    window.goToRanking = goToRanking; 
+
+    // --- LÓGICA DE USUARIO Y FIREBASE ---
+    async function loadUserData() {
+        if (!currentUser) return;
+        try {
+            const docRef = db.collection('users').doc(currentUser.uid);
+            const docSnap = await docRef.get();
+            
+            let data;
+
+            if (docSnap.exists) {
+                data = docSnap.data();
+                username = data.username || currentUser.email.split('@')[0]; 
+                
+                const votesRemaining = data.votesRemaining !== undefined ? data.votesRemaining : maxVotes;
+                const lastVoteDate = data.lastVoteDate;
+                const lastDateString = lastVoteDate ? lastVoteDate.toDate().toDateString() : null;
+                const todayString = new Date().toDateString();
+
+                if (lastDateString !== todayString) {
+                    // Actualizar fecha y votos en Firestore
+                    await docRef.update({ 
+                        votesRemaining: maxVotes, 
+                        lastVoteDate: new Date() 
+                    });
+                }
+
+            } else {
+                // Si el documento no existe, inicializarlo
+                username = currentUser.email.split('@')[0]; 
+                await docRef.set({
+                    username: username,
+                    totalStars: 0,
+                    votesRemaining: maxVotes,
+                    lastVoteDate: new Date(),
+                    createdAt: new Date(),
+                    activityLog: [] 
+                });
+            }
+            
+            // Actualizar mensajes y cabecera
+            document.getElementById('headerUsername').textContent = username; 
+
+        } catch (error) {
+            console.error("Error cargando datos:", error);
+            showErrorModal("Error al cargar datos del usuario. Intente recargar. " + error.message);
+        }
+    }
+
+    function initAuthObserver() {
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                loadUserData();
+            } else {
+                window.location.href = 'index.html'; 
+            }
+        });
+    }
+    
+    function logout() {
+        auth.signOut().then(() => {
+            localStorage.removeItem('currentTopic'); 
+            window.location.href = 'index.html';
+        });
+    }
+    window.logout = logout;
+
+
+    // --- CHAT GLOBAL ---
+    function setupCommentsListener() {
+        db.collection('globalChat').orderBy('timestamp', 'desc').limit(20)
+            .onSnapshot(snapshot => {
+                const chatMessages = document.getElementById('chatMessages');
+                chatMessages.innerHTML = ''; 
+                snapshot.docs.reverse().forEach(doc => { 
+                    const data = doc.data();
+                    const timestamp = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString([], { 
+                        year: 'numeric', 
+                        month: '2-digit', 
+                        day: '2-digit', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    }) : 'N/A';
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'chat-message relative group';
+                    messageElement.innerHTML = `
+                        <div class="chat-message-header">${data.username || 'Usuario anónimo'} <span class="text-xs text-gray-500 ml-2">${timestamp}</span></div>
+                        <div class="chat-message-text">${data.message}</div>
+                        ${data.userId === currentUser.uid ? `<button onclick="deleteMessage('${doc.id}')" class="absolute top-0 right-0 text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity text-xs"><i class="fas fa-trash"></i></button>` : ''}
+                    `;
+                    chatMessages.appendChild(messageElement);
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight; 
+            }, err => {
+                console.error("Error al escuchar el chat:", err);
+            });
+    }
+
+    async function submitGlobalComment() {
+        if (!currentUser) {
+            showErrorModal("Debes iniciar sesión para comentar.");
+            return;
+        }
+        const input = document.getElementById('commentInput');
+        const message = input.value.trim();
+
+        if (message.length > 0) {
+            
+            const button = document.getElementById('sendCommentButton');
+            
+            button.disabled = true;
+
+            try {
+                await db.collection('globalChat').add({
+                    username: username, 
+                    userId: currentUser.uid,
+                    message: message,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+                });
+                input.value = ''; 
+            } catch (e) {
+                console.error("Error al enviar el comentario:", e);
+                showErrorModal("Error al enviar el comentario.");
+            } finally {
+                button.disabled = false;
+            }
+        }
+    }
+    window.submitGlobalComment = submitGlobalComment;
+
+
+    // --- MODALES ---
+    function openRulesModal() {
+        document.getElementById('rulesModal').classList.remove('hidden');
+        document.getElementById('rulesModal').classList.add('flex');
+        closeSidebar(); // Cierra el menú hamburguesa al abrir un modal
+    }
+    window.openRulesModal = openRulesModal;
+
+    function closeRulesModal() {
+        document.getElementById('rulesModal').classList.add('hidden');
+        document.getElementById('rulesModal').classList.remove('flex');
+    }
+    window.closeRulesModal = closeRulesModal;
+
+    function openMissionModal() {
+        document.getElementById('missionModal').classList.remove('hidden');
+        document.getElementById('missionModal').classList.add('flex');
+        closeSidebar(); // Cierra el menú hamburguesa al abrir un modal
+    }
+    window.openMissionModal = openMissionModal;
+
+    function closeMissionModal() {
+        document.getElementById('missionModal').classList.add('hidden');
+        document.getElementById('missionModal').classList.remove('flex');
+    }
+    window.closeMissionModal = closeMissionModal;
+
+    function openInfoModal() {
+        document.getElementById('infoModal').classList.remove('hidden');
+        document.getElementById('infoModal').classList.add('flex');
+        closeSidebar(); // Cierra el menú hamburguesa al abrir un modal
+    }
+    window.openInfoModal = openInfoModal;
+
+    function closeInfoModal() {
+        document.getElementById('infoModal').classList.add('hidden');
+        document.getElementById('infoModal').classList.remove('flex');
+    }
+    window.closeInfoModal = closeInfoModal;
+    
+    function showErrorModal(details) {
+        document.getElementById('errorDetails').textContent = details;
+        document.getElementById('errorModal').classList.remove('hidden');
+        document.getElementById('errorModal').classList.add('flex');
+    }
+
+    function closeErrorModal() {
+        document.getElementById('errorModal').classList.add('hidden');
+        document.getElementById('errorModal').classList.remove('flex');
+        document.getElementById('errorDetails').textContent = "";
+    }
+    window.closeErrorModal = closeErrorModal;
+
+    function openChatRulesModal() {
+        document.getElementById('chatRulesModal').classList.remove('hidden');
+        document.getElementById('chatRulesModal').classList.add('flex');
+        closeSidebar(); // Cierra el menú hamburguesa al abrir un modal
+    }
+    window.openChatRulesModal = openChatRulesModal;
+
+    function closeChatRulesModal() {
+        document.getElementById('chatRulesModal').classList.add('hidden');
+        document.getElementById('chatRulesModal').classList.remove('flex');
+    }
+    window.closeChatRulesModal = closeChatRulesModal;
+
+    // --- FUNCIONES PARA EMOJI PICKER ---
+    function toggleEmojiPicker() {
+        const emojiPicker = document.getElementById('emojiPicker');
+        emojiPicker.classList.toggle('hidden');
+    }
+    window.toggleEmojiPicker = toggleEmojiPicker;
+
+    function insertEmoji(emoji) {
+        const input = document.getElementById('commentInput');
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const text = input.value;
+        const before = text.substring(0, start);
+        const after = text.substring(end, text.length);
+        input.value = before + emoji + after;
+        input.selectionStart = input.selectionEnd = start + emoji.length;
+        input.focus();
+        
+        // Ocultar el picker después de seleccionar un emoji
+        document.getElementById('emojiPicker').classList.add('hidden');
+    }
+    window.insertEmoji = insertEmoji;
+
+    // --- FUNCIÓN PARA BORRAR MENSAJES ---
+    async function deleteMessage(messageId) {
+        if (!currentUser) {
+            showErrorModal("Debes iniciar sesión para borrar mensajes.");
+            return;
+        }
+
+        try {
+            await db.collection('globalChat').doc(messageId).delete();
+            console.log("Mensaje eliminado correctamente");
+        } catch (error) {
+            console.error("Error al eliminar el mensaje:", error);
+            showErrorModal("Error al eliminar el mensaje.");
+        }
+    }
+    window.deleteMessage = deleteMessage;
+
+
+    // --- INICIALIZACIÓN ---
+    function init() {
+        setupCommentsListener(); 
+        initAuthObserver();
+        
+        // Permitir enviar comentario con Enter
+        const commentInput = document.getElementById('commentInput');
+        if (commentInput) {
+            commentInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    submitGlobalComment();
+                }
+            });
+        }
+        
+        // Cerrar modales al hacer clic en el fondo
+        document.getElementById('rulesModal').addEventListener('click', function(e) {
+            if (e.target === this) closeRulesModal();
+        });
+        document.getElementById('missionModal').addEventListener('click', function(e) {
+            if (e.target === this) closeMissionModal();
+        });
+        document.getElementById('infoModal').addEventListener('click', function(e) {
+            if (e.target === this) closeInfoModal();
+        });
+        document.getElementById('errorModal').addEventListener('click', function(e) {
+            if (e.target === this) closeErrorModal();
+        });
+        document.getElementById('chatRulesModal').addEventListener('click', function(e) {
+            if (e.target === this) closeChatRulesModal();
+        });
+
+        // Cerrar emoji picker al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            const emojiPicker = document.getElementById('emojiPicker');
+            const emojiButton = document.getElementById('emojiButton');
+            if (!emojiPicker.contains(e.target) && !emojiButton.contains(e.target)) {
+                emojiPicker.classList.add('hidden');
+            }
+        });
+    }
+
+    init();
+</script>
+</body>
+</html>
+```
