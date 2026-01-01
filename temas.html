@@ -196,6 +196,7 @@
             flex-direction: column;
             max-height: 400px; 
             min-height: 400px; 
+            position: relative;
         }
 
         .chat-messages {
@@ -364,18 +365,44 @@
             </section>
 
             <div class="chat-box">
-                <h3 class="text-xl font-bold mb-4 text-white flex items-center gap-2 border-b border-teal-700 pb-2">
-                    <i class="fas fa-comments text-teal-400"></i> Chat Global
+                <h3 class="text-xl font-bold mb-4 text-white flex items-center justify-between border-b border-teal-700 pb-2">
+                    <span class="flex items-center gap-2">
+                        <i class="fas fa-comments text-teal-400"></i> Chat Global
+                    </span>
+                    <button onclick="openChatRulesModal()" class="text-xs bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-1 px-2 rounded transition">
+                        Normas del chat
+                    </button>
                 </h3>
                 <div id="chatMessages" class="chat-messages space-y-3">
                     </div>
                 <div class="flex gap-2 mt-auto">
+                    <button onclick="toggleEmojiPicker()" id="emojiButton" class="bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-2 px-3 rounded-lg transition">
+                        😊
+                    </button>
                     <input type="text" id="commentInput" placeholder="Escribe tu comentario..." 
                            class="flex-grow p-2 rounded-lg bg-slate-700 text-white placeholder-slate-400 border border-slate-600 focus:border-teal-500 focus:ring-1 focus:ring-teal-500">
                     <button onclick="submitGlobalComment()" id="sendCommentButton"
                             class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-4 rounded-lg transition disabled:opacity-50">
                         <i class="fas fa-paper-plane"></i>
                     </button>
+                </div>
+                
+                <!-- Emoji Picker -->
+                <div id="emojiPicker" class="hidden absolute bg-slate-800 border border-slate-600 rounded-lg p-3 mt-2 z-50 shadow-lg">
+                    <div class="grid grid-cols-6 gap-2 max-w-xs">
+                        <button onclick="insertEmoji('😊')" class="text-2xl hover:bg-slate-700 p-1 rounded">😊</button>
+                        <button onclick="insertEmoji('😂')" class="text-2xl hover:bg-slate-700 p-1 rounded">😂</button>
+                        <button onclick="insertEmoji('❤️')" class="text-2xl hover:bg-slate-700 p-1 rounded">❤️</button>
+                        <button onclick="insertEmoji('👍')" class="text-2xl hover:bg-slate-700 p-1 rounded">👍</button>
+                        <button onclick="insertEmoji('👎')" class="text-2xl hover:bg-slate-700 p-1 rounded">👎</button>
+                        <button onclick="insertEmoji('🔥')" class="text-2xl hover:bg-slate-700 p-1 rounded">🔥</button>
+                        <button onclick="insertEmoji('🎵')" class="text-2xl hover:bg-slate-700 p-1 rounded">🎵</button>
+                        <button onclick="insertEmoji('🎶')" class="text-2xl hover:bg-slate-700 p-1 rounded">🎶</button>
+                        <button onclick="insertEmoji('🎸')" class="text-2xl hover:bg-slate-700 p-1 rounded">🎸</button>
+                        <button onclick="insertEmoji('🎤')" class="text-2xl hover:bg-slate-700 p-1 rounded">🎤</button>
+                        <button onclick="insertEmoji('🎧')" class="text-2xl hover:bg-slate-700 p-1 rounded">🎧</button>
+                        <button onclick="insertEmoji('🎹')" class="text-2xl hover:bg-slate-700 p-1 rounded">🎹</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -392,7 +419,7 @@
                     </a>
                 </p>
                 <p class="text-gray-400 text-xs">
-                    © 2025 La IA Musical. Todos los derechos reservados.
+                    © 2024 La IA Musical. Todos los derechos reservados.
                 </p>
             </div>
         </div>
@@ -462,14 +489,14 @@
 
     <div id="infoModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm">
         <div class="bg-slate-800 p-8 rounded-xl border border-teal-700 max-w-lg w-full shadow-2xl">
-            <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center gap-2"><i class="fas fa-info-circle text-blue-400"></i> Información del Gaming</h3>
+            <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center gap-2"><i class="fas fa-info-circle text-blue-400"></i> Información</h3>
             
             <ol class="list-decimal list-inside space-y-3 text-gray-300 text-sm pl-4">
                 <li>Explora y entra en una sala.</li>
                 <li>Dale al play y escucha la canción que la IA ha creado.</li>
                 <li>Realiza el Quiz.</li>
                 <li>Vota por el top 3 de la semana.</li>
-                <li>Sube de rango hasta hasta el nivel 50. (El rango aumenta y disminuye).</li>
+                <li>Sube de rango hasta alcanzar la cima.</li>
             </ol>
             <button onclick="closeInfoModal()" class="mt-6 w-full py-2 rounded bg-teal-600 hover:bg-teal-500 text-white font-bold transition">Cerrar</button>
         </div>
@@ -483,296 +510,427 @@
         </div>
     </div>
 
+    <div id="chatRulesModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm">
+        <div class="bg-slate-800 p-8 rounded-xl border border-yellow-700 max-w-3xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-2xl font-bold mb-4 text-yellow-400 flex items-center gap-2">
+                <i class="fas fa-scroll"> </i> Normas del Chat
+</h3>
+<div class="space-y-4 text-sm text-gray-300">
+<div class="border-b border-slate-600 pb-4">
+<p class="text-yellow-300 font-semibold mb-2">Comportamientos que conllevarán la moderación de uno o varios mensajes y la sanción correspondiente a los usuarios responsables de los mismos.</p>
+</div><div class="space-y-4">
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Hacer SPAM</h4>
+                    <p>El SPAM se define básicamente como el envío de las mismas respuestas una y otra vez en el mismo hilo o en otro hilo diferente. También se puede considerar SPAM estar publicando el mismo hilo con el mismo contenido varias veces en las mismas secciones o en secciones diferentes. Otra opción que se considera SPAM son las respuestas irrelevantes para el tema del hilo o enlaces a otras webs sin ninguna relación con el tema tratado o para beneficio personal del remitente.</p>
+                </div>
 
-    <script>
-        // CONFIGURACIÓN FIREBASE
-        const firebaseConfig = {
-            apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
-            authDomain: "laiamusical-4fba7.firebaseapp.com",
-            projectId: "laiamusical-4fba7",
-            storageBucket: "laiamusical-4fba7.firebasestorage.app",
-            messagingSenderId: "49783369602",
-            appId: "1:49783369602:web:91e287c094a8f2403d699b",
-            measurementId: "G-WC2JT6DRF4"
-        };
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Publicar contenido relacionado con desnudos, racismo, violencia, religión, política y menores.</h4>
+                    <p>Se tomarán medidas estrictas en su contra, si encontramos algún tipo de desnudez y/o racismo, temas políticos o religiosos por parte de cualquiera de los usuarios, así como fotografías con menores o imágenes violentas.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Escribir mensajes fuera del tema en cuestión</h4>
+                    <p>Las respuestas que no estén relacionadas con el asunto tratado se considerarán como respuestas fuera de tema y será motivo de moderación si se hace de forma reiterada.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Insultar, acosar, difamar o molestar a los demás usuarios</h4>
+                    <p>La participación en el foro con ánimo de insultar, acosar, difamar, molestar a otros usuarios o colaboradores será motivo de expulsión.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Entrar en discusiones en bucle</h4>
+                    <p>No se deben utilizar los chats públicos para entrar en discusiones en bucle entre dos usuarios. Menos si van acompañadas de subidas de tono. Para continuar el debate, una vez planteadas las posturas, posiciones, y réplicas razonables, si se quiere seguir discutiendo deben hacerlo a través de un chat directo.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Utilizar palabras obscenas de forma reiterada</h4>
+                    <p>Mientras animamos a los usuarios a ser abiertos y compartir sus opiniones, el uso de palabras obscenas de forma reiterada no está permitido. No está permitido faltar al respeto a otros usuarios.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Discriminar, amenazar o hacer ataques personales.</h4>
+                    <p>La cortesía es la mejor política. Entendemos que hay veces en que no estemos de acuerdo con alguien o quizás hayamos tenido un mal día, pero esto no justifica ningún uso de discriminación, amenazas o ataques personales. Cualquier usuario que se dirija de forma impropia será amonestado. Es responsabilidad de todos convertir la comunidad en un lugar agradable y acogedor.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Publicar información personal</h4>
+                    <p>No es legal publicar la información personal de alguien o publicar enlaces a información personal. Esto incluye enlaces a páginas públicas de Facebook u otras redes sociales y capturas de pantalla de páginas de Facebook u otras redes sociales con los nombres aún legibles. Al publicar capturas de pantalla, asegúrate de editar cualquier información de identificación personal para evitar que se oponga a esta regla.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Suplantar la identidad de otra persona</h4>
+                    <p>Suplantar o usar la identidad de otra persona de manera engañosa no está permitido. Si esto sucediera el usuario podrá ser expulsado de nuestro foro permanentemente.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-red-400 font-bold mb-2">Utilizar varias cuentas</h4>
+                    <p>Utilizar varias cuentas e identidades para participar en los foros no está permitido y será motivo de expulsión. Un simple análisis por IP permite identificar a usuarios con cuentas múltiples.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-orange-400 font-bold mb-2">Sobre las sanciones</h4>
+                    <p>La sanción podrá ir, en función de la gravedad, desde la eliminación del mensaje y aviso, a una expulsión temporal, o incluso una expulsión indefinida. La acumulación de mensajes moderados y sanciones podrá endurecer las sanciones siguientes por su reiteración.</p>
+                </div>
+            </div>
+        </div>
+        <button onclick="closeChatRulesModal()" class="mt-6 w-full py-2 rounded bg-yellow-600 hover:bg-yellow-500 text-white font-bold transition">Cerrar</button>
+    </div>
+</div>
+
+
+<script>
+    // CONFIGURACIÓN FIREBASE
+    const firebaseConfig = {
+        apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+        authDomain: "laiamusical-4fba7.firebaseapp.com",
+        projectId: "laiamusical-4fba7",
+        storageBucket: "laiamusical-4fba7.firebasestorage.app",
+        messagingSenderId: "49783369602",
+        appId: "1:49783369602:web:91e287c094a8f2403d699b",
+        measurementId: "G-WC2JT6DRF4"
+    };
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // VARIABLES DE ESTADO
+    let currentUser = null;
+    let username = 'Usuario'; 
+    const maxVotes = 5; 
+
+    // --- FUNCIONES PARA EL MENÚ HAMBURGUESA MODIFICADAS ---
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar-menu');
+        const overlay = document.getElementById('mobile-menu-overlay');
+        const icon = document.querySelector('#hamburger-button i');
+        
+        if (sidebar.classList.contains('open')) {
+            closeSidebar();
+        } else {
+            sidebar.classList.add('open');
+            overlay.classList.remove('hidden');
+            // Cambiar icono a X
+            icon.classList.remove('fa-bars');
+            icon.classList.add('fa-times');
         }
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+    }
+    window.toggleSidebar = toggleSidebar; 
+    
+    function closeSidebar() {
+        const sidebar = document.getElementById('sidebar-menu');
+        const overlay = document.getElementById('mobile-menu-overlay');
+        const icon = document.querySelector('#hamburger-button i');
+        
+        sidebar.classList.remove('open');
+        setTimeout(() => {
+             overlay.classList.add('hidden');
+        }, 300);
+        
+        // Restaurar icono a Barras
+        icon.classList.remove('fa-times');
+        icon.classList.add('fa-bars');
+    }
+    window.closeSidebar = closeSidebar;
 
-        // VARIABLES DE ESTADO
-        let currentUser = null;
-        let username = 'Usuario'; 
-        const maxVotes = 5; 
 
-        // --- FUNCIONES PARA EL MENÚ HAMBURGUESA MODIFICADAS ---
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar-menu');
-            const overlay = document.getElementById('mobile-menu-overlay');
-            const icon = document.querySelector('#hamburger-button i');
+    // --- MANEJO DE VISTAS ---
+    function goToRanking(topicName) {
+        console.log(`Intentando ir a la sala: ${topicName}`);
+        localStorage.setItem('currentTopic', topicName);
+        // CERRAR EL MENÚ después de la navegación en móvil
+        if (window.innerWidth < 1024) {
+             closeSidebar();
+        }
+        window.location.href = 'reproductor.html';
+    }
+    window.goToRanking = goToRanking; 
+
+    // --- LÓGICA DE USUARIO Y FIREBASE ---
+    async function loadUserData() {
+        if (!currentUser) return;
+        try {
+            const docRef = db.collection('users').doc(currentUser.uid);
+            const docSnap = await docRef.get();
             
-            if (sidebar.classList.contains('open')) {
-                closeSidebar();
+            let data;
+
+            if (docSnap.exists) {
+                data = docSnap.data();
+                username = data.username || currentUser.email.split('@')[0]; 
+                
+                const votesRemaining = data.votesRemaining !== undefined ? data.votesRemaining : maxVotes;
+                const lastVoteDate = data.lastVoteDate;
+                const lastDateString = lastVoteDate ? lastVoteDate.toDate().toDateString() : null;
+                const todayString = new Date().toDateString();
+
+                if (lastDateString !== todayString) {
+                    // Actualizar fecha y votos en Firestore
+                    await docRef.update({ 
+                        votesRemaining: maxVotes, 
+                        lastVoteDate: new Date() 
+                    });
+                }
+
             } else {
-                sidebar.classList.add('open');
-                overlay.classList.remove('hidden');
-                // Cambiar icono a X
-                icon.classList.remove('fa-bars');
-                icon.classList.add('fa-times');
+                // Si el documento no existe, inicializarlo
+                username = currentUser.email.split('@')[0]; 
+                await docRef.set({
+                    username: username,
+                    totalStars: 0,
+                    votesRemaining: maxVotes,
+                    lastVoteDate: new Date(),
+                    createdAt: new Date(),
+                    activityLog: [] 
+                });
             }
-        }
-        window.toggleSidebar = toggleSidebar; 
-        
-        function closeSidebar() {
-            const sidebar = document.getElementById('sidebar-menu');
-            const overlay = document.getElementById('mobile-menu-overlay');
-            const icon = document.querySelector('#hamburger-button i');
             
-            sidebar.classList.remove('open');
-            setTimeout(() => {
-                 overlay.classList.add('hidden');
-            }, 300);
-            
-            // Restaurar icono a Barras
-            icon.classList.remove('fa-times');
-            icon.classList.add('fa-bars');
+            // Actualizar mensajes y cabecera
+            document.getElementById('headerUsername').textContent = username; 
+
+        } catch (error) {
+            console.error("Error cargando datos:", error);
+            showErrorModal("Error al cargar datos del usuario. Intente recargar. " + error.message);
         }
-        window.closeSidebar = closeSidebar;
+    }
 
-
-        // --- MANEJO DE VISTAS ---
-        function goToRanking(topicName) {
-            console.log(`Intentando ir a la sala: ${topicName}`);
-            localStorage.setItem('currentTopic', topicName);
-            // CERRAR EL MENÚ después de la navegación en móvil
-            if (window.innerWidth < 1024) {
-                 closeSidebar();
+    function initAuthObserver() {
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                loadUserData();
+            } else {
+                window.location.href = 'index.html'; 
             }
-            window.location.href = 'reproductor.html';
-        }
-        window.goToRanking = goToRanking; 
+        });
+    }
+    
+    function logout() {
+        auth.signOut().then(() => {
+            localStorage.removeItem('currentTopic'); 
+            window.location.href = 'index.html';
+        });
+    }
+    window.logout = logout;
 
-        // --- LÓGICA DE USUARIO Y FIREBASE ---
-        async function loadUserData() {
-            if (!currentUser) return;
+
+    // --- CHAT GLOBAL ---
+    function setupCommentsListener() {
+        db.collection('globalChat').orderBy('timestamp', 'desc').limit(20)
+            .onSnapshot(snapshot => {
+                const chatMessages = document.getElementById('chatMessages');
+                chatMessages.innerHTML = ''; 
+                snapshot.docs.reverse().forEach(doc => { 
+                    const data = doc.data();
+                    const timestamp = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString([], { 
+                        year: 'numeric', 
+                        month: '2-digit', 
+                        day: '2-digit', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    }) : 'N/A';
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'chat-message relative group';
+                    messageElement.innerHTML = `
+                        <div class="chat-message-header">${data.username || 'Usuario anónimo'} <span class="text-xs text-gray-500 ml-2">${timestamp}</span></div>
+                        <div class="chat-message-text">${data.message}</div>
+                        ${data.userId === currentUser.uid ? `<button onclick="deleteMessage('${doc.id}')" class="absolute top-0 right-0 text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity text-xs"><i class="fas fa-trash"></i></button>` : ''}
+                    `;
+                    chatMessages.appendChild(messageElement);
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight; 
+            }, err => {
+                console.error("Error al escuchar el chat:", err);
+            });
+    }
+
+    async function submitGlobalComment() {
+        if (!currentUser) {
+            showErrorModal("Debes iniciar sesión para comentar.");
+            return;
+        }
+        const input = document.getElementById('commentInput');
+        const message = input.value.trim();
+
+        if (message.length > 0) {
+            
+            const button = document.getElementById('sendCommentButton');
+            
+            button.disabled = true;
+
             try {
-                const docRef = db.collection('users').doc(currentUser.uid);
-                const docSnap = await docRef.get();
-                
-                let data;
-
-                if (docSnap.exists) {
-                    data = docSnap.data();
-                    username = data.username || currentUser.email.split('@')[0]; 
-                    
-                    const votesRemaining = data.votesRemaining !== undefined ? data.votesRemaining : maxVotes;
-                    const lastVoteDate = data.lastVoteDate;
-                    const lastDateString = lastVoteDate ? lastVoteDate.toDate().toDateString() : null;
-                    const todayString = new Date().toDateString();
-
-                    if (lastDateString !== todayString) {
-                        // Actualizar fecha y votos en Firestore
-                        await docRef.update({ 
-                            votesRemaining: maxVotes, 
-                            lastVoteDate: new Date() 
-                        });
-                    }
-
-                } else {
-                    // Si el documento no existe, inicializarlo
-                    username = currentUser.email.split('@')[0]; 
-                    await docRef.set({
-                        username: username,
-                        totalStars: 0,
-                        votesRemaining: maxVotes,
-                        lastVoteDate: new Date(),
-                        createdAt: new Date(),
-                        activityLog: [] 
-                    });
-                }
-                
-                // Actualizar mensajes y cabecera
-                document.getElementById('headerUsername').textContent = username; 
-
-            } catch (error) {
-                console.error("Error cargando datos:", error);
-                showErrorModal("Error al cargar datos del usuario. Intente recargar. " + error.message);
+                await db.collection('globalChat').add({
+                    username: username, 
+                    userId: currentUser.uid,
+                    message: message,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+                });
+                input.value = ''; 
+            } catch (e) {
+                console.error("Error al enviar el comentario:", e);
+                showErrorModal("Error al enviar el comentario.");
+            } finally {
+                button.disabled = false;
             }
         }
+    }
+    window.submitGlobalComment = submitGlobalComment;
 
-        function initAuthObserver() {
-            auth.onAuthStateChanged(user => {
-                if (user) {
-                    currentUser = user;
-                    loadUserData();
-                } else {
-                    window.location.href = 'index.html'; 
+
+    // --- MODALES ---
+    function openRulesModal() {
+        document.getElementById('rulesModal').classList.remove('hidden');
+        document.getElementById('rulesModal').classList.add('flex');
+        closeSidebar(); // Cierra el menú hamburguesa al abrir un modal
+    }
+    window.openRulesModal = openRulesModal;
+
+    function closeRulesModal() {
+        document.getElementById('rulesModal').classList.add('hidden');
+        document.getElementById('rulesModal').classList.remove('flex');
+    }
+    window.closeRulesModal = closeRulesModal;
+
+    function openMissionModal() {
+        document.getElementById('missionModal').classList.remove('hidden');
+        document.getElementById('missionModal').classList.add('flex');
+        closeSidebar(); // Cierra el menú hamburguesa al abrir un modal
+    }
+    window.openMissionModal = openMissionModal;
+
+    function closeMissionModal() {
+        document.getElementById('missionModal').classList.add('hidden');
+        document.getElementById('missionModal').classList.remove('flex');
+    }
+    window.closeMissionModal = closeMissionModal;
+
+    function openInfoModal() {
+        document.getElementById('infoModal').classList.remove('hidden');
+        document.getElementById('infoModal').classList.add('flex');
+        closeSidebar(); // Cierra el menú hamburguesa al abrir un modal
+    }
+    window.openInfoModal = openInfoModal;
+
+    function closeInfoModal() {
+        document.getElementById('infoModal').classList.add('hidden');
+        document.getElementById('infoModal').classList.remove('flex');
+    }
+    window.closeInfoModal = closeInfoModal;
+    
+    function showErrorModal(details) {
+        document.getElementById('errorDetails').textContent = details;
+        document.getElementById('errorModal').classList.remove('hidden');
+        document.getElementById('errorModal').classList.add('flex');
+    }
+
+    function closeErrorModal() {
+        document.getElementById('errorModal').classList.add('hidden');
+        document.getElementById('errorModal').classList.remove('flex');
+        document.getElementById('errorDetails').textContent = "";
+    }
+    window.closeErrorModal = closeErrorModal;
+
+    function openChatRulesModal() {
+        document.getElementById('chatRulesModal').classList.remove('hidden');
+        document.getElementById('chatRulesModal').classList.add('flex');
+        closeSidebar(); // Cierra el menú hamburguesa al abrir un modal
+    }
+    window.openChatRulesModal = openChatRulesModal;
+
+    function closeChatRulesModal() {
+        document.getElementById('chatRulesModal').classList.add('hidden');
+        document.getElementById('chatRulesModal').classList.remove('flex');
+    }
+    window.closeChatRulesModal = closeChatRulesModal;
+
+    // --- FUNCIONES PARA EMOJI PICKER ---
+    function toggleEmojiPicker() {
+        const emojiPicker = document.getElementById('emojiPicker');
+        emojiPicker.classList.toggle('hidden');
+    }
+    window.toggleEmojiPicker = toggleEmojiPicker;
+
+    function insertEmoji(emoji) {
+        const input = document.getElementById('commentInput');
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const text = input.value;
+        const before = text.substring(0, start);
+        const after = text.substring(end, text.length);
+        input.value = before + emoji + after;
+        input.selectionStart = input.selectionEnd = start + emoji.length;
+        input.focus();
+        
+        // Ocultar el picker después de seleccionar un emoji
+        document.getElementById('emojiPicker').classList.add('hidden');
+    }
+    window.insertEmoji = insertEmoji;
+
+    // --- FUNCIÓN PARA BORRAR MENSAJES ---
+    async function deleteMessage(messageId) {
+        if (!currentUser) {
+            showErrorModal("Debes iniciar sesión para borrar mensajes.");
+            return;
+        }
+
+        try {
+            await db.collection('globalChat').doc(messageId).delete();
+            console.log("Mensaje eliminado correctamente");
+        } catch (error) {
+            console.error("Error al eliminar el mensaje:", error);
+            showErrorModal("Error al eliminar el mensaje.");
+        }
+    }
+    window.deleteMessage = deleteMessage;
+
+
+    // --- INICIALIZACIÓN ---
+    function init() {
+        setupCommentsListener(); 
+        initAuthObserver();
+        
+        // Permitir enviar comentario con Enter
+        const commentInput = document.getElementById('commentInput');
+        if (commentInput) {
+            commentInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    submitGlobalComment();
                 }
             });
         }
         
-        function logout() {
-            auth.signOut().then(() => {
-                localStorage.removeItem('currentTopic'); 
-                window.location.href = 'index.html';
-            });
-        }
-        window.logout = logout;
+        // Cerrar modales al hacer clic en el fondo
+        document.getElementById('rulesModal').addEventListener('click', function(e) {
+            if (e.target === this) closeRulesModal();
+        });
+        document.getElementById('missionModal').addEventListener('click', function(e) {
+            if (e.target === this) closeMissionModal();
+        });
+        document.getElementById('infoModal').addEventListener('click', function(e) {
+            if (e.target === this) closeInfoModal();
+        });
+        document.getElementById('errorModal').addEventListener('click', function(e) {
+            if (e.target === this) closeErrorModal();
+        });
+        document.getElementById('chatRulesModal').addEventListener('click', function(e) {
+            if (e.target === this) closeChatRulesModal();
+        });
 
-
-        // --- CHAT GLOBAL ---
-        function setupCommentsListener() {
-            db.collection('globalChat').orderBy('timestamp', 'desc').limit(20)
-                .onSnapshot(snapshot => {
-                    const chatMessages = document.getElementById('chatMessages');
-                    chatMessages.innerHTML = ''; 
-                    snapshot.docs.reverse().forEach(doc => { 
-                        const data = doc.data();
-                        const timestamp = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString([], { 
-                            year: 'numeric', 
-                            month: '2-digit', 
-                            day: '2-digit', 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                        }) : 'N/A';
-                        const messageElement = document.createElement('div');
-                        messageElement.className = 'chat-message';
-                        messageElement.innerHTML = `
-                            <div class="chat-message-header">${data.username || 'Usuario anónimo'} <span class="text-xs text-gray-500 ml-2">${timestamp}</span></div>
-                            <div class="chat-message-text">${data.message}</div>
-                        `;
-                        chatMessages.appendChild(messageElement);
-                    });
-                    chatMessages.scrollTop = chatMessages.scrollHeight; 
-                }, err => {
-                    console.error("Error al escuchar el chat:", err);
-                });
-        }
-
-        async function submitGlobalComment() {
-            if (!currentUser) {
-                showErrorModal("Debes iniciar sesión para comentar.");
-                return;
+        // Cerrar emoji picker al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            const emojiPicker = document.getElementById('emojiPicker');
+            const emojiButton = document.getElementById('emojiButton');
+            if (!emojiPicker.contains(e.target) && !emojiButton.contains(e.target)) {
+                emojiPicker.classList.add('hidden');
             }
-            const input = document.getElementById('commentInput');
-            const message = input.value.trim();
+        });
+    }
 
-            if (message.length > 0) {
-                
-                const button = document.getElementById('sendCommentButton');
-                
-                button.disabled = true;
-
-                try {
-                    await db.collection('globalChat').add({
-                        username: username, 
-                        userId: currentUser.uid,
-                        message: message,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp() 
-                    });
-                    input.value = ''; 
-                } catch (e) {
-                    console.error("Error al enviar el comentario:", e);
-                    showErrorModal("Error al enviar el comentario.");
-                } finally {
-                    button.disabled = false;
-                }
-            }
-        }
-        window.submitGlobalComment = submitGlobalComment;
-
-
-        // --- MODALES ---
-        function openRulesModal() {
-            document.getElementById('rulesModal').classList.remove('hidden');
-            document.getElementById('rulesModal').classList.add('flex');
-            closeSidebar(); // Cierra el menú hamburguesa al abrir un modal
-        }
-        window.openRulesModal = openRulesModal;
-
-        function closeRulesModal() {
-            document.getElementById('rulesModal').classList.add('hidden');
-            document.getElementById('rulesModal').classList.remove('flex');
-        }
-        window.closeRulesModal = closeRulesModal;
-
-        function openMissionModal() {
-            document.getElementById('missionModal').classList.remove('hidden');
-            document.getElementById('missionModal').classList.add('flex');
-            closeSidebar(); // Cierra el menú hamburguesa al abrir un modal
-        }
-        window.openMissionModal = openMissionModal;
-
-        function closeMissionModal() {
-            document.getElementById('missionModal').classList.add('hidden');
-            document.getElementById('missionModal').classList.remove('flex');
-        }
-        window.closeMissionModal = closeMissionModal;
-
-        function openInfoModal() {
-            document.getElementById('infoModal').classList.remove('hidden');
-            document.getElementById('infoModal').classList.add('flex');
-            closeSidebar(); // Cierra el menú hamburguesa al abrir un modal
-        }
-        window.openInfoModal = openInfoModal;
-
-        function closeInfoModal() {
-            document.getElementById('infoModal').classList.add('hidden');
-            document.getElementById('infoModal').classList.remove('flex');
-        }
-        window.closeInfoModal = closeInfoModal;
-        
-        function showErrorModal(details) {
-            document.getElementById('errorDetails').textContent = details;
-            document.getElementById('errorModal').classList.remove('hidden');
-            document.getElementById('errorModal').classList.add('flex');
-        }
-
-        function closeErrorModal() {
-            document.getElementById('errorModal').classList.add('hidden');
-            document.getElementById('errorModal').classList.remove('flex');
-            document.getElementById('errorDetails').textContent = "";
-        }
-        window.closeErrorModal = closeErrorModal;
-
-
-        // --- INICIALIZACIÓN ---
-        function init() {
-            setupCommentsListener(); 
-            initAuthObserver();
-            
-            // Permitir enviar comentario con Enter
-            const commentInput = document.getElementById('commentInput');
-            if (commentInput) {
-                commentInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        submitGlobalComment();
-                    }
-                });
-            }
-            
-            // Cerrar modales al hacer clic en el fondo
-            document.getElementById('rulesModal').addEventListener('click', function(e) {
-                if (e.target === this) closeRulesModal();
-            });
-            document.getElementById('missionModal').addEventListener('click', function(e) {
-                if (e.target === this) closeMissionModal();
-            });
-            document.getElementById('infoModal').addEventListener('click', function(e) {
-                if (e.target === this) closeInfoModal();
-            });
-            document.getElementById('errorModal').addEventListener('click', function(e) {
-                if (e.target === this) closeErrorModal();
-            });
-        }
-
-        init();
-    </script>
-
+    init();
+</script>
 </body>
-
 </html>
-
-
-
+```
