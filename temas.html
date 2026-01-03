@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salas de Temas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0f4c5c 0%, #1a5f7a 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        /* Contenedor Principal */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0.75rem;
+        }
+        
+        @media (min-width: 1024px) {
+            .main-content {
+                grid-template-columns: 280px 1fr;
+                gap: 1.5rem;
+                padding: 1rem;
+            }
+        }
+
+        /* Botón hamburguesa */
+        #hamburger-button {
+            position: relative;
+            z-index: 70;
+            transition: transform 0.3s ease;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: linear-gradient(180deg, #0a2f3f 0%, #0d3d4f 100%);
+            padding: 1rem;
+            padding-top: 80px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(20, 184, 166, 0.3);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 85%;
+            max-width: 300px;
+            height: 100%;
+            z-index: 60;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            overflow-y: auto;
+        }
+        
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        #mobile-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 55;
+            transition: opacity 0.3s;
+        }
+
+        @media (min-width: 1024px) {
+            .sidebar {
+                position: sticky;
+                top: 80px;
+                width: auto;
+                max-width: none;
+                transform: translateX(0);
+                height: fit-content;
+                padding-top: 1rem;
+                z-index: 10;
+            }
+            #mobile-menu-overlay, #hamburger-button {
+                display: none;
+            }
+        }
+
+        /* Avatar de Perfil */
+        .profile-avatar-container {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            margin-right: 0.75rem;
+            border-radius: 50%;
+            border: 3px solid #14b8a6;
+            overflow: hidden;
+            flex-shrink: 0;
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+
+        .profile-avatar-container:hover {
+            transform: scale(1.05);
+            border-color: #2dd4bf;
+        }
+
+        .profile-avatar-container:hover::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .profile-avatar-container:hover::before {
+            content: '📷';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.75rem;
+            z-index: 10;
+        }
+
+        .profile-avatar-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #profileImageInput {
+            display: none;
+        }
+
+        /* Tarjetas de Sala - Optimizadas para móviles */
+        .sala-cards-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        @media (min-width: 640px) {
+            .sala-cards-container {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .sala-cards-container {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.25rem;
+            }
+        }
+
+        .sala-card {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d4a6f 100%);
+            padding: 0.75rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid rgba(20, 184, 166, 0.2);
+            text-align: center;
+        }
+
+        .sala-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(20, 184, 166, 0.3);
+            border-color: #14b8a6;
+        }
+
+        .sala-card img {
+            width: 100%;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        @media (min-width: 640px) {
+            .sala-card img {
+                height: 100px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .sala-card img {
+                height: 110px;
+            }
+        }
+
+        .sala-card h3 {
+            font-size: 0.875rem;
+            font-weight: bold;
+            margin-top: 0.25rem;
+            color: #2dd4bf;
+            line-height: 1.2;
+        }
+
+        @media (min-width: 1024px) {
+            .sala-card h3 {
+                font-size: 1rem;
+            }
+        }
+
+        .sala-card p {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin-top: 0.25rem;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        @media (min-width: 1024px) {
+            .sala-card p {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Chat Global - Optimizado para móviles */
+        .chat-box {
+            background: linear-gradient(180deg, #0a2f3f 0%, #0d3d4f 100%);
+            padding: 0.875rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(20, 184, 166, 0.3);
+            display: flex;
+            flex-direction: column;
+            height: 400px;
+            position: relative;
+        }
+
+        @media (min-width: 1024px) {
+            .chat-box {
+                padding: 1.25rem;
+                height: 450px;
+            }
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(71, 85, 105, 0.5);
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #14b8a6;
+            border-radius: 3px;
+        }
+
+        .chat-message {
+            margin-bottom: 0.625rem;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            line-height: 1.4;
+        }
+
+        .chat-message-header {
+            font-weight: bold;
+            color: #2dd4bf;
+            font-size: 0.8rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .chat-message-text {
+            font-size: 0.85rem;
+            color: #e2e8f0;
+        }
+
+        /* Emoji Picker - Mejorado con 40 emojis */
+        #emojiPicker {
+            position: absolute;
+            bottom: 60px;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, #0d3d4f 0%, #0a2f3f 100%);
+            border: 1px solid rgba(20, 184, 166, 0.4);
+            border-radius: 12px;
+            padding: 0.75rem;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 50;
+        }
+
+        #emojiPicker::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        #emojiPicker::-webkit-scrollbar-thumb {
+            background: #14b8a6;
+            border-radius: 3px;
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 0.5rem;
+        }
+
+        @media (min-width: 640px) {
+            .emoji-grid {
+                grid-template-columns: repeat(10, 1fr);
+            }
+        }
+
+        .emoji-btn {
+            font-size: 1.5rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid transparent;
+        }
+
+        .emoji-btn:hover {
+            background: rgba(20, 184, 166, 0.2);
+            border-color: #14b8a6;
+            transform: scale(1.1);
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #14b8a6;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            z-index: 20;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Botones del sidebar */
+        .sidebar-btn {
+            width: 100%;
+            text-align: left;
+            padding: 0.625rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid transparent;
+        }
+
+        .sidebar-btn:hover {
+            background: rgba(20, 184, 166, 0.1);
+            border-color: rgba(20, 184, 166, 0.3);
+            transform: translateX(5px);
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="p-3 bg-gradient-to-r from-slate-900/95 to-teal-900/95 backdrop-blur-md sticky top-0 z-50 shadow-xl border-b border-teal-700/50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <button id="hamburger-button" onclick="toggleSidebar()" class="text-teal-400 text-2xl lg:hidden focus:outline-none w-8 h-8 flex items-center justify-center">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <i class="fas fa-music text-teal-400 text-xl"></i>
+                <h1 class="text-lg font-bold tracking-wide">La IA Musical</h1>
+            </div>
+
+            <div class="flex items-center gap-4 text-sm">
+                <span id="headerUsername" class="text-teal-300 font-medium hidden md:block">Usuario</span>
+                <button onclick="logout()" class="text-gray-400 hover:text-white transition">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <div id="mobile-menu-overlay" class="hidden" onclick="closeSidebar()"></div>
+
+    <div class="main-content">
+        <div id="sidebar-menu" class="sidebar">
+            
+            <div class="flex items-center gap-3 mb-4 pb-3 border-b border-teal-700/50">
+                <div id="profile-avatar" class="profile-avatar-container" onclick="triggerImageUpload()">
+                    <img id="profileImage" src="images/suno.png" alt="Mi Avatar">
+                    <div id="uploadSpinner" class="loading-spinner hidden"></div>
+                </div>
+                <input type="file" id="profileImageInput" accept="image/*" onchange="handleImageUpload(event)">
+                
+                <div class="cursor-pointer hover:text-teal-400 transition" onclick="window.location.href='perfil.html'">
+                    <div class="text-xl font-bold text-teal-300">Mi Perfil</div>
+                    <div class="text-xs text-gray-400">Ver progreso</div>
+                </div>
+            </div>
+
+            <div class="space-y-2 mb-4">
+                <button onclick="window.location.href='biblioteca.html'" class="sidebar-btn">
+                    <i class="fas fa-book-open text-orange-400"></i> Biblioteca
+                </button>
+                <button onclick="window.location.href='estadisticas.html'" class="sidebar-btn">
+                    <i class="fas fa-chart-line text-blue-400"></i> Estadísticas
+                </button>
+                <button onclick="window.location.href='podcast.html'" class="sidebar-btn">
+                    <i class="fas fa-podcast text-green-400"></i> Podcast IA
+                </button>
+                <button onclick="alert('Abrir Spotify')" class="sidebar-btn">
+                    <i class="fab fa-spotify text-green-500"></i> Spotify
+                </button>
+                <button onclick="alert('Abrir TikTok')" class="sidebar-btn">
+                    <i class="fab fa-tiktok text-pink-400"></i> Tik Tok
+                </button>
+                <button onclick="window.open('https://youtube.com/@laliteraturamusical?si=OpqvLWsxJnHJtlTf')" class="sidebar-btn">
+                    <i class="fab fa-youtube text-red-500"></i> Canal YouTube
+                </button>
+            </div>
+
+            <div class="space-y-2 border-t border-teal-700/50 pt-3">
+                <button onclick="openInfoModal()" class="sidebar-btn">
+                    <i class="fas fa-info-circle text-blue-400"></i> Información
+                </button>
+                <button onclick="openRulesModal()" class="sidebar-btn">
+                    <i class="fas fa-scroll text-yellow-500"></i> Sistema de puntos
+                </button>
+                <button onclick="openMissionModal()" class="sidebar-btn">
+                    <i class="fas fa-brain text-purple-400"></i> Misión de la IA
+                </button>
+            </div>
+        </div>
+
+        <div class="lg:col-span-1 space-y-4">
+            <section>
+                <h2 class="text-2xl font-bold text-teal-300 mb-3 pb-2 border-b-2 border-teal-700/50">Salas de Temas</h2>
+                
+                <div class="sala-cards-container">
+                    <div class="sala-card" onclick="goToRanking('Literatura')">
+                        <img src="images/literatura.png" alt="Literatura">
+                        <h3>Literatura</h3>
+                        <p>Música inspirada en grandes autores y novelas</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Cine')">
+                        <img src="images/cine.png" alt="Cine">
+                        <h3>Cine</h3>
+                        <p>Bandas sonoras épicas e icónicas</p>
+                    </div>
+                    
+                    <div class="sala-card" onclick="goToRanking('Dibujos animados')">
+                        <img src="images/dibujosanimados.png" alt="Animación">
+                        <h3>Animación</h3>
+                        <p>Clásicos de dibujos animados</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Ópera y conciertos')">
+                        <img src="images/operayconciertos.png" alt="Ópera">
+                        <h3>Ópera</h3>
+                        <p>Obras maestras clásicas</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Teatro y musicales')">
+                        <img src="images/teatroymusicales.png" alt="Musicales">
+                        <h3>Musicales</h3>
+                        <p>Broadway y teatro musical</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Series')">
+                        <img src="images/series.png" alt="Series">
+                        <h3>Series</h3>
+                        <p>Temas de series de TV</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Anime')">
+                        <img src="images/anime.png" alt="Anime">
+                        <h3>Anime</h3>
+                        <p>Openings y OST japoneses</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Extra y documentales')">
+                        <img src="images/extras.png" alt="Documentales">
+                        <h3>Documentales</h3>
+                        <p>Naturaleza e historia</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Usuarios')">
+                        <img src="images/usuarios.png" alt="Usuarios">
+                        <h3>Usuarios</h3>
+                        <p>Música de la comunidad</p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="chat-box">
+                <div class="flex items-center justify-between mb-3 pb-2 border-b border-teal-700/50">
+                    <h3 class="text-lg font-bold text-teal-300 flex items-center gap-2">
+                        <i class="fas fa-comments"></i> Chat Global
+                    </h3>
+                    <button onclick="openChatRulesModal()" class="text-xs bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-1 px-2 rounded transition">
+                        Normas
+                    </button>
+                </div>
+
+                <div id="chatMessages" class="chat-messages"></div>
+
+                <div id="emojiPicker" class="hidden">
+                    <div class="emoji-grid">
+                        <button onclick="insertEmoji('😊')" class="emoji-btn">😊</button>
+                        <button onclick="insertEmoji('😂')" class="emoji-btn">😂</button>
+                        <button onclick="insertEmoji('🤣')" class="emoji-btn">🤣</button>
+                        <button onclick="insertEmoji('😍')" class="emoji-btn">😍</button>
+                        <button onclick="insertEmoji('😘')" class="emoji-btn">😘</button>
+                        <button onclick="insertEmoji('😎')" class="emoji-btn">😎</button>
+                        <button onclick="insertEmoji('🤔')" class="emoji-btn">🤔</button>
+                        <button onclick="insertEmoji('😢')" class="emoji-btn">😢</button>
+                        <button onclick="insertEmoji('😭')" class="emoji-btn">😭</button>
+                        <button onclick="insertEmoji('😡')" class="emoji-btn">😡</button>
+                        <button onclick="insertEmoji('🥰')" class="emoji-btn">🥰</button>
+                        <button onclick="insertEmoji('😇')" class="emoji-btn">😇</button>
+                        <button onclick="insertEmoji('🤗')" class="emoji-btn">🤗</button>
+                        <button onclick="insertEmoji('🤩')" class="emoji-btn">🤩</button>
+                        <button onclick="insertEmoji('😴')" class="emoji-btn">😴</button>
+                        <button onclick="insertEmoji('❤️')" class="emoji-btn">❤️</button>
+                        <button onclick="insertEmoji('💙')" class="emoji-btn">💙</button>
+                        <button onclick="insertEmoji('💚')" class="emoji-btn">💚</button>
+                        <button onclick="insertEmoji('💛')" class="emoji-btn">💛</button>
+                        <button onclick="insertEmoji('💜')" class="emoji-btn">💜</button>
+                        <button onclick="insertEmoji('🖤')" class="emoji-btn">🖤</button>
+                        <button onclick="insertEmoji('🤍')" class="emoji-btn">🤍</button>
+                        <button onclick="insertEmoji('👍')" class="emoji-btn">👍</button>
+                        <button onclick="insertEmoji('👎')" class="emoji-btn">👎</button>
+                        <button onclick="insertEmoji('👏')" class="emoji-btn">👏</button>
+                        <button onclick="insertEmoji('🙌')" class="emoji-btn">🙌</button>
+                        <button onclick="insertEmoji('🔥')" class="emoji-btn">🔥</button>
+                        <button onclick="insertEmoji('⭐')" class="emoji-btn">⭐</button>
+                        <button onclick="insertEmoji('✨')" class="emoji-btn">✨</button>
+                        <button onclick="insertEmoji('💯')" class="emoji-btn">💯</button>
+                        <button onclick="insertEmoji('🎵')" class="emoji-btn">🎵</button>
+                        <button onclick="insertEmoji('🎶')" class="emoji-btn">🎶</button>
+                        <button onclick="insertEmoji('🎸')" class="emoji-btn">🎸</button>
+                        <button onclick="insertEmoji('🎤')" class="emoji-btn">🎤</button>
+                        <button onclick="insertEmoji('🎧')" class="emoji-btn">🎧</button>
+                        <button onclick="insertEmoji('🎹')" class="emoji-btn">🎹</button>
+                        <button onclick="insertEmoji('🎺')" class="emoji-btn">🎺</button>
+                        <button onclick="insertEmoji('🎻')" class="emoji-btn">🎻</button>
+                        <button onclick="insertEmoji('🥁')" class="emoji-btn">🥁</button>
+                        <button onclick="insertEmoji('🎼')" class="emoji-btn">🎼</button>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="toggleEmojiPicker()" id="emojiButton" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-3 rounded-lg transition flex-shrink-0">
+                        😊
+                    </button>
+                    <input type="text" id="commentInput" placeholder="Escribe..." 
+                           class="flex-grow p-2 rounded-lg bg-slate-700/50 text-white placeholder-slate-400 border border-slate-600/50 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm">
+                    <button onclick="submitGlobalComment()" id="sendCommentButton"
+                            class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-3 rounded-lg transition disabled:opacity-50 flex-shrink-0">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-8 py-6 bg-gradient-to-r from-slate-900/95 to-teal-900/95 border-t border-teal-700/50">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <p class="text-gray-300 text-sm mb-2">
+                Contacto: <a href="mailto:contact@hotmail.com" class="text-teal-400 hover:text-teal-300 underline">La IA Musical</a>
+            </p>
+            <p class="text-gray-400 text-xs">© 2024 La IA Musical. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- MODALES -->
+    <div id="rulesModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl border border-teal-700 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4 text-teal-300 flex items-center gap-2">
+                <i class="fas fa-scroll text-yellow-400"></i> Sistema de Puntos
+            </h3>
+            <div class="space-y-3 text-sm text-gray-300">
+                <div class="flex items-start gap-3 p-3 bg-slate-700/30 rounded-lg">
+                    <i class="fas fa-vote-yea text-blue-400 text-lg pt-1"></i>
+                    <div>
+                        <span class="font-bold text-teal-200">Votos:</span> 5 votos gratuitos diarios. Valora canciones hasta 5 estrellas.
+                    </div>
+                </div>
+                <div class="flex items-start gap-3 p-3 bg-slate-700/30 rounded-lg">
+                    <i class="fas fa-star text-yellow-400 text-lg pt-1"></i>
+                    <div>
+                        <span class="font-bold text-teal-200">Estrellas:</span> Consíguelas en Quizzes y clasificaciones.
+                    </div>
+                </div>
+                <div class="flex items-start gap-3 p-3 bg-slate-700/30 rounded-lg">
+                    <i class="fas fa-gem text-purple-400 text-lg pt-1"></i>
+                    <div>
+                        <span class="font-bold text-teal-200">Diamantes:</span> 100% de acierto en Quiz y Top 3 semanal.
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeRulesModal()" class="mt-6 w-full py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold transition">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="missionModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl border border-teal-700 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4 text-teal-300 flex items-center gap-2">
+                <i class="fas fa-brain text-purple-400"></i> Nuestra Misión
+            </h3>
+            <ul class="list-disc list-inside space-y-2 text-sm text-gray-300 pl-2">
+                <li>Crear una biblioteca musical inspirada en literatura, cine y arte</li>
+                <li>Motivar la exploración del universo de la IA musical</li>
+                <li>Usar música para facilitar memorización y comprensión</li>
+                <li>Rejuvenecer la apreciación por grandes autores</li>
+                <li>Ofrecer experiencia sensorial única</li>
+                <li>Comunidad de votación activa</li>
+                <li>Experiencia lúdica y gratificante</li>
+            </ul>
+            <button onclick="closeMissionModal()" class="mt-6 w-full py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold transition">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="infoModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl border border-teal-700 max-w-lg w-full shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 text-teal-300 flex items-center gap-2">
+                <i class="fas fa-info-circle text-blue-400"></i> Información
+            </h3>
+            <ol class="list-decimal list-inside space-y-2 text-sm text-gray-300 pl-2">
+                <li>Explora y entra en una sala</li>
+                <li>Dale al play y escucha la canción</li>
+                <li>Realiza el Quiz</li>
+                <li>Vota por el top 3 de la semana</li>
+                <li>Sube de rango hasta la cima</li>
+            </ol>
+            <button onclick="closeInfoModal()" class="mt-6 w-full py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold transition">Cerrar</button>
+        </div>
+    </div>
+    
+    <div id="errorModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl border border-red-700 max-w-sm w-full shadow-2xl">
+            <h3 class="text-lg font-bold mb-3 text-red-400 flex items-center gap-2">
+                <i class="fas fa-exclamation-triangle"></i> Error
+            </h3>
+            <p id="errorDetails" class="text-gray-300 mb-4 text-sm">Ha ocurrido un error inesperado.</p>
+            <button onclick="closeErrorModal()" class="w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold transition">Aceptar</button>
+        </div>
+    </div>
+
+    <div id="chatRulesModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl border border-yellow-700 max-w-3xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4 text-yellow-400 flex items-center gap-2">
+                <i class="fas fa-scroll"></i> Normas del Chat
+            </h3>
+            <div class="space-y-3 text-xs text-gray-300">
+                <p class="text-yellow-300 font-semibold text-sm">Comportamientos sancionables:</p>
+                
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Prohibido hacer SPAM</h4>
+                    <p>Envío repetitivo de mensajes o enlaces irrelevantes.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Contenido inapropiado</h4>
+                    <p>Desnudos, racismo, violencia, política, religión o contenido con menores.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Mensajes fuera de tema</h4>
+                    <p>Respuestas no relacionadas con el tema tratado.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Acoso e insultos</h4>
+                    <p>Insultar, acosar, difamar o molestar a otros usuarios.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Discusiones en bucle</h4>
+                    <p>Debates repetitivos en chat público. Usar mensajes directos.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Lenguaje obsceno reiterado</h4>
+                    <p>Uso excesivo de palabras obscenas o falta de respeto.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Información personal</h4>
+                    <p>Publicar datos personales propios o de terceros.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Suplantación de identidad</h4>
+                    <p>Hacerse pasar por otra persona de forma engañosa.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Múltiples cuentas</h4>
+                    <p>Usar varias cuentas está prohibido y es rastreable por IP.</p>
+                </div>
+
+                <div class="bg-orange-900/30 p-3 rounded-lg border border-orange-600/50">
+                    <h4 class="text-orange-400 font-bold text-sm mb-1">⚠️ Sobre las sanciones</h4>
+                    <p>Desde advertencias hasta expulsión permanente según gravedad.</p>
+                </div>
+            </div>
+            <button onclick="closeChatRulesModal()" class="mt-6 w-full py-2 rounded-lg bg-yellow-600 hover:bg-yellow-500 text-white font-bold transition">Cerrar</button>
+        </div>
+    </div>
+
+<script>
+    // CONFIGURACIÓN FIREBASE
+    const firebaseConfig = {
+        apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+        authDomain: "laiamusical-4fba7.firebaseapp.com",
+        projectId: "laiamusical-4fba7",
+        storageBucket: "laiamusical-4fba7.firebasestorage.app",
+        messagingSenderId: "49783369602",
+        appId: "1:49783369602:web:91e287c094a8f2403d699b",
+        measurementId: "G-WC2JT6DRF4"
+    };
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // VARIABLES DE ESTADO
+    let currentUser = null;
+    let username = 'Usuario';
+    const maxVotes = 5;
+
+    // --- FUNCIONES PARA SUBIR IMAGEN DE PERFIL ---
+    function triggerImageUpload() {
+        document.getElementById('profileImageInput').click();
+    }
+    window.triggerImageUpload = triggerImageUpload;
+
+    async function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            showErrorModal('Por favor, selecciona un archivo de imagen válido.');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            showErrorModal('La imagen es demasiado grande. El tamaño máximo es 5MB.');
+            return;
+        }
+
+        if (!currentUser) {
+            showErrorModal('Debes iniciar sesión para subir una foto de perfil.');
+            return;
+        }
+
+        const spinner = document.getElementById('uploadSpinner');
+        const profileImage = document.getElementById('profileImage');
+        
+        try {
+            spinner.classList.remove('hidden');
+            
+            const storageRef = storage.ref();
+            const profileImageRef = storageRef.child(`profileImages/${currentUser.uid}`);
+            
+            await profileImageRef.put(file);
+            const downloadURL = await profileImageRef.getDownloadURL();
+            
+            await db.collection('users').doc(currentUser.uid).update({
+                profileImageUrl: downloadURL
+            });
+            
+            profileImage.src = downloadURL;
+            console.log('Imagen de perfil actualizada correctamente');
+            
+        } catch (error) {
+            console.error('Error al subir la imagen:', error);
+            showErrorModal('Error al subir la imagen: ' + error.message);
+        } finally {
+            spinner.classList.add('hidden');
+        }
+    }
+    window.handleImageUpload = handleImageUpload;
+
+    // --- FUNCIONES PARA EL MENÚ HAMBURGUESA ---
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar-menu');
+        const overlay = document.getElementById('mobile-menu-overlay');
+        const icon = document.querySelector('#hamburger-button i');
+        
+        if (sidebar.classList.contains('open')) {
+            closeSidebar();
+        } else {
+            sidebar.classList.add('open');
+            overlay.classList.remove('hidden');
+            icon.classList.remove('fa-bars');
+            icon.classList.add('fa-times');
+        }
+    }
+    window.toggleSidebar = toggleSidebar;
+    
+    function closeSidebar() {
+        const sidebar = document.getElementById('sidebar-menu');
+        const overlay = document.getElementById('mobile-menu-overlay');
+        const icon = document.querySelector('#hamburger-button i');
+        
+        sidebar.classList.remove('open');
+        setTimeout(() => {
+             overlay.classList.add('hidden');
+        }, 300);
+        
+        icon.classList.remove('fa-times');
+        icon.classList.add('fa-bars');
+    }
+    window.closeSidebar = closeSidebar;
+
+    // --- MANEJO DE VISTAS ---
+    function goToRanking(topicName) {
+        console.log(`Intentando ir a la sala: ${topicName}`);
+        localStorage.setItem('currentTopic', topicName);
+        if (window.innerWidth < 1024) {
+             closeSidebar();
+        }
+        window.location.href = 'reproductor.html';
+    }
+    window.goToRanking = goToRanking;
+
+    // --- LÓGICA DE USUARIO Y FIREBASE ---
+    async function loadUserData() {
+        if (!currentUser) return;
+        try {
+            const docRef = db.collection('users').doc(currentUser.uid);
+            const docSnap = await docRef.get();
+            
+            let data;
+
+            if (docSnap.exists) {
+                data = docSnap.data();
+                username = data.username || currentUser.email.split('@')[0];
+                
+                if (data.profileImageUrl) {
+                    document.getElementById('profileImage').src = data.profileImageUrl;
+                }
+                
+                const votesRemaining = data.votesRemaining !== undefined ? data.votesRemaining : maxVotes;
+                const lastVoteDate = data.lastVoteDate;
+                const lastDateString = lastVoteDate ? lastVoteDate.toDate().toDateString() : null;
+                const todayString = new Date().toDateString();
+
+                if (lastDateString !== todayString) {
+                    await docRef.update({ 
+                        votesRemaining: maxVotes, 
+                        lastVoteDate: new Date() 
+                    });
+                }
+
+            } else {
+                username = currentUser.email.split('@')[0];
+                await docRef.set({
+                    username: username,
+                    totalStars: 0,
+                    votesRemaining: maxVotes,
+                    lastVoteDate: new Date(),
+                    createdAt: new Date(),
+                    activityLog: [],
+                    profileImageUrl: null
+                });
+            }
+            
+            document.getElementById('headerUsername').textContent = username;
+
+        } catch (error) {
+            console.error("Error cargando datos:", error);
+            showErrorModal("Error al cargar datos del usuario. Intente recargar. " + error.message);
+        }
+    }
+
+    function initAuthObserver() {
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                loadUserData();
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+    }
+    
+    function logout() {
+        auth.signOut().then(() => {
+            localStorage.removeItem('currentTopic');
+            window.location.href = 'index.html';
+        });
+    }
+    window.logout = logout;
+
+    // --- CHAT GLOBAL ---
+    function setupCommentsListener() {
+        db.collection('globalChat').orderBy('timestamp', 'desc').limit(20)
+            .onSnapshot(snapshot => {
+                const chatMessages = document.getElementById('chatMessages');
+                chatMessages.innerHTML = '';
+                snapshot.docs.reverse().forEach(doc => {
+                    const data = doc.data();
+                    const timestamp = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString([], { 
+                        year: 'numeric', 
+                        month: '2-digit', 
+                        day: '2-digit', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    }) : 'N/A';
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'chat-message relative group';
+                    messageElement.innerHTML = `
+                        <div class="chat-message-header">${data.username || 'Usuario anónimo'} <span class="text-xs text-gray-500 ml-2">${timestamp}</span></div>
+                        <div class="chat-message-text">${data.message}</div>
+                        ${data.userId === currentUser.uid ? `<button onclick="deleteMessage('${doc.id}')" class="absolute top-0 right-0 text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity text-xs"><i class="fas fa-trash"></i></button>` : ''}
+                    `;
+                    chatMessages.appendChild(messageElement);
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, err => {
+                console.error("Error al escuchar el chat:", err);
+            });
+    }
+
+    async function submitGlobalComment() {
+        if (!currentUser) {
+            showErrorModal("Debes iniciar sesión para comentar.");
+            return;
+        }
+        const input = document.getElementById('commentInput');
+        const message = input.value.trim();
+
+        if (message.length > 0) {
+            const button = document.getElementById('sendCommentButton');
+            button.disabled = true;
+
+            try {
+                await db.collection('globalChat').add({
+                    username: username,
+                    userId: currentUser.uid,
+                    message: message,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                input.value = '';
+            } catch (e) {
+                console.error("Error al enviar el comentario:", e);
+                showErrorModal("Error al enviar el comentario.");
+            } finally {
+                button.disabled = false;
+            }
+        }
+    }
+    window.submitGlobalComment = submitGlobalComment;
+
+    // --- MODALES ---
+    function openRulesModal() {
+        document.getElementById('rulesModal').classList.remove('hidden');
+        document.getElementById('rulesModal').classList.add('flex');
+        closeSidebar();
+    }
+    window.openRulesModal = openRulesModal;
+
+    function closeRulesModal() {
+        document.getElementById('rulesModal').classList.add('hidden');
+        document.getElementById('rulesModal').classList.remove('flex');
+    }
+    window.closeRulesModal = closeRulesModal;
+
+    function openMissionModal() {
+        document.getElementById('missionModal').classList.remove('hidden');
+        document.getElementById('missionModal').classList.add('flex');
+        closeSidebar();
+    }
+    window.openMissionModal = openMissionModal;
+
+    function closeMissionModal() {
+        document.getElementById('missionModal').classList.add('hidden');
+        document.getElementById('missionModal').classList.remove('flex');
+    }
+    window.closeMissionModal = closeMissionModal;
+
+    function openInfoModal() {
+        document.getElementById('infoModal').classList.remove('hidden');
+        document.getElementById('infoModal').classList.add('flex');
+        closeSidebar();
+    }
+    window.openInfoModal = openInfoModal;
+
+    function closeInfoModal() {
+        document.getElementById('infoModal').classList.add('hidden');
+        document.getElementById('infoModal').classList.remove('flex');
+    }
+    window.closeInfoModal = closeInfoModal;
+    
+    function showErrorModal(details) {
+        document.getElementById('errorDetails').textContent = details;
+        document.getElementById('errorModal').classList.remove('hidden');
+        document.getElementById('errorModal').classList.add('flex');
+    }
+
+    function closeErrorModal() {
+        document.getElementById('errorModal').classList.add('hidden');
+        document.getElementById('errorModal').classList.remove('flex');
+        document.getElementById('errorDetails').textContent = "";
+    }
+    window.closeErrorModal = closeErrorModal;
+
+    function openChatRulesModal() {
+        document.getElementById('chatRulesModal').classList.remove('hidden');
+        document.getElementById('chatRulesModal').classList.add('flex');
+        closeSidebar();
+    }
+    window.openChatRulesModal = openChatRulesModal;
+
+    function closeChatRulesModal() {
+        document.getElementById('chatRulesModal').classList.add('hidden');
+        document.getElementById('chatRulesModal').classList.remove('flex');
+    }
+    window.closeChatRulesModal = closeChatRulesModal;
+
+    // --- FUNCIONES PARA EMOJI PICKER ---
+    function toggleEmojiPicker() {
+        const emojiPicker = document.getElementById('emojiPicker');
+        emojiPicker.classList.toggle('hidden');
+    }
+    window.toggleEmojiPicker = toggleEmojiPicker;
+
+    function insertEmoji(emoji) {
+        const input = document.getElementById('commentInput');
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const text = input.value;
+        const before = text.substring(0, start);
+        const after = text.substring(end, text.length);
+        input.value = before + emoji + after;
+        input.selectionStart = input.selectionEnd = start + emoji.length;
+        input.focus();
+        
+        document.getElementById('emojiPicker').classList.add('hidden');
+    }
+    window.insertEmoji = insertEmoji;
+
+    // --- FUNCIÓN PARA BORRAR MENSAJES ---
+    async function deleteMessage(messageId) {
+        if (!currentUser) {
+            showErrorModal("Debes iniciar sesión para borrar mensajes.");
+            return;
+        }
+
+        try {
+            await db.collection('globalChat').doc(messageId).delete();
+            console.log("Mensaje eliminado correctamente");
+        } catch (error) {
+            console.error("Error al eliminar el mensaje:", error);
+            showErrorModal("Error al eliminar el mensaje.");
+        }
+    }
+    window.deleteMessage = deleteMessage;
+
+    // --- INICIALIZACIÓN ---
+    function init() {
+        setupCommentsListener();
+        initAuthObserver();
+        
+        const commentInput = document.getElementById('commentInput');
+        if (commentInput) {
+            commentInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    submitGlobalComment();
+                }
+            });
+        }
+        
+        document.getElementById('rulesModal').addEventListener('click', function(e) {
+            if (e.target === this) closeRulesModal();
+        });
+        document.getElementById('missionModal').addEventListener('click', function(e) {
+            if (e.target === this) closeMissionModal();
+        });
+        document.getElementById('infoModal').addEventListener('click', function(e) {
+            if (e.target === this) closeInfoModal();
+        });
+        document.getElementById('errorModal').addEventListener('click', function(e) {
+            if (e.target === this) closeErrorModal();
+        });
+        document.getElementById('chatRulesModal').addEventListener('click', function(e) {
+            if (e.target === this) closeChatRulesModal();
+        });
+
+        document.addEventListener('click', function(e) {
+            const emojiPicker = document.getElementById('emojiPicker');
+            const emojiButton = document.getElementById('emojiButton');
+            if (!emojiPicker.contains(e.target) && !emojiButton.contains(e.target)) {
+                emojiPicker.classList.add('hidden');
+            }
+        });
+    }
+
+    init();
+</script>
+</body>
+</html>
