@@ -1,0 +1,2039 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salas de Temas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0f4c5c 0%, #1a5f7a 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        /* Contenedor Principal */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0.75rem;
+        }
+        
+        @media (min-width: 1024px) {
+            .main-content {
+                grid-template-columns: 280px 1fr;
+                gap: 1.5rem;
+                padding: 1rem;
+            }
+        }
+
+        /* Botón hamburguesa */
+        #hamburger-button {
+            position: relative;
+            z-index: 70;
+            transition: transform 0.3s ease;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: linear-gradient(180deg, #0a2f3f 0%, #0d3d4f 100%);
+            padding: 1rem;
+            padding-top: 80px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(20, 184, 166, 0.3);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 85%;
+            max-width: 300px;
+            height: 100%;
+            z-index: 60;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            overflow-y: auto;
+        }
+        
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        #mobile-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 55;
+            transition: opacity 0.3s;
+        }
+
+        @media (min-width: 1024px) {
+            .sidebar {
+                position: sticky;
+                top: 80px;
+                width: auto;
+                max-width: none;
+                transform: translateX(0);
+                height: fit-content;
+                padding-top: 1rem;
+                z-index: 10;
+            }
+            #mobile-menu-overlay, #hamburger-button {
+                display: none;
+            }
+        }
+
+        /* Avatar de Perfil */
+        .profile-avatar-container {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            margin-right: 0.75rem;
+            border-radius: 50%;
+            border: 3px solid #14b8a6;
+            overflow: hidden;
+            flex-shrink: 0;
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+
+        .profile-avatar-container:hover {
+            transform: scale(1.05);
+            border-color: #2dd4bf;
+        }
+
+        .profile-avatar-container:hover::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .profile-avatar-container:hover::before {
+            content: '📷';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.75rem;
+            z-index: 10;
+        }
+
+        .profile-avatar-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #profileImageInput {
+            display: none;
+        }
+
+        /* Tarjetas de Sala - Optimizadas para móviles */
+        .sala-cards-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            padding: 0 0.25rem;
+        }
+
+        @media (min-width: 640px) {
+            .sala-cards-container {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.75rem;
+                padding: 0;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .sala-cards-container {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.25rem;
+            }
+        }
+
+        .sala-card {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d4a6f 100%);
+            padding: 0.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid rgba(20, 184, 166, 0.5);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sala-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.4);
+            border-color: #14b8a6;
+        }
+
+        @media (max-width: 640px) {
+            .sala-card {
+                padding: 0.4rem;
+                border-radius: 6px;
+                border-width: 1px;
+            }
+        }
+
+        .sala-card img {
+            width: 100%;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 0.4rem;
+        }
+
+        @media (min-width: 640px) {
+            .sala-card img {
+                height: 90px;
+                border-radius: 6px;
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .sala-card img {
+                height: 110px;
+                border-radius: 8px;
+            }
+        }
+
+        .sala-card h3 {
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-top: 0.2rem;
+            color: #2dd4bf;
+            line-height: 1.1;
+            margin-bottom: 0.2rem;
+        }
+
+        @media (min-width: 640px) {
+            .sala-card h3 {
+                font-size: 0.875rem;
+                margin-bottom: 0.25rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .sala-card h3 {
+                font-size: 1rem;
+            }
+        }
+
+        .sala-card p {
+            font-size: 0.625rem;
+            color: #94a3b8;
+            margin-top: 0.1rem;
+            line-height: 1.2;
+        }
+
+        @media (min-width: 640px) {
+            .sala-card p {
+                font-size: 0.7rem;
+                line-height: 1.3;
+                height: 2.6em;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .sala-card p {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Chat Global - Optimizado para móviles */
+        .chat-box {
+            background: linear-gradient(180deg, #0a2f3f 0%, #0d3d4f 100%);
+            padding: 0.625rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(20, 184, 166, 0.3);
+            display: flex;
+            flex-direction: column;
+            height: 300px;
+            position: relative;
+            margin: 0 0.25rem;
+        }
+
+        @media (min-width: 640px) {
+            .chat-box {
+                height: 350px;
+                padding: 0.75rem;
+                margin: 0;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .chat-box {
+                padding: 1.25rem;
+                height: 450px;
+                border-radius: 12px;
+            }
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(71, 85, 105, 0.5);
+        }
+
+        @media (min-width: 640px) {
+            .chat-messages {
+                padding-bottom: 0.75rem;
+                margin-bottom: 0.75rem;
+            }
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #14b8a6;
+            border-radius: 3px;
+        }
+
+        .chat-message {
+            margin-bottom: 0.4rem;
+            padding: 0.4rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            line-height: 1.3;
+        }
+
+        @media (min-width: 640px) {
+            .chat-message {
+                margin-bottom: 0.625rem;
+                padding: 0.5rem;
+                border-radius: 8px;
+                line-height: 1.4;
+            }
+        }
+
+        .chat-message-header {
+            font-weight: bold;
+            color: #2dd4bf;
+            font-size: 0.7rem;
+            margin-bottom: 0.2rem;
+        }
+
+        @media (min-width: 640px) {
+            .chat-message-header {
+                font-size: 0.8rem;
+                margin-bottom: 0.25rem;
+            }
+        }
+
+        .chat-message-text {
+            font-size: 0.75rem;
+            color: #e2e8f0;
+        }
+
+        @media (min-width: 640px) {
+            .chat-message-text {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Lista de Amigos / Invitados */
+        .friend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(20, 184, 166, 0.1);
+            border: 1px solid rgba(20, 184, 166, 0.2);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        
+        .friend-item:hover {
+            background: rgba(20, 184, 166, 0.2);
+        }
+
+        /* Emoji Picker */
+        #emojiPicker {
+            position: absolute;
+            bottom: 45px;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, #0d3d4f 0%, #0a2f3f 100%);
+            border: 1px solid rgba(20, 184, 166, 0.4);
+            border-radius: 8px;
+            padding: 0.5rem;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 50;
+        }
+
+        @media (min-width: 640px) {
+            #emojiPicker {
+                bottom: 60px;
+                border-radius: 12px;
+                padding: 0.75rem;
+                max-height: 250px;
+            }
+        }
+
+        #emojiPicker::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        #emojiPicker::-webkit-scrollbar-thumb {
+            background: #14b8a6;
+            border-radius: 3px;
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.25rem;
+        }
+
+        @media (min-width: 640px) {
+            .emoji-grid {
+                grid-template-columns: repeat(8, 1fr);
+                gap: 0.5rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .emoji-grid {
+                grid-template-columns: repeat(10, 1fr);
+            }
+        }
+
+        .emoji-btn {
+            font-size: 1.2rem;
+            padding: 0.3rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid transparent;
+        }
+
+        @media (min-width: 640px) {
+            .emoji-btn {
+                font-size: 1.5rem;
+                padding: 0.5rem;
+                border-radius: 8px;
+            }
+        }
+
+        .emoji-btn:hover {
+            background: rgba(20, 184, 166, 0.2);
+            border-color: #14b8a6;
+            transform: scale(1.1);
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #14b8a6;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            z-index: 20;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Botones del sidebar */
+        .sidebar-btn {
+            width: 100%;
+            text-align: left;
+            padding: 0.625rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid transparent;
+        }
+
+        .sidebar-btn:hover {
+            background: rgba(20, 184, 166, 0.1);
+            border-color: rgba(20, 184, 166, 0.3);
+            transform: translateX(5px);
+        }
+
+        /* Tabs del chat */
+        .chat-tab {
+            padding-bottom: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .chat-tab.active {
+            border-color: #2dd4bf;
+            color: #2dd4bf;
+            font-weight: bold;
+        }
+
+        .chat-tab:hover:not(.active) {
+            color: #5eead4;
+        }
+
+        /* Server Selection Styles */
+        .server-selection-title {
+            font-size: 2rem;
+            color: white;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .server-selection-subtitle {
+            font-size: 1.1rem;
+            color: #ccc;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+
+        .server-button {
+            width: 100%;
+            padding: 15px;
+            background-color: #48bb78;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 10px;
+        }
+
+        .server-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .server-button.server-1 { background-color: #48bb78; }
+        .server-button.server-2 { background-color: #4299e1; }
+        .server-button.server-3 { background-color: #ed8936; }
+        .server-button.server-4 { background-color: #f56565; }
+
+        .server-button.server-1:hover { box-shadow: 0 4px 8px rgba(72, 187, 120, 0.5); }
+        .server-button.server-2:hover { box-shadow: 0 4px 8px rgba(66, 153, 225, 0.5); }
+        .server-button.server-3:hover { box-shadow: 0 4px 8px rgba(237, 137, 54, 0.5); }
+.server-button.server-4:hover { box-shadow: 0 4px 8px rgba(245, 101, 101, 0.5); }
+
+.server-button.server-unavailable {
+    background-color: #6b7280;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.server-button.server-unavailable:hover {
+    box-shadow: none;
+    transform: none;
+    background-color: #6b7280;
+}
+
+        .main-container-modal {
+            background-color: rgba(31, 41, 55, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            max-width: 450px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .back-to-auth {
+            width: 100%;
+            padding: 12px;
+            background-color: transparent;
+            color: #9ca3af;
+            border: 1px solid #6b7280;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .back-to-auth:hover {
+            background-color: #6b7280;
+            color: #111827;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="p-3 bg-gradient-to-r from-slate-900/95 to-teal-900/95 backdrop-blur-md sticky top-0 z-50 shadow-xl border-b border-teal-700/50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <button id="hamburger-button" onclick="toggleSidebar()" class="text-teal-400 text-2xl lg:hidden focus:outline-none w-8 h-8 flex items-center justify-center">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <i class="fas fa-music text-teal-400 text-xl"></i>
+                <h1 class="text-lg font-bold tracking-wide">La IA Musical</h1>
+            </div>
+
+            <div class="flex items-center gap-4 text-sm">
+            <button id="serverButton" onclick="openServerModal()" class="text-teal-300 font-medium hover:text-teal-200 transition flex items-center gap-1 bg-slate-700/50 px-3 py-2 rounded cursor-pointer">
+                <span id="currentServer">Servidor</span>
+                <i class="fas fa-server text-xs"></i>
+            </button>
+                <span id="headerUsername" class="text-teal-300 font-medium block">Usuario</span>
+                <button onclick="logout()" class="text-gray-400 hover:text-white transition">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <div id="mobile-menu-overlay" class="hidden" onclick="closeSidebar()"></div>
+
+    <div class="main-content">
+        <div id="sidebar-menu" class="sidebar">
+            
+            <div class="flex items-center gap-3 mb-4 pb-3 border-b border-teal-700/50">
+                <div id="profile-avatar" class="profile-avatar-container" onclick="triggerImageUpload()">
+                    <img id="profileImage" src="images/suno.png" alt="Mi Avatar">
+                    <div id="uploadSpinner" class="loading-spinner hidden"></div>
+                </div>
+                <input type="file" id="profileImageInput" accept="image/*" onchange="handleImageUpload(event)">
+                
+                <div class="cursor-pointer hover:text-teal-400 transition" onclick="window.location.href='perfil.html'">
+                    <div class="text-xl font-bold text-teal-300">Mi Perfil</div>
+                    <div class="text-xs text-gray-400" id="userRank">Rango: Cargando...</div>
+                    <div class="w-full bg-gray-700 rounded-full h-2 mt-1">
+                        <div id="progressBar" class="bg-teal-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1" id="progressText">0 / 0 estrellas</div>
+                </div>
+            </div>
+
+            <div class="space-y-2 mb-4">
+                <button onclick="window.location.href='biblioteca.html'" class="sidebar-btn">
+                    <i class="fas fa-book-open text-orange-400"></i> Biblioteca
+                </button>
+                <button onclick="window.location.href='estadisticas.html'" class="sidebar-btn">
+                    <i class="fas fa-chart-line text-blue-400"></i> Estadísticas
+                </button>
+                <button onclick="window.location.href='podcast.html'" class="sidebar-btn">
+                    <i class="fas fa-podcast text-green-400"></i> Podcast IA
+                </button>
+                <button onclick="alert('Abrir Spotify')" class="sidebar-btn">
+                    <i class="fab fa-spotify text-green-500"></i> Spotify
+                </button>
+                <button onclick="alert('Abrir TikTok')" class="sidebar-btn">
+                    <i class="fab fa-tiktok text-pink-400"></i> Tik Tok
+                </button>
+                <button onclick="window.open('https://youtube.com/@laliteraturamusical?si=OpqvLWsxJnHJtlTf')" class="sidebar-btn">
+                    <i class="fab fa-youtube text-red-500"></i> Canal YouTube
+                </button>
+            </div>
+
+            <div class="space-y-2 border-t border-teal-700/50 pt-3">
+                <button onclick="openInfoModal()" class="sidebar-btn">
+                    <i class="fas fa-info-circle text-blue-400"></i> Información de gaming
+                </button>
+                <button onclick="openRulesModal()" class="sidebar-btn">
+                    <i class="fas fa-scroll text-yellow-500"></i> Sistema de puntos
+                </button>
+                <button onclick="openMissionModal()" class="sidebar-btn">
+                    <i class="fas fa-brain text-purple-400"></i> Misión de la IA
+                </button>
+            </div>
+        </div>
+
+        <div class="lg:col-span-1 space-y-4">
+            <section>
+                <h2 class="text-xl md:text-2xl font-bold text-teal-300 mb-2 md:mb-3 pb-1 md:pb-2 border-b-2 border-teal-700/50">Salas temáticas</h2>
+                <p class="text-sm text-gray-400 mb-4">Entra en una sala y explora las múltiples canciones que la IA ha creado</p>
+
+                <div class="sala-cards-container">
+                    <div class="sala-card" onclick="goToRanking('Literatura')">
+                        <img src="images/literatura.png" alt="Literatura">
+                        <h3>Literatura</h3>
+                        <p>Música inspirada en grandes autores y novelas</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Cine')">
+                        <img src="images/cine.png" alt="Cine">
+                        <h3>Cine</h3>
+                        <p>Bandas sonoras épicas e icónicas</p>
+                    </div>
+                    
+                    <div class="sala-card" onclick="goToRanking('Dibujos animados')">
+                        <img src="images/dibujosanimados.png" alt="Animación">
+                        <h3>Animación</h3>
+                        <p>Clásicos de dibujos animados</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Ópera y conciertos')">
+                        <img src="images/operayconciertos.png" alt="Ópera">
+                        <h3>Ópera y conciertos</h3>
+                        <p>Obras maestras clásicas</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Teatro y musicales')">
+                        <img src="images/teatroymusicales.png" alt="Musicales">
+                        <h3>Teatro y Musicales</h3>
+                        <p>Broadway y teatro musical</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Series')">
+                        <img src="images/series.png" alt="Series">
+                        <h3>Series</h3>
+                        <p>Temas de series de TV</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Anime')">
+                        <img src="images/anime.png" alt="Anime">
+                        <h3>Anime</h3>
+                        <p>Openings y OST japoneses</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Extra y documentales')">
+                        <img src="images/extras.png" alt="Documentales">
+                        <h3>Extra y documentales</h3>
+                        <p>Naturaleza e historia</p>
+                    </div>
+
+                    <div class="sala-card" onclick="goToRanking('Usuarios')">
+                        <img src="images/usuarios.png" alt="Usuarios">
+                        <h3>Usuarios</h3>
+                        <p>Musica creada a partir de tus ideas</p>
+                    </div>
+
+                    <div class="sala-card" onclick="openPlaylistModal()">
+                        <img src="images/playlists.png" alt="Playlists" onerror="this.src='images/suno.png'">
+                        <h3>Mis Playlists</h3>
+                        <p>Una selección de LaIAmusical</p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="chat-box">
+                <div class="flex items-center justify-between mb-2 md:mb-3 pb-1 md:pb-2 border-b border-teal-700/50">
+                    <div class="flex gap-2 md:gap-4">
+                        <h3 id="tabChat" onclick="switchChatTab('chat')" class="text-sm md:text-lg font-bold flex items-center gap-1 md:gap-2 chat-tab active">
+                            <i class="fas fa-comments text-xs md:text-base"></i> <span class="hidden sm:inline">Chat</span><span class="sm:hidden">💬</span>
+                        </h3>
+                        <h3 id="tabInvites" onclick="switchChatTab('invites')" class="text-sm md:text-lg font-bold flex items-center gap-1 md:gap-2 chat-tab text-gray-500">
+                            <i class="fas fa-user-friends text-xs md:text-base"></i> <span class="hidden sm:inline">Invitados</span><span class="sm:hidden">👥</span>
+                        </h3>
+                        <h3 id="tabFriends" onclick="switchChatTab('friends')" class="text-sm md:text-lg font-bold flex items-center gap-1 md:gap-2 chat-tab text-gray-500">
+                            <i class="fas fa-users text-xs md:text-base"></i> <span class="hidden sm:inline">Amigos</span><span class="sm:hidden">👫</span>
+                        </h3>
+                    </div>
+                    <button onclick="openChatRulesModal()" class="text-xs bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-1 px-1 md:px-2 rounded transition">
+                        <span class="hidden sm:inline">Normas</span><span class="sm:hidden">📋</span>
+                    </button>
+                </div>
+
+                <div id="chatContainer" class="flex flex-col flex-grow overflow-hidden">
+                    <div id="chatMessages" class="chat-messages"></div>
+
+                    <div id="emojiPicker" class="hidden">
+                        <div class="emoji-grid">
+                            <button onclick="insertEmoji('😊')" class="emoji-btn">😊</button>
+                            <button onclick="insertEmoji('😂')" class="emoji-btn">😂</button>
+                            <button onclick="insertEmoji('🤣')" class="emoji-btn">🤣</button>
+                            <button onclick="insertEmoji('😍')" class="emoji-btn">😍</button>
+                            <button onclick="insertEmoji('😘')" class="emoji-btn">😘</button>
+                            <button onclick="insertEmoji('😎')" class="emoji-btn">😎</button>
+                            <button onclick="insertEmoji('🤔')" class="emoji-btn">🤔</button>
+                            <button onclick="insertEmoji('😢')" class="emoji-btn">😢</button>
+                            <button onclick="insertEmoji('😭')" class="emoji-btn">😭</button>
+                            <button onclick="insertEmoji('😡')" class="emoji-btn">😡</button>
+                            <button onclick="insertEmoji('🥰')" class="emoji-btn">🥰</button>
+                            <button onclick="insertEmoji('😇')" class="emoji-btn">😇</button>
+                            <button onclick="insertEmoji('🤗')" class="emoji-btn">🤗</button>
+                            <button onclick="insertEmoji('🤩')" class="emoji-btn">🤩</button>
+                            <button onclick="insertEmoji('😴')" class="emoji-btn">😴</button>
+                            <button onclick="insertEmoji('❤️')" class="emoji-btn">❤️</button>
+                            <button onclick="insertEmoji('💙')" class="emoji-btn">💙</button>
+                            <button onclick="insertEmoji('💚')" class="emoji-btn">💚</button>
+                            <button onclick="insertEmoji('💛')" class="emoji-btn">💛</button>
+                            <button onclick="insertEmoji('💜')" class="emoji-btn">💜</button>
+                            <button onclick="insertEmoji('🖤')" class="emoji-btn">🖤</button>
+                            <button onclick="insertEmoji('🤍')" class="emoji-btn">🤍</button>
+                            <button onclick="insertEmoji('👍')" class="emoji-btn">👍</button>
+                            <button onclick="insertEmoji('👎')" class="emoji-btn">👎</button>
+                            <button onclick="insertEmoji('👏')" class="emoji-btn">👏</button>
+                            <button onclick="insertEmoji('🙌')" class="emoji-btn">🙌</button>
+                            <button onclick="insertEmoji('🔥')" class="emoji-btn">🔥</button>
+                            <button onclick="insertEmoji('⭐')" class="emoji-btn">⭐</button>
+                            <button onclick="insertEmoji('✨')" class="emoji-btn">✨</button>
+                            <button onclick="insertEmoji('💯')" class="emoji-btn">💯</button>
+                            <button onclick="insertEmoji('🎵')" class="emoji-btn">🎵</button>
+                            <button onclick="insertEmoji('🎶')" class="emoji-btn">🎶</button>
+                            <button onclick="insertEmoji('🎸')" class="emoji-btn">🎸</button>
+                            <button onclick="insertEmoji('🎤')" class="emoji-btn">🎤</button>
+                            <button onclick="insertEmoji('🎧')" class="emoji-btn">🎧</button>
+                            <button onclick="insertEmoji('🎹')" class="emoji-btn">🎹</button>
+                            <button onclick="insertEmoji('🎺')" class="emoji-btn">🎺</button>
+                            <button onclick="insertEmoji('🎻')" class="emoji-btn">🎻</button>
+                            <button onclick="insertEmoji('🥁')" class="emoji-btn">🥁</button>
+                            <button onclick="insertEmoji('🎼')" class="emoji-btn">🎼</button>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="toggleEmojiPicker()" id="emojiButton" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-3 rounded-lg transition flex-shrink-0">
+                            😊
+                        </button>
+                        <input type="text" id="commentInput" placeholder="Escribe..." 
+                               class="flex-grow p-2 rounded-lg bg-slate-700/50 text-white placeholder-slate-400 border border-slate-600/50 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm">
+                        <button onclick="submitGlobalComment()" id="sendCommentButton"
+                                class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-3 rounded-lg transition disabled:opacity-50 flex-shrink-0">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="invitesContainer" class="hidden flex-grow overflow-y-auto">
+                    <p class="text-xs text-gray-400 mb-3 text-center italic">Usuarios que se unieron con tu enlace</p>
+                    <div id="invitedUsersList" class="space-y-2">
+                        <div class="text-center py-10 text-gray-500 text-sm">Cargando...</div>
+                    </div>
+                </div>
+
+                <div id="friendsContainer" class="hidden flex-grow overflow-y-auto">
+                    <p class="text-xs text-gray-400 mb-3 text-center italic">Tus amigos</p>
+                    <div id="friendsList" class="space-y-2">
+                        <div class="text-center py-10 text-gray-500 text-sm">Cargando...</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-8 py-6 bg-gradient-to-r from-slate-900/95 to-teal-900/95 border-t border-teal-700/50">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <p class="text-gray-300 text-sm mb-2">
+                Contacto: <a href="mailto:contact@hotmail.com" class="text-teal-400 hover:text-teal-300 underline">La IA Musical</a>
+            </p>
+            <p class="text-gray-400 text-xs">© 2026 La IA Musical. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <div id="rulesModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl border border-teal-700 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4 text-teal-300 flex items-center gap-2">
+                <i class="fas fa-scroll text-yellow-400"></i> Sistema de Puntos
+            </h3>
+            <div class="space-y-3 text-sm text-gray-300">
+                <div class="flex items-start gap-3 p-3 bg-slate-700/30 rounded-lg">
+                    <i class="fas fa-vote-yea text-blue-400 text-lg pt-1"></i>
+                    <div>
+                        <span class="font-bold text-teal-200">Votos:</span> 5 votos gratuitos diarios. Valora canciones hasta 5 estrellas.
+                    </div>
+                </div>
+                <div class="flex items-start gap-3 p-3 bg-slate-700/30 rounded-lg">
+                    <i class="fas fa-star text-yellow-400 text-lg pt-1"></i>
+                    <div>
+                        <span class="font-bold text-teal-200">Estrellas:</span> Consíguelas en Quizzes y clasificaciones.
+                    </div>
+                </div>
+                <div class="flex items-start gap-3 p-3 bg-slate-700/30 rounded-lg">
+                    <i class="fas fa-gem text-purple-400 text-lg pt-1"></i>
+                    <div>
+                        <span class="font-bold text-teal-200">Diamantes:</span> 100% de acierto en Quiz y Top 3 semanal.
+                    </div>
+                </div>
+                
+                <div class="flex items-start gap-3 p-3 bg-slate-700/30 rounded-lg border border-amber-600/30">
+                    <i class="fas fa-coins text-amber-500 text-lg pt-1"></i>
+                    <div>
+                        <span class="font-bold text-amber-200">Monedas:</span> Intercambia estrellas por monedas en el Mercado para comprar cartas especiales.
+                    </div>
+                </div>
+                <div class="flex items-start gap-3 p-3 bg-slate-700/30 rounded-lg border border-teal-500/30">
+                    <i class="fas fa-trophy text-teal-400 text-lg pt-1"></i>
+                    <div>
+                        <span class="font-bold text-teal-200">Rango:</span> Muestra tu nivel de usuario basado en estrellas acumuladas (Novato, Maestro, Dios...).
+                    </div>
+                </div>
+                <div class="flex items-start gap-3 p-3 bg-slate-700/30 rounded-lg border border-pink-500/30">
+                    <i class="fas fa-layer-group text-pink-400 text-lg pt-1"></i>
+                    <div>
+                        <span class="font-bold text-pink-200">Combos:</span> Usa diamantes para subir de nivel tus cartas compradas y aumentar su valor.
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeRulesModal()" class="mt-6 w-full py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold transition">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="missionModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl border border-teal-700 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4 text-teal-300 flex items-center gap-2">
+                <i class="fas fa-brain text-purple-400"></i> Nuestra Misión
+            </h3>
+            <ul class="list-disc list-inside space-y-2 text-sm text-gray-300 pl-2">
+                <li>Crear una biblioteca musical inspirada en el arte de la literatura, cine, etc</li>
+                <li>Motivar la exploración del universo de la IA musical</li>
+                <li>Usar música para facilitar memorización y comprensión</li>
+                <li>Rejuvenecer la apreciación por grandes autores</li>
+                <li>Ofrecer experiencia sensorial única</li>
+                <li>Comunidad de votación activa</li>
+                <li>Experiencia lúdica y gratificante</li>
+            </ul>
+            <button onclick="closeMissionModal()" class="mt-6 w-full py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold transition">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="infoModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl border border-teal-700 max-w-lg w-full shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 text-teal-300 flex items-center gap-2">
+                <i class="fas fa-info-circle text-blue-400"></i> Información
+            </h3>
+            <ol class="list-decimal list-inside space-y-2 text-sm text-gray-300 pl-2">
+                <li>Explora y entra en una sala</li>
+                <li>Dale al play y escucha la canción</li>
+                <li>Realiza el Quiz</li>
+                <li>Vota por el top 3 de la semana</li>
+                <li>Sube de rango hasta la cima</li>
+            </ol>
+            <button onclick="closeInfoModal()" class="mt-6 w-full py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold transition">Cerrar</button>
+        </div>
+    </div>
+    
+    <div id="errorModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl border border-red-700 max-w-sm w-full shadow-2xl">
+            <h3 class="text-lg font-bold mb-3 text-red-400 flex items-center gap-2">
+                <i class="fas fa-exclamation-triangle"></i> Error
+            </h3>
+            <p id="errorDetails" class="text-gray-300 mb-4 text-sm">Ha ocurrido un error inesperado.</p>
+            <button onclick="closeErrorModal()" class="w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold transition">Aceptar</button>
+        </div>
+    </div>
+
+    <div id="chatRulesModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl border border-yellow-700 max-w-3xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4 text-yellow-400 flex items-center gap-2">
+                <i class="fas fa-scroll"></i> Normas del Chat
+            </h3>
+            <div class="space-y-3 text-xs text-gray-300">
+                <p class="text-yellow-300 font-semibold text-sm">Comportamientos sancionables:</p>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Prohibido hacer SPAM</h4>
+                    <p>Envío repetitivo de mensajes o enlaces irrelevantes.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Contenido inapropiado</h4>
+                    <p>Desnudos, racismo, violencia, política, religión o contenido con menores.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Mensajes fuera de tema</h4>
+                    <p>Respuestas no relacionadas con el tema tratado.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Acoso e insultos</h4>
+                    <p>Insultar, acosar, difamar o molestar a otros usuarios.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Discusiones en bucle</h4>
+                    <p>Debates repetitivos en chat público. Usar mensajes directos.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Lenguaje obsceno reiterado</h4>
+                    <p>Uso excesivo de palabras obscenas o falta de respeto.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Información personal</h4>
+                    <p>Publicar datos personales propios o de terceros.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Suplantación de identidad</h4>
+                    <p>Hacerse pasar por otra persona de forma engañosa.</p>
+                </div>
+
+                <div class="bg-slate-700/30 p-3 rounded-lg">
+                    <h4 class="text-red-400 font-bold text-sm mb-1">❌ Múltiples cuentas</h4>
+                    <p>Usar varias cuentas está prohibido y es rastreable por IP.</p>
+                </div>
+
+                <div class="bg-orange-900/30 p-3 rounded-lg border border-orange-600/50">
+                    <h4 class="text-orange-400 font-bold text-sm mb-1">⚠️ Sobre las sanciones</h4>
+                    <p>Desde advertencias hasta expulsión permanente según gravedad.</p>
+                </div>
+            </div>
+            <button onclick="closeChatRulesModal()" class="mt-6 w-full py-2 rounded-lg bg-yellow-600 hover:bg-yellow-500 text-white font-bold transition">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="serverModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="main-container-modal">
+            <h3 class="server-selection-title">Seleccionar Servidor</h3>
+            <p class="server-selection-subtitle">Elige el servidor al que quieres conectarte</p>
+
+            <button onclick="alert('Este servidor no está disponible actualmente.')" class="server-button server-1 server-unavailable">
+                <i class="fas fa-server mr-2"></i>Servidor LaIAmusical 1
+            </button>
+            <button onclick="alert('Este servidor no está disponible actualmente.')" class="server-button server-2 server-unavailable">
+                <i class="fas fa-server mr-2"></i>Servidor LaIAmusical 2
+            </button>
+            <button onclick="alert('Este servidor requiere un código para acceder y no está disponible actualmente.')" class="server-button server-3 server-unavailable">
+                <i class="fas fa-server mr-2"></i>Servidor privado
+            </button>
+            <button onclick="changeServer('Servidor en pruebas')" class="server-button server-4">
+                <i class="fas fa-server mr-2"></i>Servidor en pruebas
+            </button>
+
+            <button onclick="closeServerModal()" class="back-to-auth">
+                <i class="fas fa-times mr-2"></i>Cerrar
+            </button>
+        </div>
+    </div>
+
+    <div id="addFriendModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl border border-teal-700 max-w-sm w-full shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 text-teal-300 flex items-center gap-2">
+                <i class="fas fa-user-plus text-blue-400"></i> Agregar como amigo
+            </h3>
+            <p class="text-gray-300 mb-4 text-sm">¿Quieres agregar a este usuario como amigo?</p>
+            <div class="flex gap-3">
+                <button onclick="confirmAddFriend()" class="flex-1 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold transition">Sí</button>
+                <button onclick="closeAddFriendModal()" class="flex-1 py-2 rounded-lg bg-gray-600 hover:bg-gray-500 text-white font-bold transition">No</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="userProfileModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl border border-teal-700 max-w-sm w-full shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 text-teal-300 flex items-center gap-2">
+                <i class="fas fa-user text-blue-400"></i> Perfil de Usuario
+            </h3>
+            <div id="userProfileContent">
+                <div class="text-center py-4">
+                    <div class="loading-spinner"></div>
+                    <p class="text-gray-400 text-sm mt-2">Cargando...</p>
+                </div>
+            </div>
+            <button onclick="closeUserProfileModal()" class="mt-6 w-full py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold transition">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="addFriendTooltip" class="hidden fixed bg-slate-800 p-3 rounded border border-teal-700 text-white z-50 shadow-lg">
+        <p class="text-sm mb-2" id="tooltipText"></p>
+        <div class="flex gap-2">
+            <button onclick="confirmAddFriendFromTooltip()" class="px-3 py-1 bg-teal-600 hover:bg-teal-500 text-white text-xs rounded transition">Sí</button>
+            <button onclick="hideAddFriendTooltip()" class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white text-xs rounded transition">No</button>
+        </div>
+    </div>
+
+    <div id="playlistModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl border border-teal-700 max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4 text-teal-300 flex items-center gap-2">
+                <i class="fas fa-list text-purple-400"></i> Mis Playlists
+            </h3>
+
+            <div class="flex gap-4 mb-6">
+                <button onclick="showCreatePlaylist()" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-4 rounded-lg transition flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Crear Playlist
+                </button>
+                <button onclick="loadUserPlaylists()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded-lg transition flex items-center gap-2">
+                    <i class="fas fa-sync"></i> Actualizar
+                </button>
+            </div>
+
+            <div id="playlistContent">
+                <div class="text-center py-8">
+                    <div class="loading-spinner"></div>
+                    <p class="text-gray-400 text-sm mt-2">Cargando playlists...</p>
+                </div>
+            </div>
+
+            <button onclick="closePlaylistModal()" class="mt-6 w-full py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold transition">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="createPlaylistModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl border border-teal-700 max-w-md w-full shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 text-teal-300 flex items-center gap-2">
+                <i class="fas fa-plus text-green-400"></i> Crear Nueva Playlist
+            </h3>
+
+            <form onsubmit="createPlaylist(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-gray-300 mb-2">Nombre de la Playlist</label>
+                    <input type="text" id="playlistName" required class="w-full p-3 rounded-lg bg-slate-700/50 text-white placeholder-slate-400 border border-slate-600/50 focus:border-teal-500 focus:ring-1 focus:ring-teal-500" placeholder="Mi Playlist Favorita">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-gray-300 mb-2">Descripción (opcional)</label>
+                    <textarea id="playlistDescription" rows="3" class="w-full p-3 rounded-lg bg-slate-700/50 text-white placeholder-slate-400 border border-slate-600/50 focus:border-teal-500 focus:ring-1 focus:ring-teal-500" placeholder="Una colección de mis canciones favoritas..."></textarea>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold transition">Crear</button>
+                    <button type="button" onclick="closeCreatePlaylistModal()" class="flex-1 py-2 rounded-lg bg-gray-600 hover:bg-gray-500 text-white font-bold transition">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<script>
+    // CONFIGURACIÓN FIREBASE
+    const firebaseConfig = {
+        apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+        authDomain: "laiamusical-4fba7.firebaseapp.com",
+        projectId: "laiamusical-4fba7",
+        storageBucket: "laiamusical-4fba7.firebasestorage.app",
+        messagingSenderId: "49783369602",
+        appId: "1:49783369602:web:91e287c094a8f2403d699b",
+        measurementId: "G-WC2JT6DRF4"
+    };
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // VARIABLES DE ESTADO
+    let currentUser = null;
+    let username = 'Usuario';
+    const maxVotes = 5;
+    let currentChatListener = null;
+    let pendingFriendUserId = null;
+    let pendingFriendUsername = null;
+
+    // Sistema de rangos con 50 niveles
+    const rankingSystem = [
+        { name: "Novato", minStars: 0, maxStars: 500, icon: "fa-medal", color: "text-teal-400" },
+        { name: "Aprendiz", minStars: 501, maxStars: 1000, icon: "fa-award", color: "text-green-400" },
+        { name: "Aficionado", minStars: 1001, maxStars: 1500, icon: "fa-star", color: "text-blue-400" },
+        { name: "Entusiasta", minStars: 1501, maxStars: 2000, icon: "fa-gem", color: "text-purple-400" },
+        { name: "Conocedor", minStars: 2001, maxStars: 2500, icon: "fa-crown", color: "text-yellow-400" },
+        { name: "Experto", minStars: 2501, maxStars: 3000, icon: "fa-trophy", color: "text-orange-400" },
+        { name: "Maestro", minStars: 3001, maxStars: 3500, icon: "fa-fire", color: "text-red-400" },
+        { name: "Virtuoso", minStars: 3501, maxStars: 4000, icon: "fa-bolt", color: "text-yellow-300" },
+        { name: "Prodigio", minStars: 4001, maxStars: 4500, icon: "fa-star-half-alt", color: "text-amber-400" },
+        { name: "Ídolo", minStars: 4501, maxStars: 5000, icon: "fa-music", color: "text-pink-400" },
+        { name: "Leyenda", minStars: 5001, maxStars: 5500, icon: "fa-rocket", color: "text-indigo-400" },
+        { name: "Mito", minStars: 5501, maxStars: 6000, icon: "fa-dragon", color: "text-purple-500" },
+        { name: "Inmortal", minStars: 6001, maxStars: 6500, icon: "fa-skull-crossbones", color: "text-red-500" },
+        { name: "Titán", minStars: 6501, maxStars: 7000, icon: "fa-mountain", color: "text-gray-400" },
+        { name: "Dios", minStars: 7001, maxStars: 7500, icon: "fa-sun", color: "text-yellow-500" },
+        { name: "Supremo", minStars: 7501, maxStars: 8000, icon: "fa-infinity", color: "text-white" },
+        { name: "Trascendente", minStars: 8001, maxStars: 8500, icon: "fa-lightbulb", color: "text-cyan-400" },
+        { name: "Celestial", minStars: 8501, maxStars: 9000, icon: "fa-cloud", color: "text-blue-300" },
+        { name: "Divino", minStars: 9001, maxStars: 9500, icon: "fa-hand-sparkles", color: "text-gold-400" },
+        { name: "Eterno", minStars: 9501, maxStars: 10000, icon: "fa-hourglass", color: "text-purple-300" },
+        { name: "Omnipotente", minStars: 10001, maxStars: 11000, icon: "fa-atom", color: "text-emerald-500" },
+        { name: "Universal", minStars: 11001, maxStars: 12000, icon: "fa-globe", color: "text-blue-500" },
+        { name: "Cósmico", minStars: 12001, maxStars: 13000, icon: "fa-meteor", color: "text-orange-500" },
+        { name: "Galáctico", minStars: 13001, maxStars: 14000, icon: "fa-satellite", color: "text-purple-400" },
+        { name: "Estelar", minStars: 14001, maxStars: 15000, icon: "fa-star-of-life", color: "text-yellow-400" },
+        { name: "Nebular", minStars: 15001, maxStars: 16000, icon: "fa-cloud-moon", color: "text-indigo-300" },
+        { name: "Cuántico", minStars: 16001, maxStars: 17000, icon: "fa-atom", color: "text-teal-500" },
+        { name: "Dimensional", minStars: 17001, maxStars: 18000, icon: "fa-cube", color: "text-pink-500" },
+        { name: "Multiversal", minStars: 18001, maxStars: 19000, icon: "fa-dice-d20", color: "text-red-400" },
+        { name: "Absoluto", minStars: 19001, maxStars: 20000, icon: "fa-yin-yang", color: "text-white" },
+        { name: "Primordial", minStars: 20001, maxStars: 21000, icon: "fa-seedling", color: "text-green-500" },
+        { name: "Ancestral", minStars: 21001, maxStars: 22000, icon: "fa-tree", color: "text-amber-600" },
+        { name: "Milenario", minStars: 22001, maxStars: 23000, icon: "fa-scroll", color: "text-yellow-600" },
+        { name: "Arcano", minStars: 23001, maxStars: 24000, icon: "fa-magic", color: "text-purple-600" },
+        { name: "Místico", minStars: 24001, maxStars: 25000, icon: "fa-eye", color: "text-indigo-500" },
+        { name: "Oráculo", minStars: 25001, maxStars: 26000, icon: "fa-crystal-ball", color: "text-blue-400" },
+        { name: "Profeta", minStars: 26001, maxStars: 27000, icon: "fa-book-dead", color: "text-red-600" },
+        { name: "Vidente", minStars: 27001, maxStars: 28000, icon: "fa-eye-slash", color: "text-cyan-500" },
+        { name: "Iluminado", minStars: 28001, maxStars: 29000, icon: "fa-sun", color: "text-yellow-400" },
+        { name: "Radiante", minStars: 29001, maxStars: 30000, icon: "fa-certificate", color: "text-gold-500" },
+        { name: "Ascendido", minStars: 30001, maxStars: 32000, icon: "fa-arrow-up", color: "text-green-400" },
+        { name: "Elevado", minStars: 32001, maxStars: 34000, icon: "fa-angle-double-up", color: "text-teal-400" },
+        { name: "Sublime", minStars: 34001, maxStars: 36000, icon: "fa-pray", color: "text-blue-300" },
+        { name: "Perfecto", minStars: 36001, maxStars: 38000, icon: "fa-check-circle", color: "text-green-500" },
+        { name: "Impecable", minStars: 38001, maxStars: 40000, icon: "fa-shield-alt", color: "text-purple-500" },
+        { name: "Inmaculado", minStars: 40001, maxStars: 43000, icon: "fa-shield", color: "text-white" },
+        { name: "Omnisciente", minStars: 43001, maxStars: 46000, icon: "fa-brain", color: "text-pink-400" },
+        { name: "Omnipresente", minStars: 46001, maxStars: 49000, icon: "fa-broadcast-tower", color: "text-orange-400" },
+        { name: "Creador", minStars: 49001, maxStars: 52000, icon: "fa-hat-wizard", color: "text-red-500" },
+        { name: "Arquitecto del Universo", minStars: 52001, maxStars: 999999, icon: "fa-infinity", color: "text-gradient" }
+    ];
+
+    function getUserRank(stars) {
+        for (let i = 0; i < rankingSystem.length; i++) {
+            if (stars >= rankingSystem[i].minStars && stars <= rankingSystem[i].maxStars) {
+                return {
+                    current: rankingSystem[i],
+                    next: rankingSystem[i + 1] || null,
+                    level: i + 1
+                };
+            }
+        }
+        return {
+            current: rankingSystem[rankingSystem.length - 1],
+            next: null,
+            level: rankingSystem.length
+        };
+    }
+
+    // --- FUNCIONES PARA SUBIR IMAGEN DE PERFIL ---
+    function triggerImageUpload() {
+        document.getElementById('profileImageInput').click();
+    }
+    window.triggerImageUpload = triggerImageUpload;
+
+    async function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            showErrorModal('Por favor, selecciona un archivo de imagen válido.');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            showErrorModal('La imagen es demasiado grande. El tamaño máximo es 5MB.');
+            return;
+        }
+
+        if (!currentUser) {
+            showErrorModal('Debes iniciar sesión para subir una foto de perfil.');
+            return;
+        }
+
+        const spinner = document.getElementById('uploadSpinner');
+        const profileImage = document.getElementById('profileImage');
+        
+        try {
+            spinner.classList.remove('hidden');
+            
+            const storageRef = storage.ref();
+            const profileImageRef = storageRef.child(`profileImages/${currentUser.uid}`);
+            
+            await profileImageRef.put(file);
+            const downloadURL = await profileImageRef.getDownloadURL();
+            
+            await db.collection('users').doc(currentUser.uid).update({
+                profileImageUrl: downloadURL
+            });
+            
+            profileImage.src = downloadURL;
+            console.log('Imagen de perfil actualizada correctamente');
+            
+        } catch (error) {
+            console.error('Error al subir la imagen:', error);
+            showErrorModal('Error al subir la imagen: ' + error.message);
+        } finally {
+            spinner.classList.add('hidden');
+        }
+    }
+    window.handleImageUpload = handleImageUpload;
+
+    // --- FUNCIONES PARA EL MENÚ HAMBURGUESA ---
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar-menu');
+        const overlay = document.getElementById('mobile-menu-overlay');
+        const icon = document.querySelector('#hamburger-button i');
+        
+        if (sidebar.classList.contains('open')) {
+            closeSidebar();
+        } else {
+            sidebar.classList.add('open');
+            overlay.classList.remove('hidden');
+            icon.classList.remove('fa-bars');
+            icon.classList.add('fa-times');
+        }
+    }
+    window.toggleSidebar = toggleSidebar;
+    
+    function closeSidebar() {
+        const sidebar = document.getElementById('sidebar-menu');
+        const overlay = document.getElementById('mobile-menu-overlay');
+        const icon = document.querySelector('#hamburger-button i');
+        
+        sidebar.classList.remove('open');
+        setTimeout(() => {
+             overlay.classList.add('hidden');
+        }, 300);
+        
+        icon.classList.remove('fa-times');
+        icon.classList.add('fa-bars');
+    }
+    window.closeSidebar = closeSidebar;
+
+    // --- MANEJO DE VISTAS ---
+    function goToRanking(topicName) {
+        console.log(`Intentando ir a la sala: ${topicName}`);
+        localStorage.setItem('currentTopic', topicName);
+        if (window.innerWidth < 1024) {
+             closeSidebar();
+        }
+        window.location.href = 'reproductor.html';
+    }
+    window.goToRanking = goToRanking;
+
+    // --- LÓGICA DE USUARIO Y FIREBASE ---
+    async function loadUserData() {
+        if (!currentUser) return;
+        try {
+            const docRef = db.collection('users').doc(currentUser.uid);
+            const docSnap = await docRef.get();
+            
+            let data;
+
+            if (docSnap.exists) {
+                data = docSnap.data();
+                username = data.username || currentUser.email.split('@')[0];
+
+                if (data.profileImageUrl) {
+                    document.getElementById('profileImage').src = data.profileImageUrl;
+                }
+
+                // Ensure email is stored
+                if (!data.email) {
+                    await docRef.update({ email: currentUser.email });
+                }
+
+                const votesRemaining = data.votesRemaining !== undefined ? data.votesRemaining : maxVotes;
+                const lastVoteDate = data.lastVoteDate;
+                const lastDateString = lastVoteDate ? lastVoteDate.toDate().toDateString() : null;
+                const todayString = new Date().toDateString();
+
+                if (lastDateString !== todayString) {
+                    await docRef.update({
+                        votesRemaining: maxVotes,
+                        lastVoteDate: new Date()
+                    });
+                }
+
+                // Cargar lista de invitados
+                loadInvitedUsers();
+
+                // Cargar lista de amigos
+                loadFriends();
+
+            } else {
+                username = currentUser.email.split('@')[0];
+                await docRef.set({
+                    username: username,
+                    email: currentUser.email,
+                    totalStars: 0,
+                    votesRemaining: maxVotes,
+                    lastVoteDate: new Date(),
+                    createdAt: new Date(),
+                    activityLog: [],
+                    profileImageUrl: null
+                });
+            }
+            
+            document.getElementById('headerUsername').textContent = username;
+
+            // Update rank and progress bar
+            const totalStars = data.userStars || 0;
+            const rankInfo = getUserRank(totalStars);
+            document.getElementById('userRank').textContent = `Rango: ${rankInfo.current.name}`;
+
+            // Calculate progress within the current rank
+            const progress = rankInfo.next
+                ? Math.min(((totalStars - rankInfo.current.minStars) / (rankInfo.current.maxStars - rankInfo.current.minStars) * 100), 100)
+                : 100;
+
+            // Show progress bar and stars
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            document.getElementById('progressText').textContent = `${totalStars} / ${rankInfo.current.maxStars} estrellas`;
+
+        } catch (error) {
+            console.error("Error cargando datos:", error);
+            showErrorModal("Error al cargar datos del usuario. Intente recargar. " + error.message);
+        }
+    }
+
+    function initAuthObserver() {
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                loadUserData();
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+    }
+    
+    function logout() {
+        auth.signOut().then(() => {
+            localStorage.removeItem('currentTopic');
+            window.location.href = 'index.html';
+        });
+    }
+    window.logout = logout;
+
+    // --- CHAT GLOBAL Y LISTA DE INVITADOS ---
+    
+    // Función para cambiar pestañas del chat
+    function switchChatTab(tab) {
+        const tabChat = document.getElementById('tabChat');
+        const tabInvites = document.getElementById('tabInvites');
+        const tabFriends = document.getElementById('tabFriends');
+        const chatContainer = document.getElementById('chatContainer');
+        const invitesContainer = document.getElementById('invitesContainer');
+        const friendsContainer = document.getElementById('friendsContainer');
+
+        // Reset all
+        tabChat.classList.remove('active', 'text-teal-300');
+        tabChat.classList.add('text-gray-500');
+        tabInvites.classList.remove('active', 'text-teal-300');
+        tabInvites.classList.add('text-gray-500');
+        tabFriends.classList.remove('active', 'text-teal-300');
+        tabFriends.classList.add('text-gray-500');
+        chatContainer.classList.add('hidden');
+        invitesContainer.classList.add('hidden');
+        friendsContainer.classList.add('hidden');
+
+        if (tab === 'chat') {
+            tabChat.classList.add('active', 'text-teal-300');
+            tabChat.classList.remove('text-gray-500');
+            chatContainer.classList.remove('hidden');
+        } else if (tab === 'invites') {
+            tabInvites.classList.add('active', 'text-teal-300');
+            tabInvites.classList.remove('text-gray-500');
+            invitesContainer.classList.remove('hidden');
+        } else if (tab === 'friends') {
+            tabFriends.classList.add('active', 'text-teal-300');
+            tabFriends.classList.remove('text-gray-500');
+            friendsContainer.classList.remove('hidden');
+        }
+    }
+    window.switchChatTab = switchChatTab;
+
+    // Cargar usuarios invitados
+    async function loadInvitedUsers() {
+        if (!currentUser) return;
+        const container = document.getElementById('invitedUsersList');
+
+        try {
+            // Buscamos en la colección de invitaciones
+            const invitesSnapshot = await db.collection('invitations')
+                .where('inviterId', '==', currentUser.uid)
+                .where('status', '==', 'completed') // Solo los que aceptaron y se registraron
+                .get();
+
+            if (invitesSnapshot.empty) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-user-plus text-gray-500 text-3xl mb-3"></i>
+                        <p class="text-gray-400 text-sm">Aún no tienes invitados.</p>
+                        <button onclick="window.location.href='perfil.html'" class="mt-3 text-teal-400 text-xs hover:underline">
+                            Ir a Perfil para compartir enlace
+                        </button>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+
+            // Procesar cada invitación
+            for (const doc of invitesSnapshot.docs) {
+                const data = doc.data();
+                const date = data.completedAt ? new Date(data.completedAt).toLocaleDateString() : 'Reciente';
+
+                let inviteeUsername = "Usuario Nuevo";
+                let inviteeId = data.inviteeId;
+
+                // Intentar obtener el username del usuario invitado
+                if (inviteeId) {
+                    try {
+                        const userDoc = await db.collection('users').doc(inviteeId).get();
+                        if (userDoc.exists) {
+                            const userData = userDoc.data();
+                            inviteeUsername = userData.username || userData.email.split('@')[0] || "Usuario Nuevo";
+                        }
+                    } catch (error) {
+                        console.error("Error obteniendo username del invitado:", error);
+                    }
+                }
+
+                const div = document.createElement('div');
+                div.className = 'friend-item';
+                div.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-teal-700 flex items-center justify-center text-xs font-bold text-white">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-teal-100">${inviteeUsername}</p>
+                        <p class="text-xs text-gray-400">Se unió: ${date}</p>
+                    </div>
+                    <div class="ml-auto">
+                        <span class="text-xs bg-green-900 text-green-300 px-2 py-1 rounded-full">
+                            <i class="fas fa-check mr-1"></i> Aceptado
+                        </span>
+                    </div>
+                `;
+
+                // Add hover events for adding friend if inviteeId exists and not current user
+                if (inviteeId && inviteeId !== currentUser.uid) {
+                    div.addEventListener('mouseenter', (e) => {
+                        showAddFriendTooltip(inviteeId, inviteeUsername, e);
+                    });
+                    div.addEventListener('mouseleave', () => {
+                        hideAddFriendTooltip();
+                    });
+                }
+
+                container.appendChild(div);
+            }
+
+        } catch (error) {
+            console.error("Error cargando invitados:", error);
+            container.innerHTML = '<p class="text-red-400 text-xs text-center">Error al cargar lista.</p>';
+        }
+    }
+
+    // Cargar lista de amigos
+    async function loadFriends() {
+        if (!currentUser) return;
+        const container = document.getElementById('friendsList');
+
+        try {
+            // Buscamos en la colección de amigos
+            const friendsSnapshot = await db.collection('friends')
+                .where('userId', '==', currentUser.uid)
+                .where('status', '==', 'accepted')
+                .get();
+
+            if (friendsSnapshot.empty) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-users text-gray-500 text-3xl mb-3"></i>
+                        <p class="text-gray-400 text-sm">Aún no tienes amigos.</p>
+                        <p class="text-gray-500 text-xs mt-2">Puedes agregar amigos desde sus perfiles.</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+
+            friendsSnapshot.forEach(async (doc) => {
+                const data = doc.data();
+                const friendId = data.friendId;
+
+                // Obtener datos del amigo
+                const friendDoc = await db.collection('users').doc(friendId).get();
+                if (friendDoc.exists) {
+                    const friendData = friendDoc.data();
+                    const friendUsername = friendData.username || friendData.email.split('@')[0];
+                    const friendImage = friendData.profileImageUrl || 'images/suno.png';
+
+                    const div = document.createElement('div');
+                    div.className = 'friend-item';
+                    div.innerHTML = `
+                        <img src="${friendImage}" alt="${friendUsername}" class="w-8 h-8 rounded-full object-cover">
+                        <div>
+                            <p class="text-sm font-bold text-teal-100">${friendUsername}</p>
+                            <p class="text-xs text-gray-400">Amigo</p>
+                        </div>
+                        <div class="ml-auto">
+                            <button onclick="removeFriend('${friendId}')" class="text-red-400 hover:text-red-300 text-xs">
+                                <i class="fas fa-user-minus"></i>
+                            </button>
+                        </div>
+                    `;
+                    div.addEventListener('click', () => {
+                        openUserProfileModal(friendId);
+                    });
+                    div.style.cursor = 'pointer';
+                    container.appendChild(div);
+                }
+            });
+
+        } catch (error) {
+            console.error("Error cargando amigos:", error);
+            container.innerHTML = '<p class="text-red-400 text-xs text-center">Error al cargar lista de amigos.</p>';
+        }
+    }
+
+    // Función para remover amigo
+    async function removeFriend(friendId) {
+        if (!currentUser) return;
+
+        try {
+            // Remover de la colección de amigos
+            const friendQuery = await db.collection('friends')
+                .where('userId', '==', currentUser.uid)
+                .where('friendId', '==', friendId)
+                .get();
+
+            friendQuery.forEach(async (doc) => {
+                await doc.ref.delete();
+            });
+
+            // También remover la relación inversa
+            const inverseQuery = await db.collection('friends')
+                .where('userId', '==', friendId)
+                .where('friendId', '==', currentUser.uid)
+                .get();
+
+            inverseQuery.forEach(async (doc) => {
+                await doc.ref.delete();
+            });
+
+            // Recargar lista de amigos
+            loadFriends();
+        } catch (error) {
+            console.error("Error removiendo amigo:", error);
+            showErrorModal("Error al remover amigo.");
+        }
+    }
+    window.removeFriend = removeFriend;
+
+    function setupCommentsListener() {
+        // Unsubscribe from previous listener if exists
+        if (currentChatListener) {
+            currentChatListener();
+        }
+
+        const currentServer = localStorage.getItem('currentServer') || 'Servidor LaIAmusical 1'; // Default server if none selected
+        currentChatListener = db.collection('globalChat').orderBy('timestamp', 'desc').limit(20)
+            .onSnapshot(snapshot => {
+                const chatMessages = document.getElementById('chatMessages');
+                chatMessages.innerHTML = '';
+                snapshot.docs.reverse().forEach(doc => {
+                    const data = doc.data();
+                    // Filter messages by server in the callback
+                    if (data.server !== currentServer) return;
+                    const timestamp = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString([], {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : 'N/A';
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'chat-message relative group';
+                    messageElement.innerHTML = `
+                        <div class="chat-message-header">${data.username || 'Usuario anónimo'} <span class="text-xs text-gray-500 ml-2">${timestamp}</span></div>
+                        <div class="chat-message-text">${data.message}</div>
+                        ${data.userId === currentUser.uid ? `<button onclick="deleteMessage('${doc.id}')" class="absolute top-0 right-0 text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity text-xs"><i class="fas fa-trash"></i></button>` : ''}
+                    `;
+
+                    // Add click event for opening user profile modal if not current user
+                    if (data.userId !== currentUser.uid) {
+                        messageElement.addEventListener('click', () => {
+                            openUserProfileModal(data.userId);
+                        });
+                        messageElement.style.cursor = 'pointer';
+                    }
+
+                    chatMessages.appendChild(messageElement);
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, err => {
+                console.error("Error al escuchar el chat:", err);
+            });
+    }
+
+    async function submitGlobalComment() {
+        if (!currentUser) {
+            showErrorModal("Debes iniciar sesión para comentar.");
+            return;
+        }
+        const input = document.getElementById('commentInput');
+        const message = input.value.trim();
+        const currentServer = localStorage.getItem('currentServer') || 'Servidor LaIAmusical 1';
+
+        if (message.length > 0) {
+            const button = document.getElementById('sendCommentButton');
+            button.disabled = true;
+
+            try {
+                await db.collection('globalChat').add({
+                    username: username,
+                    userId: currentUser.uid,
+                    message: message,
+                    server: currentServer,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                input.value = '';
+            } catch (e) {
+                console.error("Error al enviar el comentario:", e);
+                showErrorModal("Error al enviar el comentario.");
+            } finally {
+                button.disabled = false;
+            }
+        }
+    }
+    window.submitGlobalComment = submitGlobalComment;
+
+    // --- MODALES ---
+    function openRulesModal() {
+        document.getElementById('rulesModal').classList.remove('hidden');
+        document.getElementById('rulesModal').classList.add('flex');
+        closeSidebar();
+    }
+    window.openRulesModal = openRulesModal;
+
+    function closeRulesModal() {
+        document.getElementById('rulesModal').classList.add('hidden');
+        document.getElementById('rulesModal').classList.remove('flex');
+    }
+    window.closeRulesModal = closeRulesModal;
+
+    function openMissionModal() {
+        document.getElementById('missionModal').classList.remove('hidden');
+        document.getElementById('missionModal').classList.add('flex');
+        closeSidebar();
+    }
+    window.openMissionModal = openMissionModal;
+
+    function closeMissionModal() {
+        document.getElementById('missionModal').classList.add('hidden');
+        document.getElementById('missionModal').classList.remove('flex');
+    }
+    window.closeMissionModal = closeMissionModal;
+
+    function openInfoModal() {
+        document.getElementById('infoModal').classList.remove('hidden');
+        document.getElementById('infoModal').classList.add('flex');
+        closeSidebar();
+    }
+    window.openInfoModal = openInfoModal;
+
+    function closeInfoModal() {
+        document.getElementById('infoModal').classList.add('hidden');
+        document.getElementById('infoModal').classList.remove('flex');
+    }
+    window.closeInfoModal = closeInfoModal;
+    
+    function showErrorModal(details) {
+        document.getElementById('errorDetails').textContent = details;
+        document.getElementById('errorModal').classList.remove('hidden');
+        document.getElementById('errorModal').classList.add('flex');
+    }
+
+    function closeErrorModal() {
+        document.getElementById('errorModal').classList.add('hidden');
+        document.getElementById('errorModal').classList.remove('flex');
+        document.getElementById('errorDetails').textContent = "";
+    }
+    window.closeErrorModal = closeErrorModal;
+
+    function openChatRulesModal() {
+        document.getElementById('chatRulesModal').classList.remove('hidden');
+        document.getElementById('chatRulesModal').classList.add('flex');
+        closeSidebar();
+    }
+    window.openChatRulesModal = openChatRulesModal;
+
+    function closeChatRulesModal() {
+        document.getElementById('chatRulesModal').classList.add('hidden');
+        document.getElementById('chatRulesModal').classList.remove('flex');
+    }
+    window.closeChatRulesModal = closeChatRulesModal;
+
+    // --- FUNCIONES PARA EMOJI PICKER ---
+    function toggleEmojiPicker() {
+        const emojiPicker = document.getElementById('emojiPicker');
+        emojiPicker.classList.toggle('hidden');
+    }
+    window.toggleEmojiPicker = toggleEmojiPicker;
+
+    function insertEmoji(emoji) {
+        const input = document.getElementById('commentInput');
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const text = input.value;
+        const before = text.substring(0, start);
+        const after = text.substring(end, text.length);
+        input.value = before + emoji + after;
+        input.selectionStart = input.selectionEnd = start + emoji.length;
+        input.focus();
+        
+        document.getElementById('emojiPicker').classList.add('hidden');
+    }
+    window.insertEmoji = insertEmoji;
+
+    // --- FUNCIÓN PARA BORRAR MENSAJES ---
+    async function deleteMessage(messageId) {
+        if (!currentUser) {
+            showErrorModal("Debes iniciar sesión para borrar mensajes.");
+            return;
+        }
+
+        try {
+            await db.collection('globalChat').doc(messageId).delete();
+            console.log("Mensaje eliminado correctamente");
+        } catch (error) {
+            console.error("Error al eliminar el mensaje:", error);
+            showErrorModal("Error al eliminar el mensaje.");
+        }
+    }
+    window.deleteMessage = deleteMessage;
+
+    // --- FUNCIONES PARA AGREGAR AMIGOS ---
+    function showAddFriendTooltip(userId, username, event) {
+        if (!currentUser || userId === currentUser.uid) return;
+
+        const tooltip = document.getElementById('addFriendTooltip');
+        const tooltipText = document.getElementById('tooltipText');
+        tooltipText.textContent = `¿Agregar a ${username} como amigo?`;
+        pendingFriendUserId = userId;
+        pendingFriendUsername = username;
+
+        tooltip.style.left = `${event.pageX + 10}px`;
+        tooltip.style.top = `${event.pageY + 10}px`;
+        tooltip.classList.remove('hidden');
+    }
+    window.showAddFriendTooltip = showAddFriendTooltip;
+
+    function hideAddFriendTooltip() {
+        document.getElementById('addFriendTooltip').classList.add('hidden');
+        pendingFriendUserId = null;
+        pendingFriendUsername = null;
+    }
+    window.hideAddFriendTooltip = hideAddFriendTooltip;
+
+    async function addFriend(friendId) {
+        if (!currentUser || !friendId) return;
+
+        try {
+            // Check if already friends
+            const existingFriend = await db.collection('friends')
+                .where('userId', '==', currentUser.uid)
+                .where('friendId', '==', friendId)
+                .get();
+
+            if (!existingFriend.empty) {
+                showErrorModal('Ya eres amigo de este usuario.');
+                return;
+            }
+
+            // Add friend relationship (bidirectional)
+            await db.collection('friends').add({
+                userId: currentUser.uid,
+                friendId: friendId,
+                status: 'accepted',
+                addedAt: new Date()
+            });
+
+            await db.collection('friends').add({
+                userId: friendId,
+                friendId: currentUser.uid,
+                status: 'accepted',
+                addedAt: new Date()
+            });
+
+            // Reload friends list
+            loadFriends();
+            hideAddFriendTooltip();
+        } catch (error) {
+            console.error('Error adding friend:', error);
+            showErrorModal('Error al agregar amigo.');
+        }
+    }
+    window.addFriend = addFriend;
+
+    function confirmAddFriendFromTooltip() {
+        if (pendingFriendUserId) {
+            addFriend(pendingFriendUserId);
+        }
+    }
+    window.confirmAddFriendFromTooltip = confirmAddFriendFromTooltip;
+
+    // --- FUNCIONES PARA PERFIL DE USUARIO ---
+    let currentProfileUserId = null;
+
+    async function openUserProfileModal(userId) {
+        if (!currentUser || userId === currentUser.uid) return;
+
+        currentProfileUserId = userId;
+        const modal = document.getElementById('userProfileModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        await loadUserProfile(userId);
+    }
+    window.openUserProfileModal = openUserProfileModal;
+
+    function closeUserProfileModal() {
+        const modal = document.getElementById('userProfileModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        currentProfileUserId = null;
+    }
+    window.closeUserProfileModal = closeUserProfileModal;
+
+    async function loadUserProfile(userId) {
+        const content = document.getElementById('userProfileContent');
+
+        try {
+            // Fetch user data
+            const userDoc = await db.collection('users').doc(userId).get();
+            if (!userDoc.exists) {
+                content.innerHTML = '<p class="text-red-400 text-sm text-center">Usuario no encontrado.</p>';
+                return;
+            }
+
+            const userData = userDoc.data();
+            const profileUsername = userData.username || userData.email.split('@')[0];
+            const totalStars = userData.totalStars || 0;
+
+            // Check if already friends
+            const friendsQuery = await db.collection('friends')
+                .where('userId', '==', currentUser.uid)
+                .where('friendId', '==', userId)
+                .where('status', '==', 'accepted')
+                .get();
+
+            const isFriend = !friendsQuery.empty;
+
+            content.innerHTML = `
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-full bg-teal-700 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-user text-2xl text-white"></i>
+                    </div>
+                    <h4 class="text-lg font-bold text-teal-300 mb-2">${profileUsername}</h4>
+                    <p class="text-gray-300 mb-4">
+                        <i class="fas fa-star text-yellow-400 mr-1"></i>
+                        ${totalStars} estrellas totales
+                    </p>
+                    <button onclick="addFriendFromModal()" 
+                            class="w-full py-2 rounded-lg font-bold transition ${isFriend ? 'bg-gray-600 text-gray-400 cursor-not-allowed' : 'bg-teal-600 hover:bg-teal-500 text-white'}"
+                            ${isFriend ? 'disabled' : ''}>
+                        <i class="fas fa-user-plus mr-2"></i>
+                        ${isFriend ? 'Ya es amigo' : 'Agregar como amigo'}
+                    </button>
+                </div>
+            `;
+        } catch (error) {
+            console.error('Error loading user profile:', error);
+            content.innerHTML = '<p class="text-red-400 text-sm text-center">Error al cargar el perfil.</p>';
+        }
+    }
+
+    async function addFriendFromModal() {
+        if (currentProfileUserId) {
+            await addFriend(currentProfileUserId);
+            // Reload the profile to update the button
+            await loadUserProfile(currentProfileUserId);
+        }
+    }
+    window.addFriendFromModal = addFriendFromModal;
+
+    // --- FUNCIONES PARA SELECCIÓN DE SERVIDOR ---
+    function openServerModal() {
+        const modal = document.getElementById('serverModal');
+        modal.style.display = 'flex';
+        closeSidebar();
+    }
+    window.openServerModal = openServerModal;
+
+    function closeServerModal() {
+        const modal = document.getElementById('serverModal');
+        modal.style.display = 'none';
+    }
+    window.closeServerModal = closeServerModal;
+
+    function changeServer(serverName) {
+        document.getElementById('currentServer').textContent = serverName;
+        localStorage.setItem('currentServer', serverName);
+        closeServerModal();
+        // Reiniciar el listener del chat para el nuevo servidor
+        setupCommentsListener();
+        console.log(`Servidor cambiado a: ${serverName}`);
+    }
+    window.changeServer = changeServer;
+
+    // --- INICIALIZACIÓN ---
+    function init() {
+        setupCommentsListener();
+        initAuthObserver();
+
+        // Cargar servidor seleccionado desde localStorage
+        const savedServer = localStorage.getItem('currentServer');
+        if (savedServer) {
+            document.getElementById('currentServer').textContent = savedServer;
+        }
+
+        const commentInput = document.getElementById('commentInput');
+        if (commentInput) {
+            commentInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    submitGlobalComment();
+                }
+            });
+        }
+        
+        document.getElementById('rulesModal').addEventListener('click', function(e) {
+            if (e.target === this) closeRulesModal();
+        });
+        document.getElementById('missionModal').addEventListener('click', function(e) {
+            if (e.target === this) closeMissionModal();
+        });
+        document.getElementById('infoModal').addEventListener('click', function(e) {
+            if (e.target === this) closeInfoModal();
+        });
+        document.getElementById('errorModal').addEventListener('click', function(e) {
+            if (e.target === this) closeErrorModal();
+        });
+        document.getElementById('chatRulesModal').addEventListener('click', function(e) {
+            if (e.target === this) closeChatRulesModal();
+        });
+        document.getElementById('serverModal').addEventListener('click', function(e) {
+            if (e.target === this) closeServerModal();
+        });
+
+        document.addEventListener('click', function(e) {
+            const emojiPicker = document.getElementById('emojiPicker');
+            const emojiButton = document.getElementById('emojiButton');
+            if (!emojiPicker.contains(e.target) && !emojiButton.contains(e.target)) {
+                emojiPicker.classList.add('hidden');
+            }
+        });
+    }
+
+    init();
+</script>
+</body>
+</html>
