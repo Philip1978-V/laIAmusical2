@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso - Literatura Musical</title>
+    <style>
+        /* --- ESTILOS GENERALES Y RESET --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a202c 0%, #2c7a7b 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            padding: 20px;
+        }
+
+        /* --- CABECERA --- */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .title {
+            font-size: 3rem;
+            font-weight: 800;
+            text-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        /* --- CONTENEDOR PRINCIPAL --- */
+        .main-container {
+            background-color: rgba(31, 41, 55, 0.95);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        #authContainer {
+             border-top: 4px solid #48bb78;
+        }
+
+        h2 {
+            color: #48bb78;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        /* --- ELEMENTOS DEL FORMULARIO --- */
+        .form-group { margin-bottom: 1.25rem; }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #cbd5e0;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            border: 1px solid #4a5568;
+            background-color: #2d3748;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #48bb78;
+            box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.2);
+        }
+
+        .primary-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #48bb78;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+        }
+
+        .primary-btn:hover {
+            background-color: #38a169;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        /* --- ENLACES Y TEXTOS DE AYUDA --- */
+        .switch-text {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #a0aec0;
+        }
+
+        .switch-text button {
+            background: none;
+            border: none;
+            color: #63b3ed;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        .forgot-pass {
+            text-align: right;
+            margin-top: -10px;
+            margin-bottom: 15px;
+        }
+        
+        .forgot-pass button {
+            background: none; border: none; color: #a0aec0; cursor: pointer; font-size: 0.8rem;
+        }
+        .forgot-pass button:hover { color: #fff; }
+
+        /* --- MENSAJES DE ERROR/ÉXITO --- */
+        .msg-box {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.9rem;
+            display: none;
+        }
+        .error { background-color: rgba(245, 101, 101, 0.2); color: #fc8181; border: 1px solid #c53030; }
+        .success { background-color: rgba(72, 187, 120, 0.2); color: #68d391; border: 1px solid #2f855a; }
+
+        /* --- UTILIDADES DE VISIBILIDAD --- */
+        .hidden { display: none !important; }
+
+        /* --- ESTILOS ESPECÍFICOS DEL DASHBOARD --- */
+        #protectedContent {
+            text-align: center;
+            max-width: 600px;
+        }
+
+        .dashboard-title {
+            font-size: 2.2rem; color: #fff; margin-bottom: 20px; text-align: center;
+        }
+        
+        .dashboard-text {
+            font-size: 1.3rem; margin-bottom: 40px; text-align: center; color: #e2e8f0; font-weight: 300;
+        }
+
+        .btn-acceder {
+            font-size: 1.2rem;
+            padding: 15px 50px;
+            width: auto;
+            display: inline-block;
+            box-shadow: 0 4px 10px rgba(72, 187, 120, 0.4);
+        }
+
+        .logout-btn {
+            background-color: transparent;
+            border: 2px solid #e53e3e;
+            color: #e53e3e;
+            margin-top: 25px;
+            width: auto;
+            padding: 8px 25px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .logout-btn:hover { background-color: #e53e3e; color: white; opacity: 1;}
+
+        /* --- ESTILOS ESPECÍFICOS PARA SELECCIÓN DE SERVIDOR --- */
+        #serverSelection {
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .server-selection-title {
+            font-size: 2rem; 
+            color: #fff; 
+            margin-bottom: 15px; 
+            text-align: center;
+        }
+
+        .server-selection-subtitle {
+            font-size: 1.1rem; 
+            margin-bottom: 30px; 
+            text-align: center; 
+            color: #e2e8f0; 
+            font-weight: 300;
+        }
+
+        .server-btn {
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .server-btn.server-1 {
+            background-color: #48bb78;
+            color: white;
+        }
+
+        .server-btn.server-1:hover {
+            background-color: #38a169;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(72, 187, 120, 0.4);
+        }
+
+        .server-btn.server-2 {
+            background-color: #4299e1;
+            color: white;
+        }
+
+        .server-btn.server-2:hover {
+            background-color: #3182ce;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(66, 153, 225, 0.4);
+        }
+
+        .server-btn.server-3 {
+            background-color: #ed8936;
+            color: white;
+        }
+
+        .server-btn.server-3:hover {
+            background-color: #dd6b20;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(237, 137, 54, 0.4);
+        }
+
+        .server-btn.server-4 {
+            background-color: #9f7aea;
+            color: white;
+        }
+
+        .server-btn.server-4:hover {
+            background-color: #805ad5;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(159, 122, 234, 0.4);
+        }
+
+        .server-btn:disabled,
+        .server-btn.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background-color: #4a5568 !important;
+            color: #a0aec0 !important;
+        }
+
+        .server-btn:disabled:hover,
+        .server-btn.disabled:hover {
+            transform: none;
+            box-shadow: none;
+            background-color: #4a5568 !important;
+        }
+
+        .server-status {
+            display: block;
+            font-size: 0.75rem;
+            margin-top: 5px;
+            font-weight: 400;
+            opacity: 0.8;
+        }
+
+        .back-to-auth {
+            background-color: transparent;
+            border: 2px solid #a0aec0;
+            color: #a0aec0;
+            margin-top: 20px;
+            width: auto;
+            padding: 8px 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .back-to-auth:hover { 
+            background-color: #a0aec0; 
+            color: #1a202c; 
+            opacity: 1;
+        }
+
+        /* --- MODAL PARA CÓDIGO DE SERVIDOR PRIVADO --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: rgba(31, 41, 55, 0.98);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            width: 90%;
+            max-width: 400px;
+            border-top: 4px solid #ed8936;
+        }
+
+        .modal-title {
+            color: #ed8936;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .modal-text {
+            color: #cbd5e0;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-primary {
+            background-color: #ed8936;
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            background-color: #dd6b20;
+        }
+
+        .modal-btn-secondary {
+            background-color: transparent;
+            border: 2px solid #a0aec0;
+            color: #a0aec0;
+        }
+
+        .modal-btn-secondary:hover {
+            background-color: #a0aec0;
+            color: #1a202c;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 class="title">LaIAmusical</h1>
+        <p class="subtitle">Portal de Acceso al Conocimiento</p>
+    </div>
+
+    <div id="authContainer" class="main-container">
+        
+        <div id="loginView">
+            <h2>Iniciar Sesión</h2>
+            <div id="loginMsg" class="msg-box error"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Usuario o Email</label>
+                    <input type="text" id="loginInput" required placeholder="Ej: musico123">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="loginPass" required placeholder="******">
+                </div>
+                
+                <div class="forgot-pass">
+                    <button type="button" onclick="switchView('recovery')">¿Olvidaste tu contraseña?</button>
+                </div>
+
+                <button type="submit" class="primary-btn">Entrar</button>
+            </form>
+
+            <div class="switch-text">
+                ¿No tienes cuenta? <button onclick="switchView('register')">Regístrate gratis</button>
+            </div>
+        </div>
+
+        <div id="registerView" class="hidden">
+            <h2>Crear Cuenta Nueva</h2>
+            <div id="registerMsg" class="msg-box error"></div>
+
+            <form id="registerForm">
+                <div class="form-group">
+                    <label>Nombre de Usuario</label>
+                    <input type="text" id="regUser" required placeholder="Mínimo 3 caracteres">
+                </div>
+                <div class="form-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="regEmail" placeholder="nombre@ejemplo.com (opcional)">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="regPass" required placeholder="Mínimo 6 caracteres">
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Contraseña</label>
+                    <input type="password" id="regPassConf" required>
+                </div>
+
+                <button type="submit" class="primary-btn">Registrarme</button>
+            </form>
+
+            <div class="switch-text">
+                ¿Ya tienes cuenta? <button onclick="switchView('login')">Inicia sesión</button>
+            </div>
+        </div>
+
+        <div id="recoveryView" class="hidden">
+            <h2>Recuperar Contraseña</h2>
+            <p style="color:#a0aec0; margin-bottom:15px; text-align:center; font-size:0.9rem;">Te enviaremos un enlace para restablecer tu acceso.</p>
+            <div id="recoveryMsg" class="msg-box"></div>
+
+            <form id="recoveryForm">
+                <div class="form-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="recEmail" required>
+                </div>
+                <button type="submit" class="primary-btn">Enviar Enlace</button>
+            </form>
+
+            <div class="switch-text">
+                <button onclick="switchView('login')">Volver al inicio</button>
+            </div>
+        </div>
+
+        <div id="addEmailView" class="hidden">
+            <h2>Añadir Correo Electrónico</h2>
+            <p style="color:#a0aec0; margin-bottom:15px; text-align:center; font-size:0.9rem;">Añade tu correo electrónico para verificar tu cuenta y mejorar la seguridad.</p>
+            <div id="addEmailMsg" class="msg-box"></div>
+
+            <form id="addEmailForm">
+                <div class="form-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="addEmailInput" required placeholder="nombre@ejemplo.com">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña Actual</label>
+                    <input type="password" id="addEmailPass" required placeholder="Ingresa tu contraseña actual">
+                </div>
+                <button type="submit" class="primary-btn">Añadir y Verificar</button>
+            </form>
+
+            <div class="switch-text">
+                <button onclick="switchView('login')">Volver al inicio</button>
+            </div>
+        </div>
+
+        <div id="verifyEmailView" class="hidden">
+            <h2>Verificar Correo Electrónico</h2>
+            <p style="color:#a0aec0; margin-bottom:15px; text-align:center; font-size:0.9rem;">Hemos enviado un enlace de verificación a tu correo. Haz clic en el enlace para verificar tu cuenta.</p>
+            <div id="verifyEmailMsg" class="msg-box"></div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button type="button" id="btnCheckVerification" class="primary-btn" style="margin-right: 10px;">He Verificado</button>
+                <button type="button" id="btnResendVerification" class="primary-btn back-to-auth">Reenviar Verificación</button>
+            </div>
+
+            <div class="switch-text">
+                <button onclick="switchView('login')">Volver al inicio</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="serverSelection" class="main-container hidden">
+        <h2 class="server-selection-title">¡Bienvenido, <span id="serverDisplayUsername" style="color:#48bb78;">Usuario</span>!</h2>
+        
+        <p class="server-selection-subtitle">
+            Elige servidor para entrar:
+        </p>
+        
+        <div style="text-align: center;">
+            <button class="primary-btn server-btn server-1 disabled" disabled>
+                Servidor LaIAmusical 1
+                <span class="server-status">🔴 Temporalmente no disponible</span>
+            </button>
+            
+            <button class="primary-btn server-btn server-2 disabled" disabled>
+                Servidor LaIAmusical 2
+                <span class="server-status">🔴 Temporalmente no disponible</span>
+            </button>
+            
+            <button onclick="showPrivateServerModal()" class="primary-btn server-btn server-3">
+                Servidor privado
+                <span class="server-status">🔒 Requiere código de acceso</span>
+            </button>
+
+            <button onclick="selectServer('server4')" class="primary-btn server-btn server-4">
+                Servidor en pruebas
+                <span class="server-status">🟢 Disponible</span>
+            </button>
+        </div>
+
+        <div style="text-align: center;">
+            <button id="btnLogoutFromServer" class="primary-btn back-to-auth">
+                Cerrar Sesión
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para código de servidor privado -->
+    <div id="privateServerModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="modal-title">🔒 Servidor Privado</h3>
+            <p class="modal-text">Este servidor requiere un código de acceso especial.</p>
+            
+            <div id="privateServerMsg" class="msg-box error"></div>
+            
+            <form id="privateServerForm">
+                <div class="form-group">
+                    <label>Código de Acceso</label>
+                    <input type="text" id="privateServerCode" required placeholder="Ingresa el código">
+                </div>
+                
+                <div class="modal-buttons">
+                    <button type="button" onclick="closePrivateServerModal()" class="modal-btn modal-btn-secondary">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="modal-btn modal-btn-primary">
+                        Verificar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="protectedContent" class="main-container hidden">
+        <h2 class="dashboard-title">¡Bienvenido, <span id="displayUsername" style="color:#48bb78;">Usuario</span>!</h2>
+        
+        <p class="dashboard-text">
+            Vas a acceder al contenido exclusivo de LaIAmusical.
+        </p>
+        
+        <div style="text-align: center;">
+            <button onclick="window.location.href='temas.html'" class="primary-btn btn-acceder">
+                Acceder
+            </button>
+        </div>
+
+        <div style="text-align: center;">
+            <button id="btnAddEmail" class="primary-btn back-to-auth" style="margin-right: 10px;">
+                Añadir Email
+            </button>
+
+            <button id="btnLogout" class="primary-btn logout-btn">
+                Cerrar Sesión
+            </button>
+
+            <button id="btnChangeServer" class="primary-btn back-to-auth" style="margin-left: 10px;">
+                Cambiar Servidor
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- 1. CONFIGURACIÓN FIREBASE ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import {
+            getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+            onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification, signOut,
+            EmailAuthProvider, reauthenticateWithCredential, updateEmail
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { 
+            getFirestore, collection, doc, setDoc, query, where, getDocs, getDoc 
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+            authDomain: "laiamusical-4fba7.firebaseapp.com",
+            projectId: "laiamusical-4fba7",
+            storageBucket: "laiamusical-4fba7.firebasestorage.app",
+            messagingSenderId: "49783369602",
+            appId: "1:49783369602:web:91e287c094a8f2403d699b",
+            measurementId: "G-WC2JT6DRF4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- CÓDIGO PARA SERVIDOR PRIVADO ---
+        const PRIVATE_SERVER_CODE = "TU_CODIGO_AQUI";
+
+        // --- SISTEMA DE INVITACIONES ---
+        let currentInviteId = null;
+
+        function handleInviteRegistration() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const inviteId = urlParams.get('invite');
+            
+            if (inviteId) {
+                localStorage.setItem('pendingInviteId', inviteId);
+                currentInviteId = inviteId;
+                showInvitationMessage();
+            }
+        }
+
+        function showInvitationMessage() {
+            const authContainer = document.getElementById('authContainer');
+            
+            const inviteMessage = document.createElement('div');
+            inviteMessage.id = 'inviteMessage';
+            inviteMessage.className = 'msg-box success';
+            inviteMessage.style.display = 'block';
+            inviteMessage.innerHTML = '🎉 ¡Has sido invitado a unirte a La IA Musical! Regístrate para comenzar tu aventura musical.';
+            
+            authContainer.insertBefore(inviteMessage, authContainer.firstChild);
+            
+            setTimeout(() => {
+                switchView('register');
+            }, 1000);
+        }
+
+        async function completeInviteProcess() {
+            const pendingInviteId = localStorage.getItem('pendingInviteId');
+            
+            if (pendingInviteId) {
+                try {
+                    await processInviteReward(pendingInviteId);
+                    localStorage.removeItem('pendingInviteId');
+                    
+                    showMessage('registerMsg', '¡Invitación procesada! Tanto tú como tu invitador habéis recibido 50★ cada uno! 🌟✨', 'success');
+                } catch (error) {
+                    console.error("Error procesando invitación:", error);
+                }
+            }
+        }
+
+        async function processInviteReward(inviteId) {
+            try {
+                const inviteDocRef = doc(db, 'invitations', inviteId);
+                const inviteDoc = await getDoc(inviteDocRef);
+                
+                if (inviteDoc.exists() && !inviteDoc.data().rewardClaimed) {
+                    const inviteData = inviteDoc.data();
+                    const inviterId = inviteData.inviterId;
+                    
+                    await setDoc(inviteDocRef, {
+                        ...inviteData,
+                        status: 'completed',
+                        rewardClaimed: true,
+                        completedAt: new Date().toISOString(),
+                        invitedUserId: auth.currentUser.uid
+                    });
+                    
+                    const inviterRef = doc(db, 'users', inviterId);
+                    const inviterDoc = await getDoc(inviterRef);
+                    
+                    if (inviterDoc.exists()) {
+                        const inviterData = inviterDoc.data();
+                        await setDoc(inviterRef, {
+                            ...inviterData,
+                            userStars: (inviterData.userStars || 0) + 50,
+                            activityLog: [
+                                ...(inviterData.activityLog || []),
+                                {
+                                    type: 'invite_reward',
+                                    description: 'Un amigo aceptó tu invitación - +50★',
+                                    timestamp: new Date().toISOString(),
+                                    inviteId: inviteId
+                                }
+                            ]
+                        });
+                    }
+                    
+                    console.log(`Recompensa de invitación procesada: ${inviteId}`);
+                }
+            } catch (error) {
+                console.error("Error procesando recompensa de invitación:", error);
+            }
+        }
+
+        // --- SISTEMA DE SELECCIÓN DE SERVIDOR ---
+        window.selectServer = (serverId) => {
+            const serverNames = {
+                'server1': 'Servidor LaIAmusical 1',
+                'server2': 'Servidor LaIAmusical 2',
+                'server3': 'Servidor privado',
+                'server4': 'Servidor en pruebas'
+            };
+            localStorage.setItem('currentServer', serverNames[serverId]);
+            showProtectedContent();
+        };
+
+        window.showPrivateServerModal = () => {
+            document.getElementById('privateServerModal').classList.remove('hidden');
+            document.getElementById('privateServerCode').value = '';
+            document.getElementById('privateServerMsg').style.display = 'none';
+        };
+
+        window.closePrivateServerModal = () => {
+            document.getElementById('privateServerModal').classList.add('hidden');
+        };
+
+        document.getElementById('privateServerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const code = document.getElementById('privateServerCode').value.trim();
+            
+            if (code === PRIVATE_SERVER_CODE) {
+                closePrivateServerModal();
+                selectServer('server3');
+            } else {
+                showMessage('privateServerMsg', '❌ Código incorrecto. Inténtalo de nuevo.', 'error');
+            }
+        });
+
+        window.changeServer = () => {
+            localStorage.removeItem('currentServer');
+            showServerSelection();
+        };
+
+        function showServerSelection() {
+            const authContainer = document.getElementById('authContainer');
+            const serverSelection = document.getElementById('serverSelection');
+            const protectedContent = document.getElementById('protectedContent');
+            
+            authContainer.classList.add('hidden');
+            serverSelection.classList.remove('hidden');
+            protectedContent.classList.add('hidden');
+        }
+
+        function showProtectedContent() {
+            const authContainer = document.getElementById('authContainer');
+            const serverSelection = document.getElementById('serverSelection');
+            const protectedContent = document.getElementById('protectedContent');
+            
+            authContainer.classList.add('hidden');
+            serverSelection.classList.add('hidden');
+            protectedContent.classList.remove('hidden');
+        }
+
+        function showAuthContainer() {
+            const authContainer = document.getElementById('authContainer');
+            const serverSelection = document.getElementById('serverSelection');
+            const protectedContent = document.getElementById('protectedContent');
+            
+            authContainer.classList.remove('hidden');
+            serverSelection.classList.add('hidden');
+            protectedContent.classList.add('hidden');
+        }
+
+        // --- 2. GESTIÓN DE UI ---
+        window.switchView = (viewName) => {
+            const views = ['loginView', 'registerView', 'recoveryView', 'addEmailView', 'verifyEmailView'];
+            const msgs = ['loginMsg', 'registerMsg', 'recoveryMsg', 'addEmailMsg', 'verifyEmailMsg'];
+            views.forEach(v => document.getElementById(v).classList.add('hidden'));
+            msgs.forEach(m => {
+                const el = document.getElementById(m);
+                el.style.display = 'none';
+                el.className = 'msg-box';
+            });
+            document.getElementById(viewName + 'View').classList.remove('hidden');
+        };
+
+        const showMessage = (elementId, msg, type = 'error') => {
+            const el = document.getElementById(elementId);
+            el.textContent = msg;
+            el.className = `msg-box ${type}`;
+            el.style.display = 'block';
+        };
+
+        // --- 3. FUNCIONES AUXILIARES ---
+        async function getEmailFromIdentifier(identifier) {
+            const lowerId = identifier.trim().toLowerCase();
+            const usersRef = collection(db, "users");
+            const qUser = query(usersRef, where("username", "==", lowerId));
+            const snapUser = await getDocs(qUser);
+            if (!snapUser.empty) return snapUser.docs[0].data().email;
+            const qEmail = query(usersRef, where("email", "==", lowerId));
+            const snapEmail = await getDocs(qEmail);
+            if (!snapEmail.empty) return snapEmail.docs[0].data().email;
+            return null;
+        }
+
+        // --- 4. MANEJADORES DE EVENTOS ---
+        // LOGIN
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('loginInput').value;
+            const pass = document.getElementById('loginPass').value;
+            if(!input || !pass) return showMessage('loginMsg', 'Rellena todos los campos');
+            try {
+                let email = input;
+                if (!input.includes('@')) {
+                    const foundEmail = await getEmailFromIdentifier(input);
+                    if (!foundEmail) throw { code: 'custom/user-not-found' };
+                    email = foundEmail;
+                }
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (error) {
+                console.error(error);
+                let msg = 'Error al iniciar sesión.';
+                if (error.code === 'auth/wrong-password') msg = 'Contraseña incorrecta.';
+                if (error.code === 'auth/user-not-found' || error.code === 'custom/user-not-found') msg = 'Usuario no encontrado.';
+                if (error.code === 'auth/too-many-requests') msg = 'Demasiados intentos. Espera unos minutos.';
+                showMessage('loginMsg', msg);
+            }
+        });
+
+        // REGISTRO
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = document.getElementById('regUser').value.trim().toLowerCase();
+            let email = document.getElementById('regEmail').value.trim().toLowerCase();
+            const pass = document.getElementById('regPass').value;
+            const passConf = document.getElementById('regPassConf').value;
+            if (pass !== passConf) return showMessage('registerMsg', 'Las contraseñas no coinciden');
+            if (pass.length < 6) return showMessage('registerMsg', 'La contraseña debe tener al menos 6 caracteres');
+            if (user.length < 3) return showMessage('registerMsg', 'El usuario debe tener al menos 3 caracteres');
+            try {
+                const exists = await getEmailFromIdentifier(user);
+                if (exists) return showMessage('registerMsg', 'Ese nombre de usuario ya está ocupado');
+
+                const hasEmail = email.length > 0;
+                if (!hasEmail) {
+                    email = `${user}@dummy.laiamusical.com`;
+                }
+
+                const cred = await createUserWithEmailAndPassword(auth, email, pass);
+
+                const pendingInviteId = localStorage.getItem('pendingInviteId');
+                const welcomeBonus = pendingInviteId ? 50 : 0;
+
+                await setDoc(doc(db, "users", cred.user.uid), {
+                    username: user,
+                    email: hasEmail ? email : '',
+                    createdAt: new Date(),
+                    userStars: welcomeBonus,
+                    userDiamonds: 0,
+                    userCoins: 0,
+                    votesRemaining: 5,
+                    registrationPassword: pass,
+                    activityLog: welcomeBonus > 0 ? [{
+                        type: 'welcome_bonus',
+                        description: 'Bonus de bienvenida por invitación - +50★',
+                        timestamp: new Date().toISOString()
+                    }] : []
+                });
+
+                await completeInviteProcess();
+
+                const welcomeMessage = welcomeBonus > 0 ?
+                    '¡Cuenta creada con éxito! Has recibido 50★ de bienvenida por la invitación! 🎵⭐' :
+                    '¡Cuenta creada con éxito! Bienvenido a La IA Musical! 🎵';
+
+                showMessage('registerMsg', welcomeMessage, 'success');
+            } catch (error) {
+                console.error(error);
+                let msg = 'Error en el registro.';
+                if (error.code === 'auth/email-already-in-use') msg = 'El correo ya está registrado.';
+                showMessage('registerMsg', msg);
+            }
+        });
+
+        // RECUPERACIÓN
+        document.getElementById('recoveryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('recEmail').value.trim();
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showMessage('recoveryMsg', 'Correo enviado. Revisa tu bandeja de entrada.', 'success');
+            } catch (error) {
+                showMessage('recoveryMsg', 'Error. Verifica el correo.');
+            }
+        });
+
+        // AÑADIR EMAIL - CON REAUTENTICACIÓN
+        document.getElementById('addEmailForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newEmail = document.getElementById('addEmailInput').value.trim().toLowerCase();
+            const currentPassword = document.getElementById('addEmailPass').value;
+
+            if (!newEmail) return showMessage('addEmailMsg', 'Ingresa un correo electrónico válido');
+            if (!currentPassword) return showMessage('addEmailMsg', 'Ingresa tu contraseña actual');
+
+            try {
+                const currentUser = auth.currentUser;
+
+                // Obtener datos del usuario de Firestore
+                const userDocRef = doc(db, "users", currentUser.uid);
+                let userDoc = await getDoc(userDocRef);
+                let userData = null;
+
+                if (!userDoc.exists()) {
+                    // Si el documento no existe, intentar crearlo con datos básicos
+                    console.log('Documento de usuario no encontrado, intentando crear uno básico...');
+                    const basicUserData = {
+                        username: currentUser.email.split('@')[0] || 'usuario',
+                        email: currentUser.email,
+                        createdAt: new Date(),
+                        userStars: 0,
+                        userDiamonds: 0,
+                        userCoins: 0,
+                        votesRemaining: 5,
+                        activityLog: []
+                    };
+
+                    try {
+                        await setDoc(userDocRef, basicUserData);
+                        userData = basicUserData;
+                        console.log('Documento de usuario creado exitosamente');
+                    } catch (createError) {
+                        console.error('Error creando documento de usuario:', createError);
+                        throw new Error('Error al crear el perfil de usuario. Inténtalo de nuevo.');
+                    }
+                } else {
+                    userData = userDoc.data();
+                }
+                const isDummyEmail = currentUser.email.endsWith('@dummy.laiamusical.com');
+
+                // Reautenticar según el tipo de email
+                if (isDummyEmail) {
+                    // Para emails dummy, intentar usar la contraseña de registro si está disponible
+                    if (userData.registrationPassword) {
+                        try {
+                            const credential = EmailAuthProvider.credential(currentUser.email, userData.registrationPassword);
+                            await reauthenticateWithCredential(currentUser, credential);
+                        } catch (reauthError) {
+                            // Si falla, continuar sin reautenticación (para cuentas dummy nuevas)
+                            console.log('Reautenticación fallida para email dummy, continuando...');
+                        }
+                    }
+                } else {
+                    // Para emails reales, requerir reautenticación con la contraseña proporcionada
+                    const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
+                    await reauthenticateWithCredential(currentUser, credential);
+                }
+
+                // Actualizar email en Firebase Auth
+                await updateEmail(currentUser, newEmail);
+
+                // Enviar verificación de email
+                await sendEmailVerification(currentUser);
+
+                // Actualizar email en Firestore
+                await setDoc(userDocRef, {
+                    email: newEmail
+                }, { merge: true });
+
+                showMessage('addEmailMsg', 'Correo añadido exitosamente. Ahora verifica tu email.', 'success');
+
+                // Cambiar a la vista de verificación
+                setTimeout(() => {
+                    switchView('verifyEmail');
+                }, 1500);
+            } catch (error) {
+                console.error(error);
+                let msg = 'Error al añadir el correo.';
+                if (error.code === 'auth/email-already-in-use') msg = 'Este correo ya está registrado.';
+                if (error.code === 'auth/invalid-email') msg = 'Formato de correo inválido.';
+                if (error.code === 'auth/wrong-password') msg = 'Contraseña incorrecta. Verifica tu contraseña.';
+                if (error.code === 'auth/requires-recent-login') msg = 'Por seguridad, vuelve a iniciar sesión.';
+                showMessage('addEmailMsg', msg);
+            }
+        });
+
+        // LOGOUT
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            localStorage.removeItem('currentServer');
+            signOut(auth);
+        });
+
+        document.getElementById('btnLogoutFromServer').addEventListener('click', () => {
+            localStorage.removeItem('currentServer');
+            signOut(auth);
+        });
+
+        // CAMBIAR SERVIDOR
+        document.getElementById('btnChangeServer').addEventListener('click', () => {
+            changeServer();
+        });
+
+        // AÑADIR EMAIL DESDE DASHBOARD
+        document.getElementById('btnAddEmail').addEventListener('click', () => {
+            showAuthContainer();
+            switchView('addEmail');
+        });
+
+        // VERIFICACIÓN DE EMAIL
+        document.getElementById('btnCheckVerification').addEventListener('click', async () => {
+            try {
+                await auth.currentUser.reload();
+                if (auth.currentUser.emailVerified) {
+                    showMessage('verifyEmailMsg', '¡Correo verificado exitosamente! 🎉', 'success');
+                    setTimeout(() => {
+                        const selectedServer = localStorage.getItem('currentServer');
+                        if (selectedServer) {
+                            showProtectedContent();
+                        } else {
+                            showServerSelection();
+                        }
+                    }, 1500);
+                } else {
+                    showMessage('verifyEmailMsg', 'El correo aún no ha sido verificado. Revisa tu bandeja de entrada y haz clic en el enlace.', 'error');
+                }
+            } catch (error) {
+                console.error('Error verificando email:', error);
+                showMessage('verifyEmailMsg', 'Error al verificar el correo. Inténtalo de nuevo.', 'error');
+            }
+        });
+
+        document.getElementById('btnResendVerification').addEventListener('click', async () => {
+            try {
+                await sendEmailVerification(auth.currentUser);
+                showMessage('verifyEmailMsg', 'Correo de verificación reenviado. Revisa tu bandeja de entrada.', 'success');
+            } catch (error) {
+                console.error('Error reenviando verificación:', error);
+                showMessage('verifyEmailMsg', 'Error al reenviar el correo de verificación.', 'error');
+            }
+        });
+
+        // --- 5. GESTIÓN DE SESIÓN ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const docSnap = await getDoc(doc(db, "users", user.uid));
+                    const userData = docSnap.exists() ? docSnap.data() : null;
+                    const username = userData ? userData.username.toUpperCase() : user.email;
+
+                    document.getElementById('displayUsername').textContent = username;
+                    document.getElementById('serverDisplayUsername').textContent = username;
+
+                    const hasRealEmail = user.email && !user.email.endsWith('@dummy.laiamusical.com');
+                    const btnAddEmail = document.getElementById('btnAddEmail');
+                    if (hasRealEmail) {
+                        btnAddEmail.style.display = 'none';
+                    } else {
+                        btnAddEmail.style.display = 'inline-block';
+                    }
+                } catch (e) {
+                    document.getElementById('displayUsername').textContent = "Músico";
+                    document.getElementById('serverDisplayUsername').textContent = "Músico";
+                }
+
+                const selectedServer = localStorage.getItem('currentServer');
+
+                if (selectedServer) {
+                    showProtectedContent();
+                } else {
+                    showServerSelection();
+                }
+            } else {
+                localStorage.removeItem('currentServer');
+                showAuthContainer();
+                switchView('login');
+            }
+        });
+
+        // --- 6. INICIALIZACIÓN ---
+        window.addEventListener('load', () => {
+            handleInviteRegistration();
+        });
+    </script>
+</body>
+</html>
