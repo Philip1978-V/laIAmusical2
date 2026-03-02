@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Storybook</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300&family=Fredoka+One&family=Nunito:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #1a1209;
+      --parchment: #f5ede0;
+      --gold: #c9933a;
+      --gold-light: #e8b96a;
+      --child-bg: #fff8f0;
+      --child-accent: #e05c3a;
+      --child-secondary: #4fb87a;
+      --anim-bg: #f0f7ff;
+      --anim-accent: #3a7de0;
+      --anim-secondary: #e0a83a;
+      --adult-bg: #12100e;
+      --adult-accent: #9b7e46;
+      --adult-silver: #b8c4cc;
+      --suspense-bg: #0e0e14;
+      --suspense-accent: #7b4fa6;
+      --suspense-silver: #c8bcd8;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background-color: var(--parchment);
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      overflow-x: hidden;
+    }
+
+    /* ---- HEADER ---- */
+    header {
+      text-align: center;
+      padding: 60px 20px 30px;
+      position: relative;
+    }
+
+    header::after {
+      content: '';
+      display: block;
+      width: 180px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 24px auto 0;
+    }
+
+    .header-subtitle {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 1rem;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      animation: fadeDown 0.8s ease both;
+    }
+
+    .header-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3rem, 8vw, 5.5rem);
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1;
+      letter-spacing: -0.01em;
+      animation: fadeDown 0.8s 0.15s ease both;
+    }
+
+    .header-title span {
+      color: var(--gold);
+    }
+
+    /* ---- MAIN LAYOUT ---- */
+    main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      min-height: calc(100vh - 200px);
+      gap: 0;
+    }
+
+    @media (max-width: 768px) {
+      main { grid-template-columns: 1fr; }
+    }
+
+    /* ---- SECTION BASE ---- */
+    .section {
+      position: relative;
+      padding: 60px 40px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      overflow: hidden;
+      transition: filter 0.4s;
+    }
+
+    .section:hover { filter: none; }
+    main:hover .section:not(:hover) { filter: brightness(0.92); }
+
+    /* ---- DIVIDERS ---- */
+    .section--children {
+      border-right: 1px solid rgba(201,147,58,0.3);
+      border-bottom: 1px solid rgba(201,147,58,0.3);
+    }
+    .section--animation {
+      border-bottom: 1px solid rgba(201,147,58,0.3);
+    }
+    .section--adults {
+      border-right: 1px solid rgba(201,147,58,0.3);
+    }
+
+    /* ---- CHILDREN SECTION ---- */
+    .section--children {
+      background-color: var(--child-bg);
+      background-image:
+        radial-gradient(circle at 80% 10%, rgba(224,92,58,0.08) 0%, transparent 60%),
+        radial-gradient(circle at 10% 90%, rgba(79,184,122,0.10) 0%, transparent 50%);
+    }
+
+    .section-tag--children {
+      display: inline-block;
+      background: var(--child-accent);
+      color: #fff;
+      font-family: 'Fredoka One', cursive;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+      animation: popIn 0.6s 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    .section-heading--children {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      color: var(--child-accent);
+      margin-bottom: 36px;
+      line-height: 1.1;
+      animation: fadeLeft 0.7s 0.5s ease both;
+    }
+
+    .book-card--children {
+      position: relative;
+      background: #fff;
+      border-radius: 16px;
+      padding: 0;
+      box-shadow: 0 4px 20px rgba(224,92,58,0.12), 0 1px 4px rgba(0,0,0,0.06);
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      width: 100%;
+      max-width: 380px;
+      border: 2px solid transparent;
+      overflow: hidden;
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s, border-color 0.3s;
+      animation: fadeLeft 0.7s 0.65s ease both;
+    }
+
+    .book-card--children:hover {
+      transform: translateY(-6px) rotate(-1deg);
+      box-shadow: 0 16px 40px rgba(224,92,58,0.22), 0 2px 8px rgba(0,0,0,0.08);
+      border-color: var(--child-accent);
+    }
+
+    .book-card--children .book-cover {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+      border-radius: 14px 14px 0 0;
+    }
+
+    .book-card--children .book-cover-placeholder {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, rgba(224,92,58,0.12), rgba(79,184,122,0.12));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      border-radius: 14px 14px 0 0;
+    }
+
+    .book-card--children .book-card-body {
+      padding: 22px 30px 32px;
+    }
+
+    .book-title--children {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.25rem;
+      color: var(--ink);
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    .book-meta--children {
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.8rem;
+      color: var(--child-secondary);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .book-arrow--children {
+      position: absolute;
+      right: 22px;
+      bottom: 22px;
+      width: 32px;
+      height: 32px;
+      background: var(--child-accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1rem;
+      transition: transform 0.3s;
+    }
+
+    .book-card--children:hover .book-arrow--children {
+      transform: translateX(4px);
+    }
+
+    /* ---- DECORATIVE STARS (children) ---- */
+    .deco-stars {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .star {
+      position: absolute;
+      font-size: 1.1rem;
+      opacity: 0.18;
+      animation: float 4s ease-in-out infinite alternate;
+    }
+
+    .star:nth-child(1) { top: 12%; right: 15%; animation-delay: 0s; }
+    .star:nth-child(2) { top: 55%; right: 8%; animation-delay: 1s; font-size: 0.8rem; }
+    .star:nth-child(3) { bottom: 20%; right: 25%; animation-delay: 2s; font-size: 1.4rem; }
+    .star:nth-child(4) { top: 30%; right: 35%; animation-delay: 0.5s; font-size: 0.7rem; }
+
+    /* ---- ANIMATION SECTION ---- */
+    .section--animation {
+      background-color: var(--anim-bg);
+      background-image:
+        radial-gradient(circle at 80% 10%, rgba(58,125,224,0.10) 0%, transparent 60%),
+        radial-gradient(circle at 10% 90%, rgba(224,168,58,0.10) 0%, transparent 50%);
+    }
+
+    .section-tag--animation {
+      display: inline-block;
+      background: var(--anim-accent);
+      color: #fff;
+      font-family: 'Fredoka One', cursive;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+      animation: popIn 0.6s 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    .section-heading--animation {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      color: var(--anim-accent);
+      margin-bottom: 36px;
+      line-height: 1.1;
+      animation: fadeRight 0.7s 0.5s ease both;
+    }
+
+    .book-card--animation {
+      position: relative;
+      background: #fff;
+      border-radius: 16px;
+      padding: 0;
+      box-shadow: 0 4px 20px rgba(58,125,224,0.12), 0 1px 4px rgba(0,0,0,0.06);
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      width: 100%;
+      max-width: 380px;
+      border: 2px solid transparent;
+      overflow: hidden;
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s, border-color 0.3s;
+      animation: fadeRight 0.7s 0.65s ease both;
+    }
+
+    .book-card--animation:hover {
+      transform: translateY(-6px) rotate(1deg);
+      box-shadow: 0 16px 40px rgba(58,125,224,0.22), 0 2px 8px rgba(0,0,0,0.08);
+      border-color: var(--anim-accent);
+    }
+
+    .book-card--animation .book-cover {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+      border-radius: 14px 14px 0 0;
+    }
+
+    .book-card--animation .book-cover-placeholder {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, rgba(58,125,224,0.12), rgba(224,168,58,0.12));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      border-radius: 14px 14px 0 0;
+    }
+
+    .book-card--animation .book-card-body {
+      padding: 22px 30px 32px;
+    }
+
+    .book-title--animation {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.25rem;
+      color: var(--ink);
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    .book-meta--animation {
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.8rem;
+      color: var(--anim-accent);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .book-arrow--animation {
+      position: absolute;
+      right: 22px;
+      bottom: 22px;
+      width: 32px;
+      height: 32px;
+      background: var(--anim-accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1rem;
+      transition: transform 0.3s;
+    }
+
+    .book-card--animation:hover .book-arrow--animation {
+      transform: translateX(4px);
+    }
+
+    /* ---- DECORATIVE BUBBLES (animation) ---- */
+    .deco-bubbles {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.10;
+      animation: float 5s ease-in-out infinite alternate;
+    }
+
+    .bubble:nth-child(1) { width: 40px; height: 40px; background: var(--anim-accent); top: 12%; right: 15%; animation-delay: 0s; }
+    .bubble:nth-child(2) { width: 20px; height: 20px; background: var(--anim-secondary); top: 55%; right: 8%; animation-delay: 1.2s; }
+    .bubble:nth-child(3) { width: 55px; height: 55px; background: var(--anim-accent); bottom: 18%; right: 22%; animation-delay: 2s; }
+    .bubble:nth-child(4) { width: 15px; height: 15px; background: var(--anim-secondary); top: 35%; right: 38%; animation-delay: 0.7s; }
+
+    /* ---- ADULTS SECTION ---- */
+    .section--adults {
+      background-color: var(--adult-bg);
+      background-image:
+        radial-gradient(ellipse at 20% 0%, rgba(155,126,70,0.15) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 100%, rgba(155,126,70,0.10) 0%, transparent 50%);
+    }
+
+    .section-tag--adults {
+      display: inline-block;
+      border: 1px solid var(--adult-accent);
+      color: var(--adult-accent);
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 0.75rem;
+      letter-spacing: 0.25em;
+      padding: 4px 16px;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      animation: popIn 0.6s 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    .section-heading--adults {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      color: var(--adult-silver);
+      margin-bottom: 36px;
+      line-height: 1.15;
+      font-style: italic;
+      animation: fadeLeft 0.7s 0.5s ease both;
+    }
+
+    .book-card--adults {
+      position: relative;
+      background: transparent;
+      border: 1px solid rgba(155,126,70,0.4);
+      padding: 0;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      width: 100%;
+      max-width: 380px;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s, border-color 0.4s, background 0.4s;
+      animation: fadeLeft 0.7s 0.65s ease both;
+    }
+
+    .book-card--adults::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(155,126,70,0.05), transparent);
+      opacity: 0;
+      transition: opacity 0.4s;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .book-card--adults:hover::before { opacity: 1; }
+
+    .book-card--adults:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(155,126,70,0.1);
+      border-color: var(--adult-accent);
+    }
+
+    .book-card--adults .book-cover {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+      opacity: 0.85;
+      transition: opacity 0.4s;
+    }
+
+    .book-card--adults:hover .book-cover {
+      opacity: 1;
+    }
+
+    .book-card--adults .book-cover-placeholder {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, rgba(155,126,70,0.15), rgba(18,16,14,0.8));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      opacity: 0.8;
+    }
+
+    .book-card--adults .book-card-body {
+      padding: 22px 30px 32px;
+    }
+
+    .book-title--adults {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem;
+      color: var(--adult-silver);
+      line-height: 1.4;
+      margin-bottom: 8px;
+      font-weight: 400;
+    }
+
+    .book-meta--adults {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 0.85rem;
+      color: var(--adult-accent);
+      letter-spacing: 0.08em;
+    }
+
+    .book-arrow--adults {
+      position: absolute;
+      right: 22px;
+      bottom: 22px;
+      color: var(--adult-accent);
+      font-size: 1.1rem;
+      opacity: 0;
+      transform: translateX(-8px);
+      transition: opacity 0.3s, transform 0.3s;
+    }
+
+    .book-card--adults:hover .book-arrow--adults {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* ---- DECORATIVE LINES (adults) ---- */
+    .deco-lines {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .deco-lines::before {
+      content: '';
+      position: absolute;
+      width: 1px;
+      height: 40%;
+      background: linear-gradient(to bottom, transparent, rgba(155,126,70,0.3), transparent);
+      right: 20%;
+      top: 15%;
+    }
+
+    .deco-lines::after {
+      content: '';
+      position: absolute;
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(155,126,70,0.3));
+      right: 10%;
+      top: 60%;
+    }
+
+    /* ---- SUSPENSE SECTION ---- */
+    .section--suspense {
+      background-color: var(--suspense-bg);
+      background-image:
+        radial-gradient(ellipse at 20% 0%, rgba(123,79,166,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 100%, rgba(123,79,166,0.12) 0%, transparent 50%);
+    }
+
+    .section-tag--suspense {
+      display: inline-block;
+      border: 1px solid var(--suspense-accent);
+      color: var(--suspense-accent);
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 0.75rem;
+      letter-spacing: 0.25em;
+      padding: 4px 16px;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      animation: popIn 0.6s 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    .section-heading--suspense {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      color: var(--suspense-silver);
+      margin-bottom: 36px;
+      line-height: 1.15;
+      font-style: italic;
+      animation: fadeRight 0.7s 0.5s ease both;
+    }
+
+    .book-card--suspense {
+      position: relative;
+      background: transparent;
+      border: 1px solid rgba(123,79,166,0.4);
+      padding: 0;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      width: 100%;
+      max-width: 380px;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s, border-color 0.4s, background 0.4s;
+      animation: fadeRight 0.7s 0.65s ease both;
+    }
+
+    .book-card--suspense::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(123,79,166,0.07), transparent);
+      opacity: 0;
+      transition: opacity 0.4s;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .book-card--suspense:hover::before { opacity: 1; }
+
+    .book-card--suspense:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 30px rgba(123,79,166,0.15);
+      border-color: var(--suspense-accent);
+    }
+
+    .book-card--suspense .book-cover {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+      opacity: 0.80;
+      transition: opacity 0.4s;
+    }
+
+    .book-card--suspense:hover .book-cover {
+      opacity: 1;
+    }
+
+    .book-card--suspense .book-cover-placeholder {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, rgba(123,79,166,0.2), rgba(14,14,20,0.9));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      opacity: 0.8;
+    }
+
+    .book-card--suspense .book-card-body {
+      padding: 22px 30px 32px;
+    }
+
+    .book-title--suspense {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem;
+      color: var(--suspense-silver);
+      line-height: 1.4;
+      margin-bottom: 8px;
+      font-weight: 400;
+    }
+
+    .book-meta--suspense {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 0.85rem;
+      color: var(--suspense-accent);
+      letter-spacing: 0.08em;
+    }
+
+    .book-arrow--suspense {
+      position: absolute;
+      right: 22px;
+      bottom: 22px;
+      color: var(--suspense-accent);
+      font-size: 1.1rem;
+      opacity: 0;
+      transform: translateX(-8px);
+      transition: opacity 0.3s, transform 0.3s;
+    }
+
+    .book-card--suspense:hover .book-arrow--suspense {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* ---- DECORATIVE LINES (suspense) ---- */
+    .deco-lines-suspense {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .deco-lines-suspense::before {
+      content: '';
+      position: absolute;
+      width: 1px;
+      height: 40%;
+      background: linear-gradient(to bottom, transparent, rgba(123,79,166,0.3), transparent);
+      right: 20%;
+      top: 15%;
+    }
+
+    .deco-lines-suspense::after {
+      content: '';
+      position: absolute;
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(123,79,166,0.3));
+      right: 10%;
+      top: 60%;
+    }
+
+    /* ---- FOOTER ---- */
+    footer {
+      text-align: center;
+      padding: 30px 20px;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 0.85rem;
+      color: rgba(26,18,9,0.35);
+      letter-spacing: 0.1em;
+      border-top: 1px solid rgba(201,147,58,0.15);
+    }
+
+    /* ---- ANIMATIONS ---- */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeLeft {
+      from { opacity: 0; transform: translateX(-24px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fadeRight {
+      from { opacity: 0; transform: translateX(24px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.7); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes float {
+      from { transform: translateY(0) rotate(0deg); }
+      to   { transform: translateY(-12px) rotate(15deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <p class="header-subtitle">Contenido exclusivo de LaIAmusical</p>
+    <h1 class="header-title">Story<span>book</span></h1>
+  </header>
+
+  <main>
+
+    <!-- ====== INFANTIL ====== -->
+    <section class="section section--children">
+      <div class="deco-stars">
+        <span class="star">✦</span>
+        <span class="star">✧</span>
+        <span class="star">★</span>
+        <span class="star">✦</span>
+      </div>
+
+      <span class="section-tag--children">Storybook Infantil</span>
+      <h2 class="section-heading--children">Cuentos para<br>pequeños aventureros</h2>
+
+      <a href="secretodelmontesilencio.html" class="book-card--children">
+        <img src="images/secretodelmontesilencio.png" alt="El Secreto del Monte Silencio" class="book-cover"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+        <div class="book-cover-placeholder" style="display:none;">🌲</div>
+        <div class="book-card-body">
+          <p class="book-title--children">El Secreto del Monte Silencio</p>
+          <p class="book-meta--children">✦ Aventura · Naturaleza · Misterio</p>
+        </div>
+        <span class="book-arrow--children">→</span>
+      </a>
+    </section>
+
+    <!-- ====== ANIMACIÓN ====== -->
+    <section class="section section--animation">
+      <div class="deco-bubbles">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+      </div>
+
+      <span class="section-tag--animation">Storybook Animación</span>
+      <h2 class="section-heading--animation">Historias para<br>todos los públicos</h2>
+
+      <a href="ascensoleon.html" class="book-card--animation">
+        <!--
+          IMAGEN ANIMACIÓN: reemplaza el src con el nombre de tu archivo.
+          Si no tienes imagen, elimina el <img> y el emoji del placeholder quedará visible.
+        -->
+        <img src="images/ascensoleon.png" alt="Título animación" class="book-cover"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+        <div class="book-cover-placeholder" style="display:none;">🎨</div>
+        <div class="book-card-body">
+          <p class="book-title--animation">Título de tu historia de animación</p>
+          <p class="book-meta--animation">✦ Fantasía · Aventura · Emoción</p>
+        </div>
+        <span class="book-arrow--animation">→</span>
+      </a>
+    </section>
+
+    <!-- ====== ADULTOS ====== -->
+    <section class="section section--adults">
+      <div class="deco-lines"></div>
+
+      <span class="section-tag--adults">Storybook Adultos</span>
+      <h2 class="section-heading--adults">Relatos para<br>mentes inquietas</h2>
+
+      <a href="adultos.html" class="book-card--adults">
+        <img src="images/adultos.png" alt="El Ascenso del León de Arena" class="book-cover"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+        <div class="book-cover-placeholder" style="display:none;">🦁</div>
+        <div class="book-card-body">
+          <p class="book-title--adults">El Ascenso del León de Arena</p>
+          <p class="book-meta--adults">Épica · Poder · Destino</p>
+        </div>
+        <span class="book-arrow--adults">→</span>
+      </a>
+    </section>
+
+    <!-- ====== SUSPENSE ====== -->
+    <section class="section section--suspense">
+      <div class="deco-lines-suspense"></div>
+
+      <span class="section-tag--suspense">Storybook Suspense</span>
+      <h2 class="section-heading--suspense">Relatos que<br>atrapan el aliento</h2>
+
+      <a href="supense.html" class="book-card--suspense">
+        <!--
+          IMAGEN SUSPENSE: reemplaza el src con el nombre de tu archivo.
+          Si no tienes imagen, elimina el <img> y el emoji del placeholder quedará visible.
+        -->
+        <img src="images/suspense.png" alt="Título suspense" class="book-cover"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+        <div class="book-cover-placeholder" style="display:none;">🔮</div>
+        <div class="book-card-body">
+          <p class="book-title--suspense">Título de tu historia de suspense</p>
+          <p class="book-meta--suspense">Thriller · Intriga · Oscuridad</p>
+        </div>
+        <span class="book-arrow--suspense">→</span>
+      </a>
+    </section>
+
+  </main>
+
+  <footer>
+    &copy; 2026 Storybook — Cada página, un mundo nuevo
+  </footer>
+
+</body>
+</html>
