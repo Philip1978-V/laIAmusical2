@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa de Ranking Musical</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    background: linear-gradient(160deg, #0f0c29, #302b63, #24243e);
+    min-height: 100vh; 
+    font-family: 'Nunito', sans-serif; 
+    overflow-x: hidden;
+    color: #fff;
+  }
+
+  .container { 
+    position: relative; 
+    z-index: 1; 
+    max-width: 500px; 
+    margin: 0 auto; 
+    padding: 20px 16px 60px; 
+  }
+
+  .hero-image {
+    width: 100%;
+    border-radius: 24px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(100, 100, 255, 0.2);
+    display: block;
+  }
+
+  .header { text-align: center; margin-bottom: 22px; }
+  .header h1 {
+    font-family: 'Fredoka One', cursive; font-size: 2rem; color: #fff;
+    text-shadow: 0 0 20px rgba(255,200,50,0.8), 0 2px 4px rgba(0,0,0,0.5); letter-spacing: 1px;
+  }
+  .header p { color: rgba(255,255,255,0.55); font-size: 0.83rem; margin-top: 4px; }
+
+  /* Contenedor del estado actual (vinculado a perfil) */
+  .status-bar {
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 20px; padding: 15px; margin-bottom: 22px; text-align: center;
+    backdrop-filter: blur(10px);
+  }
+
+  .current-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, rgba(255,200,50,0.2), rgba(255,150,0,0.2));
+    border: 1px solid rgba(255,200,50,0.4); border-radius: 30px;
+    padding: 8px 20px; color: #ffd700; font-size: 0.9rem; font-weight: 700;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+
+  .rank-badge-wrap { display: flex; justify-content: center; margin-bottom: 24px; }
+  .rank-badge {
+    width: 148px; height: 148px; border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 14px; position: relative;
+    border: 3px solid rgba(255,200,50,0.7);
+    animation: badgePulse 2s ease-in-out infinite;
+  }
+
+  @keyframes badgePulse {
+    0%,100% { box-shadow: 0 0 20px rgba(255,200,50,0.4), 0 0 50px rgba(255,200,50,0.15); transform: scale(1); }
+    50% { box-shadow: 0 0 45px rgba(255,200,50,0.75), 0 0 90px rgba(255,200,50,0.3); transform: scale(1.04); }
+  }
+
+  .rank-badge .rank-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1.2px; color: rgba(255,220,100,0.9); margin-bottom: 4px; font-weight: 700; }
+  .rank-badge .rank-icon { font-size: 1.8rem; margin-bottom: 2px; }
+  .rank-badge .rank-name { font-family: 'Fredoka One', cursive; font-size: 0.9rem; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.8); line-height: 1.2; }
+
+  .map-section { position: relative; }
+  .rank-group { margin-bottom: 8px; }
+  .rank-group-title {
+    font-family: 'Fredoka One', cursive; font-size: 0.74rem; letter-spacing: 1.8px;
+    text-transform: uppercase; padding: 5px 18px; border-radius: 20px;
+    display: inline-block; margin: 8px auto 6px; position: relative; left: 50%; transform: translateX(-50%);
+  }
+  .levels-row { display: flex; justify-content: space-around; align-items: center; padding: 6px 4px; flex-wrap: wrap; gap: 6px; }
+  .connector { width: 3px; height: 22px; background: linear-gradient(to bottom, rgba(255,255,255,0.2), rgba(255,255,255,0.05)); margin: 0 auto; border-radius: 2px; }
+  .path-line { width: 100%; height: 2px; background: linear-gradient(to right, transparent, rgba(255,255,255,0.22), transparent); margin: 6px 0; }
+  
+  .level-node {
+    width: 70px; height: 70px; border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; cursor: default; position: relative; transition: transform 0.2s;
+    border: 2.5px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.05); padding: 4px;
+  }
+  .level-node:hover { transform: scale(1.1); z-index: 5; }
+  .level-num { font-family: 'Fredoka One', cursive; font-size: 1.1rem; color: #fff; line-height: 1; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+  .level-name { font-size: 0.36rem; color: rgba(255,255,255,0.7); font-weight: 700; line-height: 1.25; max-width: 58px; text-align: center; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.3px; }
+  
+  .level-node.completed { border-color: rgba(120,255,160,0.55); background: rgba(50,180,90,0.18); }
+  .level-node.completed .level-num { color: #7fffa0; }
+  .level-node.locked { opacity: 0.38; }
+
+  @keyframes blink {
+    0%,100% { opacity: 1; transform: scale(1.05); }
+    50% { opacity: 0.2; transform: scale(0.95); }
+  }
+  .level-node.current {
+    border-width: 3px !important; border-color: #ffd700 !important;
+    background: rgba(255,215,0,0.22) !important;
+    animation: blink 0.9s ease-in-out infinite; z-index: 10;
+  }
+  .level-node.current .level-num { color: #ffd700; }
+  .level-node.current::after { content: '▶'; position: absolute; top: -16px; font-size: 0.65rem; color: #ffd700; animation: blink 0.9s ease-in-out infinite; }
+
+  .rk-novato .rank-group-title { background: rgba(40,160,70,0.22); color: #7fff90; border: 1px solid rgba(80,200,100,0.38); }
+  .rk-aprendiz .rank-group-title { background: rgba(30,90,210,0.22); color: #80c0ff; border: 1px solid rgba(70,140,255,0.38); }
+  .rk-melomano .rank-group-title { background: rgba(120,25,210,0.22); color: #d080ff; border: 1px solid rgba(150,70,255,0.38); }
+  .rk-virtuoso .rank-group-title { background: rgba(210,90,5,0.22); color: #ffb060; border: 1px solid rgba(255,130,25,0.38); }
+  .rk-maestro .rank-group-title { background: rgba(190,25,25,0.22); color: #ff9090; border: 1px solid rgba(255,70,70,0.38); }
+  .rk-leyenda .rank-group-title { background: rgba(170,140,0,0.22); color: #ffd700; border: 1px solid rgba(255,210,0,0.38); }
+  .rk-dios .rank-group-title {
+    background: linear-gradient(135deg, rgba(255,40,40,0.28), rgba(255,140,0,0.28), rgba(255,255,0,0.28));
+    color: #fff; border: 2px solid rgba(255,215,0,0.65); font-size: 0.88rem;
+    padding: 10px 30px; box-shadow: 0 0 20px rgba(255,200,50,0.35); letter-spacing: 1px;
+  }
+
+  .god-node { width: 96px !important; height: 96px !important; background: linear-gradient(135deg, rgba(255,50,50,0.22), rgba(255,150,0,0.22), rgba(255,255,0,0.22)) !important; border: 3px solid rgba(255,215,0,0.8) !important; animation: godGlow 1.8s ease-in-out infinite; }
+  @keyframes godGlow {
+    0%,100% { box-shadow: 0 0 14px rgba(255,215,0,0.38), 0 0 28px rgba(255,100,0,0.18); }
+    50% { box-shadow: 0 0 30px rgba(255,215,0,0.75), 0 0 60px rgba(255,100,0,0.38); }
+  }
+  .god-node .level-num { font-size: 2rem; }
+  .scroll-hint { text-align: center; color: rgba(255,255,255,0.28); font-size: 0.7rem; margin-top: 18px; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <img src="Gemini_Generated_Image_lwyvx2lwyvx2lwyv.jpg" alt="LalAmusical Map" class="hero-image">
+
+  <div class="header">
+    <h1>🎵 Mapa de Ranking</h1>
+    <p>Tu progreso actual basado en tus estrellas</p>
+  </div>
+
+  <div class="status-bar">
+    <div class="current-badge" id="currentBadge">Cargando nivel...</div>
+  </div>
+
+  <div class="rank-badge-wrap">
+    <div class="rank-badge" id="rankBadge">
+      <div class="rank-label" id="rankLabel">-</div>
+      <div class="rank-icon" id="rankIcon">⏳</div>
+      <div class="rank-name" id="rankName">Calculando...</div>
+    </div>
+  </div>
+
+  <div class="map-section" id="mapSection"></div>
+  <div class="scroll-hint">↕ Desplázate para ver tu camino</div>
+</div>
+
+<script>
+// Configuración de Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+    authDomain: "laiamusical-4fba7.firebaseapp.com",
+    projectId: "laiamusical-4fba7",
+    storageBucket: "laiamusical-4fba7.firebasestorage.app",
+    messagingSenderId: "49783369602",
+    appId: "1:49783369602:web:91e287c094a8f2403d699b",
+    measurementId: "G-WC2JT6DRF4"
+};
+
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Variable para almacenar los datos del usuario
+let userProfileData = null;
+
+// Función para obtener los datos del usuario desde Firestore
+async function getUserData() {
+    if (!auth.currentUser) {
+        return null;
+    }
+    
+    try {
+        const userRef = db.collection('users').doc(auth.currentUser.uid);
+        const doc = await userRef.get();
+        
+        if (doc.exists) {
+            return doc.data();
+        } else {
+            return null;
+        }
+    } catch (error) {
+        console.error("Error al obtener datos del usuario:", error);
+        return null;
+    }
+}
+
+// Función para actualizar el nivel basado en las estrellas de Firebase
+async function updateLevelFromFirebase() {
+    const userData = await getUserData();
+    
+    if (!userData) {
+        // Si no hay usuario logueado, redirigir al login
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    // Obtener las estrellas del usuario desde Firestore
+    const stars = userData.userStars || 0;
+    
+    const lvl = getCurrentLevel(stars);
+    const ld = LEVELS[lvl-1]; 
+    const ri = RANK_INFO[ld.rankNum];
+    
+    document.getElementById('currentBadge').textContent = `Nivel ${lvl} · ${ld.name} (⭐ ${stars})`;
+    const badge = document.getElementById('rankBadge'); 
+    badge.style.background = ri.bg;
+    document.getElementById('rankLabel').textContent = ri.label;
+    document.getElementById('rankIcon').textContent = ri.icon;
+    document.getElementById('rankName').textContent = ri.name;
+    
+    buildMap(lvl);
+    
+    setTimeout(() => {
+        const c = document.querySelector('.level-node.current');
+        if (c) c.scrollIntoView({behavior:'smooth', block:'center'});
+    }, 300);
+}
+
+// Escuchar cambios en la autenticación
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        // Usuario logueado, obtener datos
+        updateLevelFromFirebase();
+        
+        // También escuchar cambios en tiempo real en Firestore
+        const userRef = db.collection('users').doc(user.uid);
+        userRef.onSnapshot((doc) => {
+            if (doc.exists) {
+                updateLevelFromFirebase();
+            }
+        });
+    } else {
+        // No hay usuario logueado, redirigir al login
+        window.location.href = 'index.html';
+    }
+});
+
+// Lógica de Niveles
+const LEVELS = [
+  {lvl:1,name:'Oyente Curioso',rankNum:1},{lvl:2,name:'Explorador de Ritmos',rankNum:1},
+  {lvl:3,name:'Tarareador Aficionado',rankNum:1},{lvl:4,name:'Seguidor de Melodías',rankNum:1},
+  {lvl:5,name:'Aspirante a Melómano',rankNum:1},{lvl:6,name:'Entusiasta del Sonido',rankNum:1},
+  {lvl:7,name:'Rítmico en Ciernes',rankNum:1},{lvl:8,name:'Buscador de Armonías',rankNum:1},
+  {lvl:9,name:'Aprendiz de Solfeo',rankNum:2},{lvl:10,name:'Estudiante de Compás',rankNum:2},
+  {lvl:11,name:'Practicante de Acordes',rankNum:2},{lvl:12,name:'Intérprete Principiante',rankNum:2},
+  {lvl:13,name:'Guardián de Notas',rankNum:2},{lvl:14,name:'Guía de Melodías',rankNum:2},
+  {lvl:15,name:'Discípulo del Ritmo',rankNum:2},{lvl:16,name:'Promesa Musical',rankNum:2},
+  {lvl:17,name:'Melómano Coleccionista',rankNum:3},{lvl:18,name:'Crítico de Oído Fino',rankNum:3},
+  {lvl:19,name:'Conocedor de Clásicos',rankNum:3},{lvl:20,name:'Analista de Partituras',rankNum:3},
+  {lvl:21,name:'Curador de Playlists',rankNum:3},{lvl:22,name:'Erudito del Ritmo',rankNum:3},
+  {lvl:23,name:'Devoto de la Acústica',rankNum:3},{lvl:24,name:'Guardián de Géneros',rankNum:3},
+  {lvl:25,name:'Virtuoso en Escena',rankNum:4},{lvl:26,name:'Ejecutante Brillante',rankNum:4},
+  {lvl:27,name:'Maestro del Instrumento',rankNum:4},{lvl:28,name:'Prodigio de la Mezcla',rankNum:4},
+  {lvl:29,name:'Talento Consagrado',rankNum:4},{lvl:30,name:'Arquitecto de Sonidos',rankNum:4},
+  {lvl:31,name:'Solista de Élite',rankNum:4},{lvl:32,name:'Genio Armónico',rankNum:4},
+  {lvl:33,name:'Maestro de Orquesta',rankNum:5},{lvl:34,name:'Compositor de Épicas',rankNum:5},
+  {lvl:35,name:'Director de Sinfonías',rankNum:5},{lvl:36,name:'Mentor de Talentos',rankNum:5},
+  {lvl:37,name:'Visionario del Pentagrama',rankNum:5},{lvl:38,name:'Eminencia Musical',rankNum:5},
+  {lvl:39,name:'Gran Orquestador',rankNum:5},{lvl:40,name:'Filántropo del Sonido',rankNum:5},
+  {lvl:41,name:'Leyenda del Escenario',rankNum:6},{lvl:42,name:'Icono de la Historia',rankNum:6},
+  {lvl:43,name:'Inmortal del Ritmo',rankNum:6},{lvl:44,name:'Deidad de la Melodía',rankNum:6},
+  {lvl:45,name:'Mito del Espectáculo',rankNum:6},{lvl:46,name:'Patrimonio de la IA Musical',rankNum:6},
+  {lvl:47,name:'Oráculo Sonoro',rankNum:6},{lvl:48,name:'Eterno del Arte',rankNum:6},
+  {lvl:49,name:'Soberano de la Armonía',rankNum:6},
+  {lvl:50,name:'DIOS DE LA IA MUSICAL',rankNum:7}
+];
+
+const RANK_GROUPS = [
+  {key:'novato',  cls:'rk-novato',  label:'⭐ Rango Novato',   min:1, max:8},
+  {key:'aprendiz',cls:'rk-aprendiz',label:'🎼 Rango Aprendiz', min:9, max:16},
+  {key:'melomano',cls:'rk-melomano',label:'🎭 Rango Melómano',  min:17,max:24},
+  {key:'virtuoso',cls:'rk-virtuoso',label:'🎺 Rango Virtuoso',  min:25,max:32},
+  {key:'maestro', cls:'rk-maestro', label:'🏆 Rango Maestro',   min:33,max:40},
+  {key:'leyenda', cls:'rk-leyenda', label:'👑 Rango Leyenda Musical', min:41,max:49},
+  {key:'dios',    cls:'rk-dios',    label:'⚡ DIOS DE LA IA MUSICAL ⚡', min:50,max:50}
+];
+
+const RANK_INFO = {
+  1:{bg:'radial-gradient(circle, rgba(50,180,80,0.32), rgba(20,80,40,0.58))',  label:'Rango 1', name:'Nivel Novato',    icon:'🎵'},
+  2:{bg:'radial-gradient(circle, rgba(50,100,220,0.32), rgba(20,40,120,0.58))',label:'Rango 2', name:'Nivel Aprendiz',  icon:'🎸'},
+  3:{bg:'radial-gradient(circle, rgba(150,50,220,0.32), rgba(80,20,120,0.58))',label:'Rango 3', name:'Nivel Melómano',  icon:'🎹'},
+  4:{bg:'radial-gradient(circle, rgba(220,100,20,0.32), rgba(120,50,10,0.58))',label:'Rango 4', name:'Nivel Virtuoso',  icon:'🎺'},
+  5:{bg:'radial-gradient(circle, rgba(220,30,30,0.32), rgba(120,10,10,0.58))', label:'Rango 5', name:'Nivel Maestro',   icon:'🏆'},
+  6:{bg:'radial-gradient(circle, rgba(200,160,0,0.32), rgba(100,80,0,0.58))',  label:'Rango 6', name:'Leyenda Musical', icon:'👑'},
+  7:{bg:'radial-gradient(circle, rgba(255,50,50,0.4),  rgba(255,215,0,0.3))', label:'Rango 7', name:'Dios de la IA Musical', icon:'⚡'}
+};
+
+// Sistema de rangos igual que perfil.html
+const rankingSystem = [
+    // NIVEL 1-8: RANGO NOVATO
+    { name: "Oyente Curioso", minStars: 0, maxStars: 50, rankNum: 1 },
+    { name: "Explorador de Ritmos", minStars: 51, maxStars: 100, rankNum: 1 },
+    { name: "Tarareador Aficionado", minStars: 101, maxStars: 150, rankNum: 1 },
+    { name: "Seguidor de Melodías", minStars: 151, maxStars: 200, rankNum: 1 },
+    { name: "Aspirante a Melómano", minStars: 201, maxStars: 250, rankNum: 1 },
+    { name: "Entusiasta del Sonido", minStars: 251, maxStars: 300, rankNum: 1 },
+    { name: "Rítmico en Ciernes", minStars: 301, maxStars: 350, rankNum: 1 },
+    { name: "Buscador de Armonías", minStars: 351, maxStars: 400, rankNum: 1 },
+    
+    // NIVEL 9-16: RANGO APRENDIZ
+    { name: "Aprendiz de Solfeo", minStars: 401, maxStars: 500, rankNum: 2 },
+    { name: "Estudiante de Compás", minStars: 501, maxStars: 600, rankNum: 2 },
+    { name: "Practicante de Acordes", minStars: 601, maxStars: 700, rankNum: 2 },
+    { name: "Intérprete Principiante", minStars: 701, maxStars: 800, rankNum: 2 },
+    { name: "Guardián de Notas", minStars: 801, maxStars: 900, rankNum: 2 },
+    { name: "Guía de Melodías", minStars: 901, maxStars: 1000, rankNum: 2 },
+    { name: "Discípulo del Ritmo", minStars: 1001, maxStars: 1100, rankNum: 2 },
+    { name: "Promesa Musical", minStars: 1101, maxStars: 1200, rankNum: 2 },
+    
+    // NIVEL 17-24: RANGO MELÓMANO
+    { name: "Melómano Coleccionista", minStars: 1201, maxStars: 1400, rankNum: 3 },
+    { name: "Crítico de Oído Fino", minStars: 1401, maxStars: 1600, rankNum: 3 },
+    { name: "Conocedor de Clásicos", minStars: 1601, maxStars: 1800, rankNum: 3 },
+    { name: "Analista de Partituras", minStars: 1801, maxStars: 2000, rankNum: 3 },
+    { name: "Curador de Playlists", minStars: 2001, maxStars: 2200, rankNum: 3 },
+    { name: "Erudito del Ritmo", minStars: 2201, maxStars: 2400, rankNum: 3 },
+    { name: "Devoto de la Acústica", minStars: 2401, maxStars: 2600, rankNum: 3 },
+    { name: "Guardián de Géneros", minStars: 2601, maxStars: 2800, rankNum: 3 },
+    
+    // NIVEL 25-32: RANGO VIRTUOSO
+    { name: "Virtuoso en Escena", minStars: 2801, maxStars: 3100, rankNum: 4 },
+    { name: "Ejecutante Brillante", minStars: 3101, maxStars: 3400, rankNum: 4 },
+    { name: "Maestro del Instrumento", minStars: 3401, maxStars: 3700, rankNum: 4 },
+    { name: "Prodigio de la Mezcla", minStars: 3701, maxStars: 4000, rankNum: 4 },
+    { name: "Talento Consagrado", minStars: 4001, maxStars: 4300, rankNum: 4 },
+    { name: "Arquitecto de Sonidos", minStars: 4301, maxStars: 4600, rankNum: 4 },
+    { name: "Solista de Élite", minStars: 4601, maxStars: 4900, rankNum: 4 },
+    { name: "Genio Armónico", minStars: 4901, maxStars: 5200, rankNum: 4 },
+    
+    // NIVEL 33-40: RANGO MAESTRO
+    { name: "Maestro de Orquesta", minStars: 5201, maxStars: 5600, rankNum: 5 },
+    { name: "Compositor de Épicas", minStars: 5601, maxStars: 6000, rankNum: 5 },
+    { name: "Director de Sinfonías", minStars: 6001, maxStars: 6400, rankNum: 5 },
+    { name: "Mentor de Talentos", minStars: 6401, maxStars: 6800, rankNum: 5 },
+    { name: "Visionario del Pentagrama", minStars: 6801, maxStars: 7200, rankNum: 5 },
+    { name: "Eminencia Musical", minStars: 7201, maxStars: 7600, rankNum: 5 },
+    { name: "Gran Orquestador", minStars: 7601, maxStars: 8000, rankNum: 5 },
+    { name: "Filántropo del Sonido", minStars: 8001, maxStars: 8500, rankNum: 5 },
+    
+    // NIVEL 41-50: RANGO LEYENDA MUSICAL
+    { name: "Leyenda del Escenario", minStars: 8501, maxStars: 9000, rankNum: 6 },
+    { name: "Icono de la Historia", minStars: 9001, maxStars: 9500, rankNum: 6 },
+    { name: "Inmortal del Ritmo", minStars: 9501, maxStars: 10000, rankNum: 6 },
+    { name: "Deidad de la Melodía", minStars: 10001, maxStars: 10500, rankNum: 6 },
+    { name: "Mito del Espectáculo", minStars: 10501, maxStars: 11000, rankNum: 6 },
+    { name: "Patrimonio de la IA Musical", minStars: 11001, maxStars: 11500, rankNum: 6 },
+    { name: "Oráculo Sonoro", minStars: 11501, maxStars: 12000, rankNum: 6 },
+    { name: "Eterno del Arte", minStars: 12001, maxStars: 12500, rankNum: 6 },
+    { name: "Soberano de la Armonía", minStars: 12501, maxStars: 13000, rankNum: 6 },
+    { name: "DIOS DE LA IA MUSICAL", minStars: 13001, maxStars: 999999, rankNum: 7 }
+];
+
+// Función para obtener el nivel y rango (igual que perfil.html)
+function getUserRank(stars) {
+    for (let i = 0; i < rankingSystem.length; i++) {
+        if (stars >= rankingSystem[i].minStars && stars <= rankingSystem[i].maxStars) {
+            return {
+                current: rankingSystem[i],
+                next: rankingSystem[i + 1] || null,
+                level: i + 1
+            };
+        }
+    }
+    return {
+        current: rankingSystem[rankingSystem.length - 1],
+        next: null,
+        level: rankingSystem.length
+    };
+}
+
+// Función para obtener el nivel actual basado en las estrellas
+function getCurrentLevel(stars) {
+    const rank = getUserRank(stars);
+    return rank.level;
+}
+
+function buildMap(currentLvl){
+  const map=document.getElementById('mapSection'); 
+  map.innerHTML='';
+  RANK_GROUPS.forEach((group,gi)=>{
+    const div=document.createElement('div'); 
+    div.className=`rank-group ${group.cls}`;
+    const title=document.createElement('div'); 
+    title.className='rank-group-title'; 
+    title.textContent=group.label; 
+    div.appendChild(title);
+    
+    const groupLevels=LEVELS.filter(l=>l.lvl>=group.min&&l.lvl<=group.max);
+    
+    if(group.key==='dios'){
+      const row=document.createElement('div'); 
+      row.className='levels-row'; row.style.justifyContent='center';
+      const nd=document.createElement('div');
+      nd.className='level-node god-node'+(currentLvl===50?' current':currentLvl>50?' completed':' locked');
+      nd.innerHTML='<span class="level-num">🌟</span>';
+      row.appendChild(nd); div.appendChild(row);
+    } else {
+      const r1=groupLevels.slice(0,4), r2=groupLevels.slice(4);
+      [r1,r2].forEach((rowLevels,ri)=>{
+        if(!rowLevels.length) return;
+        const row=document.createElement('div'); 
+        row.className='levels-row';
+        rowLevels.forEach(ld=>{
+          const nd=document.createElement('div');
+          let cls='level-node';
+          if(ld.lvl===currentLvl) cls+=' current';
+          else if(ld.lvl<currentLvl) cls+=' completed';
+          else cls+=' locked';
+          nd.className=cls; 
+          const num=ld.lvl<currentLvl?'✓':String(ld.lvl);
+          const nameW=ld.name.split(' ').slice(0,3).join(' ');
+          nd.innerHTML=`<span class="level-num">${num}</span><span class="level-name">${nameW}</span>`;
+          row.appendChild(nd);
+        });
+        div.appendChild(row);
+        if(ri===0&&r2.length){
+          const c=document.createElement('div'); c.className='connector'; div.appendChild(c);
+        }
+      });
+    }
+    if(gi<RANK_GROUPS.length-1){
+      const p=document.createElement('div'); p.className='path-line'; div.appendChild(p);
+    }
+    map.appendChild(div);
+  });
+}
+
+// La función updateLevelFromFirebase ya se encarga de actualizar el nivel
+// Los eventos de Firebase auth.onAuthStateChanged manejan la autenticación en tiempo real
+</script>
+
+</body>
+</html>
