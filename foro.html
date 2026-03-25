@@ -467,6 +467,56 @@
     background: var(--orange); border-radius: 50%;
     margin-left: 3px; vertical-align: middle;
   }
+
+  /* ── NORMAS MODAL ────────────────────────── */
+  .normas-btn {
+    margin-left: auto; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25);
+    color: #fff; font-size: 11px; font-weight: 700; padding: 4px 12px;
+    border-radius: 3px; cursor: pointer; font-family: 'Nunito', sans-serif;
+    transition: background .15s; white-space: nowrap;
+  }
+  .normas-btn:hover { background: rgba(255,255,255,.22); }
+.normas-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.75); z-index: 400;
+    align-items: center; justify-content: center;
+  }
+  .normas-overlay.open {
+    display: flex;
+  }
+  .normas-modal {
+    background: #0c2a36; border: 1px solid rgba(0,160,160,.4);
+    border-radius: 8px; padding: 28px 24px; width: 520px; max-width: 95vw; max-height: 85vh;
+    box-shadow: 0 8px 32px rgba(0,0,0,.4); overflow-y: auto;
+  }
+  .normas-modal h3 {
+    font-family: 'Teko', sans-serif; font-size: 22px; font-weight: 600;
+    color: var(--orange-light); margin-bottom: 18px; text-align: center;
+  }
+  .normas-modal h4 { color: var(--orange); font-size: 16px; margin: 16px 0 10px 0; }
+  .normas-rules { line-height: 1.6; color: #d4f0e8; font-size: 14px; }
+  .normas-rules li { margin: 8px 0; padding-left: 8px; }
+  .normas-close {
+    position: absolute; top: 14px; right: 18px; background: none; border: none;
+    color: rgba(255,255,255,.6); font-size: 18px; cursor: pointer;
+    transition: color .15s;
+  }
+  .normas-close:hover { color: #fff; }
+  .normas-rules ul { list-style: none; padding: 0; margin: 0; }
+  .normas-rules ul li {
+    padding: 10px 12px; border-radius: 5px; margin-bottom: 6px;
+    background: rgba(255,255,255,.04); border-left: 3px solid var(--orange);
+    font-size: 13.5px; color: #d4f0e8; line-height: 1.5;
+  }
+  .normas-rules ul li strong { color: var(--orange-light); }
+  .norma-desc { color: rgba(255,255,255,.58); font-size: 12.5px; }
+  .normas-cerrar-btn {
+    background: var(--teal-mid); border: 1px solid rgba(0,160,160,.5);
+    color: #fff; font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 700;
+    padding: 9px 32px; border-radius: 4px; cursor: pointer;
+    transition: background .15s, border-color .15s; letter-spacing: .3px;
+  }
+  .normas-cerrar-btn:hover { background: var(--teal-dark); border-color: rgba(0,160,160,.8); }
 </style>
 </head>
 <body>
@@ -490,7 +540,7 @@
      TAB: LaIAmusical
 ══════════════════════════════════════════════ -->
 <div id="tab-laiamusical" class="tab-panel active">
-  <div class="page-title"><i class="fa-solid fa-music"></i> LaIAmusical</div>
+  <div class="page-title"><i class="fa-solid fa-music"></i> LaIAmusical <button class="normas-btn" onclick="openNormasModal()">Normas del foro</button></div>
 
   <table class="forum-table">
     <thead><tr>
@@ -549,7 +599,7 @@
      TAB: Storycards
 ══════════════════════════════════════════════ -->
 <div id="tab-storycards" class="tab-panel">
-  <div class="page-title"><i class="fa-solid fa-headphones"></i> Storycards</div>
+  <div class="page-title"><i class="fa-solid fa-headphones"></i> Storycards <button class="normas-btn" onclick="openNormasModal()">Normas del foro</button></div>
 
   <table class="forum-table">
     <thead><tr>
@@ -666,7 +716,7 @@
      TAB: Amigos  (Firebase-powered)
 ══════════════════════════════════════════════ -->
 <div id="tab-amigos" class="tab-panel">
-  <div class="page-title"><i class="fa-solid fa-users"></i> Amigos</div>
+  <div class="page-title"><i class="fa-solid fa-users"></i> Amigos <button class="normas-btn" onclick="openNormasModal()">Normas del foro</button></div>
 
   <div class="amigos-layout">
 
@@ -756,7 +806,66 @@
   <p>© 2026 <strong>LaIAmusical</strong> · Música original generada con Inteligencia Artificial</p>
 </footer>
 
-<!-- ══ PRIVATE CHAT PANEL ════════════════════ -->
+<!-- ══ NORMAS MODAL ═══════════════════════════ -->
+<div class="normas-overlay" id="normasOverlay" onclick="handleNormasOverlayClick(event)">
+  <div class="normas-modal" id="normasModal">
+    <button class="normas-close" onclick="closeNormasModal()" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+    <h3><i class="fa-solid fa-gavel" style="color:var(--orange-light);margin-right:10px"></i>Normas del Chat</h3>
+
+    <div class="normas-rules">
+      <h4>Comportamientos sancionables:</h4>
+      <ul>
+        <li>
+          <strong>Hacer SPAM.</strong><br>
+          <span class="norma-desc">Envío repetitivo de mensajes o enlaces irrelevantes.</span>
+        </li>
+        <li>
+          <strong>Contenido inapropiado.</strong><br>
+          <span class="norma-desc">Desnudos, racismo, violencia, política, religión o contenido con menores.</span>
+        </li>
+        <li>
+          <strong>Mensajes fuera de tema.</strong><br>
+          <span class="norma-desc">Respuestas no relacionadas con el tema tratado.</span>
+        </li>
+        <li>
+          <strong>Acoso e insultos.</strong><br>
+          <span class="norma-desc">Insultar, acosar, difamar o molestar a otros usuarios.</span>
+        </li>
+        <li>
+          <strong>Discusiones en bucle.</strong><br>
+          <span class="norma-desc">Debates repetitivos en chat público.</span>
+        </li>
+        <li>
+          <strong>Lenguaje obsceno reiterado.</strong><br>
+          <span class="norma-desc">Uso excesivo de palabras obscenas o falta de respeto.</span>
+        </li>
+        <li>
+          <strong>Dar información personal.</strong><br>
+          <span class="norma-desc">Publicar datos personales propios o de terceros.</span>
+        </li>
+        <li>
+          <strong>Suplantación de identidad.</strong><br>
+          <span class="norma-desc">Hacerse pasar por otra persona de forma engañosa.</span>
+        </li>
+        <li>
+          <strong>Múltiples cuentas.</strong><br>
+          <span class="norma-desc">Usar varias cuentas está prohibido y es rastreable. Se debe mantener la igualdad de condiciones para todo el que participa.</span>
+        </li>
+      </ul>
+
+      <h4 style="margin-top:18px">Sobre las sanciones:</h4>
+      <p style="color:#d4f0e8;font-size:13.5px;line-height:1.7;padding-left:4px">
+        Desde advertencias hasta expulsión permanente según gravedad.
+      </p>
+    </div>
+
+    <div style="margin-top:24px;text-align:center">
+      <button class="normas-cerrar-btn" onclick="closeNormasModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PRIVATE CHAT PANEL ════════════════════ --> 
 <div class="pchat-overlay" id="pchatOverlay" onclick="handlePchatOverlayClick(event)">
   <div class="pchat-panel" id="pchatPanel">
     <div class="pchat-header">
@@ -1201,6 +1310,19 @@ auth.onAuthStateChanged(async user => {
     renderLoginPrompt('fpanel-amigos');
   }
 });
+
+// ── Normas Modal ────────────────────────────────────────────────────
+function openNormasModal() {
+  document.getElementById('normasOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeNormasModal() {
+  document.getElementById('normasOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function handleNormasOverlayClick(e) {
+  if (e.target === document.getElementById('normasOverlay')) closeNormasModal();
+}
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function escHtml(str) {
