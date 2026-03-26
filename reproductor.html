@@ -206,6 +206,14 @@
             line-height: 1.75;
         }
 
+        /* Forzar escritura horizontal en todos los textareas */
+        textarea {
+            writing-mode: horizontal-tb !important;
+            direction: ltr !important;
+            text-orientation: mixed !important;
+            unicode-bidi: normal !important;
+        }
+
         /* Zona de texto clickable en la storycard */
         .card-text-zone {
             cursor: pointer;
@@ -440,18 +448,21 @@
         </div>
     </div>
 
-    <div id="surveyModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm">
-        <div class="bg-slate-800 p-6 rounded-xl border border-teal-700 max-w-lg w-full shadow-2xl transform transition-all scale-100 relative max-h-[80vh] overflow-y-auto">
+    <div id="surveyModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-slate-800 p-5 rounded-xl border border-teal-700 max-w-lg w-full shadow-2xl transform transition-all scale-100 relative max-h-[90vh] overflow-y-auto" style="min-width: 0; box-sizing: border-box;">
 
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-teal-100">Comentario: <span id="surveySongTitle"></span></h3>
-                <button onclick="closeSurveyModal()" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+                <h3 class="text-xl font-bold text-teal-100 pr-6">Comentario: <span id="surveySongTitle"></span></h3>
+                <button onclick="closeSurveyModal()" class="text-gray-400 hover:text-white flex-shrink-0"><i class="fas fa-times"></i></button>
             </div>
 
             <div id="surveyContent" class="space-y-6">
                 <div class="bg-slate-700/50 p-4 rounded-lg border border-teal-800">
                     <p class="font-bold text-teal-300 mb-3">Escribe tu comentario sobre esta canción:</p>
-                    <textarea id="commentTextarea" class="w-full h-32 p-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none" placeholder="Comparte tus pensamientos sobre esta canción..."></textarea>
+                    <textarea id="commentTextarea"
+                        class="w-full h-32 p-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                        style="writing-mode: horizontal-tb; direction: ltr; text-orientation: mixed; unicode-bidi: normal; min-width: 0; box-sizing: border-box; display: block;"
+                        placeholder="Comparte tus pensamientos sobre esta canción..."></textarea>
                 </div>
             </div>
             
@@ -2323,7 +2334,10 @@ return;
         content.innerHTML = `
             <div class="bg-slate-700/50 p-4 rounded-lg border border-teal-800">
                 <p class="font-bold text-teal-300 mb-3">Escribe tu comentario sobre esta canción:</p>
-                <textarea id="commentTextarea" class="w-full h-32 p-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none" placeholder="Comparte tus pensamientos sobre esta canción..."></textarea>
+                <textarea id="commentTextarea"
+                    class="w-full h-32 p-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                    style="writing-mode: horizontal-tb; direction: ltr; text-orientation: mixed; unicode-bidi: normal; min-width: 0; box-sizing: border-box; display: block;"
+                    placeholder="Comparte tus pensamientos sobre esta canción..."></textarea>
             </div>
         `;
         document.getElementById('commentTextarea').addEventListener('input', updateSurveyButton);
