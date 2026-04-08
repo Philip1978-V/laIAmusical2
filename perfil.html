@@ -1,0 +1,1842 @@
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Usuario - La IA Musical</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #0f172a;
+            background-image: url('./images/fondo3.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+            color: white;
+            padding-bottom: 3rem;
+        }
+
+        /* SCROLL HORIZONTAL MEJORADO PARA LAS CARTAS */
+        .scroll-container {
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: #0d9488 #1e293b;
+            display: flex;
+            gap: 1.5rem;
+            padding: 15px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .scroll-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .scroll-container::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+
+        .scroll-container::-webkit-scrollbar-thumb {
+            background: #0d9488;
+            border-radius: 10px;
+        }
+
+        .scroll-container::-webkit-scrollbar-thumb:hover {
+            background: #14b8a6;
+            border-radius: 10px;
+        }
+
+        .song-card {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid #134e4a;
+            flex: 0 0 auto;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            min-width: 260px;
+            max-width: 260px;
+            cursor: pointer;
+            position: relative;
+        }
+        .song-card:hover { 
+            transform: translateY(-5px); 
+            border-color: #2dd4bf;
+            box-shadow: 0 10px 25px rgba(13, 148, 136, 0.4);
+        }
+
+        .song-card.purchaseable::after {
+            content: '🛒 Click para comprar';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(72, 187, 120, 0.9);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        .song-card.purchased {
+            cursor: default;
+            opacity: 0.8;
+        }
+
+        .mission-item {
+            background: rgba(15, 23, 42, 0.5);
+            border-left: 4px solid #0d9488;
+        }
+
+        .activity-item {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .ranking-card {
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.2) 0%, rgba(15, 23, 42, 0.8) 100%);
+            border: 2px solid #0d9488;
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .ranking-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(13, 148, 136, 0.3);
+        }
+
+        .trophy-gold { color: #fbbf24; }
+        .trophy-silver { color: #d1d5db; }
+        .trophy-bronze { color: #f97316; }
+
+        /* Estilos para las tarjetas de premios */
+        .reward-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid #0d9488;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .reward-card:hover {
+            transform: scale(1.02);
+            border-color: #14b8a6;
+            box-shadow: 0 8px 20px rgba(13, 148, 136, 0.3);
+        }
+
+        .reward-card.claimed {
+            opacity: 0.6;
+            border-color: #475569;
+        }
+
+        /* Estilo Casa de la Moneda - Más compacto */
+        .exchange-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        /* Estilos para el modal de compartir */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(1px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border: 2px solid #0d9488;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        .link-copied-notice {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid #22c55e;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .share-button {
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        }
+
+        .share-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Modal de compra de carta */
+        .purchase-modal-content {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 3px solid #48bb78;
+            border-radius: 20px;
+            padding: 2.5rem;
+            max-width: 450px;
+            width: 90%;
+            animation: modalSlideIn 0.3s ease-out;
+            box-shadow: 0 20px 50px rgba(72, 187, 120, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="p-4 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 shadow-lg border-b border-teal-800">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <a href="temas.html" class="text-xl font-bold tracking-wide text-white hover:text-teal-200 transition-colors uppercase">
+                    La IA Musical
+                </a>
+            </div>
+            <button onclick="logout()" class="text-gray-400 hover:text-white transition flex items-center gap-2 py-1 px-3 rounded-md bg-slate-800 hover:bg-slate-700">
+                <i class="fas fa-sign-out-alt"></i> Salir
+            </button>
+        </div>
+    </header>
+
+    <!-- Modal de compartir -->
+    <div id="shareModal" class="modal-overlay" onclick="closeShareModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="text-center mb-4">
+                <i class="fas fa-share-alt text-green-500 text-3xl mb-2"></i>
+                <h3 class="text-xl font-semibold text-white mb-1">Comparte La IA Musical</h3>
+                <p class="text-gray-400 text-xs">Gana 50 estrellas compartiendo</p>
+                <p class="text-orange-400 text-xs mt-1 font-medium">⚠️ Pega el enlace en la red social para recibir el premio</p>
+            </div>
+
+            <div class="grid grid-cols-4 gap-3 mb-4">
+                <button onclick="shareOnFacebook()" class="share-button bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg flex flex-col items-center justify-center gap-1">
+                    <i class="fab fa-facebook-f text-lg"></i>
+                    <span class="text-xs">Facebook</span>
+                </button>
+
+                <button onclick="shareOnX()" class="share-button bg-black hover:bg-gray-800 text-white font-medium py-3 px-4 rounded-lg flex flex-col items-center justify-center gap-1">
+                    <i class="fab fa-x-twitter text-2xl animate-pulse"></i>
+                    <span class="text-xs">X</span>
+                </button>
+
+                <button onclick="shareOnWhatsApp()" class="share-button bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-4 rounded-lg flex flex-col items-center justify-center gap-1">
+                    <i class="fab fa-whatsapp text-lg"></i>
+                    <span class="text-xs">WhatsApp</span>
+                </button>
+
+                <button onclick="shareOnTelegram()" class="share-button bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg flex flex-col items-center justify-center gap-1">
+                    <i class="fab fa-telegram text-lg"></i>
+                    <span class="text-xs">Telegram</span>
+                </button>
+
+                <button onclick="shareOnTikTok()" class="share-button bg-black hover:bg-gray-800 text-white font-medium py-3 px-4 rounded-lg flex flex-col items-center justify-center gap-1">
+                    <i class="fab fa-tiktok text-lg"></i>
+                    <span class="text-xs">TikTok</span>
+                </button>
+
+                <button onclick="shareOnReddit()" class="share-button bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-4 rounded-lg flex flex-col items-center justify-center gap-1">
+                    <i class="fab fa-reddit text-lg"></i>
+                    <span class="text-xs">Reddit</span>
+                </button>
+
+                <button onclick="shareOnEmail()" class="share-button bg-gray-500 hover:bg-gray-600 text-white font-medium py-3 px-4 rounded-lg flex flex-col items-center justify-center gap-1">
+                    <i class="fas fa-envelope text-lg"></i>
+                    <span class="text-xs">Email</span>
+                </button>
+
+                <button onclick="copyLink()" class="share-button bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg flex flex-col items-center justify-center gap-1">
+                    <i class="fas fa-copy text-lg"></i>
+                    <span class="text-xs">Copiar</span>
+                </button>
+            </div>
+
+            <div id="linkCopiedNotice" class="link-copied-notice hidden">
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <i class="fas fa-check-circle text-green-400"></i>
+                    <span class="text-white font-semibold text-sm">Enlace copiado</span>
+                </div>
+                <p class="text-green-300 text-xs mb-3">
+                    Pega el enlace en tu red social. Cuando tu amigo se registre, recibirás 50 estrellas.
+                </p>
+                <div id="waitingForInvite" class="bg-blue-600/20 border border-blue-500 text-blue-300 font-medium py-2 px-4 rounded-lg text-center text-xs">
+                    <i class="fas fa-clock mr-1"></i>
+                    Espera a que acepte la invitación
+                </div>
+                <p class="text-green-200 text-xs mt-1">Puedes compartir múltiples veces</p>
+            </div>
+
+            <div class="text-center mt-4">
+                <button onclick="closeShareModal()" class="bg-slate-700 hover:bg-slate-600 text-white font-medium py-2 px-6 rounded-lg text-sm">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de compra de carta -->
+    <div id="purchaseModal" class="modal-overlay" onclick="closePurchaseModal()">
+        <div class="purchase-modal-content" onclick="event.stopPropagation()">
+            <div class="text-center mb-6">
+                <i class="fas fa-shopping-cart text-green-500 text-5xl mb-4"></i>
+                <h3 class="text-2xl font-bold text-white mb-3">¿Quieres comprar esta carta?</h3>
+                <div id="cardInfoDisplay" class="mb-4">
+                    <!-- Se llenará dinámicamente -->
+                </div>
+                <div class="bg-slate-800/60 rounded-lg p-4 mb-4">
+                    <p class="text-gray-300 text-sm mb-3">Precio de compra:</p>
+                    <div class="flex justify-center gap-6 text-xl font-bold">
+                        <div class="flex items-center gap-2">
+                            <span class="text-yellow-400">500</span>
+                            <i class="fas fa-star text-yellow-400"></i>
+                        </div>
+                        <span class="text-gray-500">o</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-blue-400">5</span>
+                            <i class="fas fa-gem text-blue-400"></i>
+                        </div>
+                    </div>
+                </div>
+                <div id="userResourcesDisplay" class="bg-slate-900/60 rounded-lg p-3 mb-4">
+                    <!-- Se llenará dinámicamente con los recursos del usuario -->
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="closePurchaseModal()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded-lg transition">
+                    Cancelar
+                </button>
+                <button id="confirmPurchaseBtn" onclick="confirmPurchaseCard()" class="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg transition">
+                    Comprar
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <main class="max-w-6xl mx-auto p-4 mt-6">
+
+        <div class="bg-slate-800 p-6 rounded-xl shadow-2xl border border-teal-700 mb-8">
+            <div class="flex flex-col md:flex-row items-center gap-6">
+                <div class="flex-grow text-center md:text-left">
+                    <h2 id="userNameDisplay" class="text-3xl font-bold text-teal-200 mb-1 italic">Cargando...</h2>
+                    <p id="userEmailDisplay" class="text-gray-400 text-sm mb-4">...</p>
+
+                    <div class="grid grid-cols-3 sm:grid-cols-5 gap-4 bg-slate-900 p-4 rounded-lg border border-teal-800">
+                        <div class="text-center">
+                            <i class="fas fa-star text-yellow-400 text-2xl"></i>
+                            <p id="userStarsDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-[10px] text-gray-400 uppercase">Estrellas</span>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-gem text-blue-400 text-2xl"></i>
+                            <p id="userDiamondsDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-[10px] text-gray-400 uppercase">Diamantes</span>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-coins text-amber-500 text-2xl"></i>
+                            <p id="userCoinsDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-[10px] text-gray-400 uppercase">Monedas</span>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-vote-yea text-teal-400 text-2xl"></i>
+                            <p id="votesUsedDisplay" class="text-xl font-bold mt-1">0</p>
+                            <span class="text-[10px] text-gray-400 uppercase">Votos Usados</span>
+                        </div>
+                        <div class="text-center">
+                            <i id="userRankIcon" class="fas fa-medal text-teal-400 text-2xl"></i>
+                            <p id="userRankLevel" class="text-xl font-bold mt-1">0</p>
+                            <span id="userRankName" class="text-[10px] text-gray-400 uppercase">Novato</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 text-amber-400 flex items-center uppercase tracking-tighter">
+                <i class="fas fa-gift mr-3"></i> Premios Diarios Disponibles
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="reward-card" id="dailyCoinsCard">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-coins text-amber-500 text-4xl mb-2"></i>
+                        <p class="text-xs text-gray-300 font-bold uppercase">Recompensa de monedas</p>
+                    </div>
+                    <button id="dailyCoinsBtn" onclick="claimDailyCoins()" 
+                            class="w-full bg-teal-600 hover:bg-teal-500 disabled:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition-all shadow-lg text-sm">
+                        RECLAMAR 10 <i class="fas fa-coins text-yellow-400 ml-1"></i>
+                    </button>
+                    <p id="dailyCoinsTimer" class="text-[10px] mt-2 text-teal-400 text-center hidden italic">✓ Reclamado hoy</p>
+                </div>
+
+                <div class="reward-card" id="podcastCard">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-podcast text-purple-500 text-4xl mb-2"></i>
+                        <p class="text-xs text-gray-300 font-bold uppercase">Nuestros Podcast IA</p>
+                    </div>
+                    <button id="podcastBtn" onclick="claimPodcastReward()" 
+                            class="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition-all shadow-lg text-sm">
+                        GANAR 25 <i class="fas fa-star text-yellow-400 ml-1"></i>
+                    </button>
+                    <p id="podcastTimer" class="text-[10px] mt-2 text-purple-400 text-center hidden italic">✓ Completado hoy</p>
+                </div>
+
+                <div class="reward-card" id="youtubeCard">
+                    <div class="text-center mb-3">
+                        <i class="fab fa-youtube text-red-500 text-4xl mb-2"></i>
+                        <p class="text-xs text-gray-300 font-bold uppercase">Nuestra página de YouTube</p>
+                    </div>
+                    <button id="youtubeBtn" onclick="claimYoutubeReward()" 
+                            class="w-full bg-red-600 hover:bg-red-500 disabled:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition-all shadow-lg text-sm">
+                        GANAR 25 <i class="fas fa-star text-yellow-400 ml-1"></i>
+                    </button>
+                    <p id="youtubeTimer" class="text-[10px] mt-2 text-red-400 text-center hidden italic">✓ Completado hoy</p>
+                </div>
+
+                <div class="reward-card" id="shareCard">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-share text-green-500 text-4xl mb-2"></i>
+                        <p class="text-xs text-gray-300 font-bold uppercase">Comparte la Web</p>
+                    </div>
+                    <button id="shareBtn" onclick="showShareModal()" 
+                            class="w-full bg-green-600 hover:bg-green-500 disabled:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition-all shadow-lg text-sm">
+                        GANAR 50 <i class="fas fa-star text-yellow-400 ml-1"></i>
+                    </button>
+                    <p id="shareTimer" class="text-[10px] mt-2 text-green-400 text-center hidden italic">Disponible siempre</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-8">
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center uppercase tracking-tighter">
+                        <i class="fas fa-layer-group mr-3"></i> Mis Cartas Votadas Esta Semana
+                    </h3>
+                    <p class="text-sm text-gray-400 mb-3 italic">
+                        <i class="fas fa-info-circle mr-2"></i>Haz clic en una carta para comprarla por 500⭐ o 5💎
+                    </p>
+                    <p class="text-xs text-gray-500 mb-3 italic">
+                        Al final de la semana los puntos de tus cartas sumarán o se multiplicarán. Tercer puesto de esa carta otorgará los puntos de esa carta (Estrellas y diamantes), Segundo puesto de esa carta otorgará el doble de puntos de esa carta (x2) y primer puesto de esa carta sumará el triple de puntos (x3).
+                    </p>
+                    <p class="text-xs text-orange-400 mb-3 italic">
+                        <i class="fas fa-clock mr-1"></i>Al final de la semana, los lunes a las 00.00, después de hacer todo el recuento de puntos y que suban a los marcadores, se borrarán todas las cartas de la sección "Mis cartas votadas esta semana".
+                    </p>
+                    <div class="bg-slate-900/40 rounded-xl border border-slate-800 p-2">
+                        <div id="votedSongsContainerWrapper" class="scroll-container min-h-[300px]">
+                            <div class="w-full text-center py-10 text-gray-500 text-sm">Cargando tus cartas votadas...</div>
+                        </div>
+                    </div>
+                </section>
+
+
+
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-purple-300 flex items-center uppercase tracking-tighter">
+                        <i class="fas fa-shopping-cart mr-3"></i> Mis Cartas Compradas
+                    </h3>
+
+                    <div class="bg-slate-900/40 rounded-xl border border-slate-800 p-2">
+                        <div id="purchasedCardsContainerWrapper" class="scroll-container min-h-[300px]">
+                            <div class="w-full text-center py-10 text-gray-500 text-sm">Cargando tus cartas compradas...</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-300 flex items-center uppercase tracking-tighter">
+                        <i class="fas fa-trophy mr-3"></i> Rankings Globales
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="ranking-card">
+                            <h4 class="text-lg font-bold text-amber-400 mb-4 flex items-center">
+                                <i class="fas fa-calendar-week mr-2"></i> Top 3 Semanal
+                            </h4>
+                            <div id="weeklyRankingContainer" class="space-y-3">
+                                <p class="text-gray-400 text-sm text-center py-4">Cargando...</p>
+                            </div>
+                        </div>
+
+                        <div class="ranking-card">
+                            <h4 class="text-lg font-bold text-purple-400 mb-4 flex items-center">
+                                <i class="fas fa-crown mr-2"></i> Top 3 General
+                            </h4>
+                            <div id="generalRankingContainer" class="space-y-3">
+                                <p class="text-gray-400 text-sm text-center py-4">Cargando...</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <section>
+                        <h3 class="text-xl font-bold mb-4 text-teal-300 flex items-center uppercase">
+                            <i class="fas fa-history mr-2"></i> Mi Actividad Reciente
+                        </h3>
+                        <div id="activityLogContainer" class="space-y-2">
+                        </div>
+                    </section>
+
+                    <section>
+                        <h3 class="text-xl font-bold mb-4 text-amber-400 flex items-center uppercase">
+                            <i class="fas fa-coins mr-2"></i> Mercado de intercambio
+                        </h3>
+                        <div class="exchange-card text-center">
+                            <div class="flex justify-center items-center gap-3 text-xl font-bold mb-3 text-white">
+                                <i class="fas fa-exchange-alt text-teal-400"></i>
+                            </div>
+                            <p class="text-xs text-gray-300 mb-2">Intercambia estrellas por monedas</p>
+                            
+                            <div class="bg-slate-900 p-3 rounded-lg mb-3 border border-slate-700 inline-block">
+                                <span class="text-yellow-400 font-bold text-lg">50 <i class="fas fa-star"></i></span>
+                                <span class="mx-2 text-gray-500">=</span>
+                                <span class="text-amber-400 font-bold text-lg">20 <i class="fas fa-coins"></i></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <p class="text-[10px] text-yellow-500 uppercase font-bold">Estrellas disponibles:</p>
+                                <p id="exchangeAvailableStars" class="text-xl font-bold text-white">0 <i class="fas fa-star text-yellow-400"></i></p>
+                            </div>
+
+                            <button onclick="exchangeStars()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg uppercase tracking-wider transition transform hover:scale-105 text-sm mb-3">
+                                INTERCAMBIAR ESTRELLAS POR MONEDAS
+                            </button>
+                            <p class="text-[9px] text-gray-500 mt-1 italic">Necesitas al menos 50 estrellas</p>
+
+                            <!-- Nuevo apartado: Intercambiar diamantes o monedas por voto extra -->
+                            <div class="mt-4 pt-4 border-t border-slate-700">
+                                <p class="text-xs text-gray-300 mb-2">Intercambia diamantes o monedas por voto extra</p>
+
+                                <div class="grid grid-cols-2 gap-3 mb-3">
+                                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 text-center">
+                                        <span class="text-blue-400 font-bold text-lg">1 <i class="fas fa-gem"></i></span>
+                                        <span class="mx-2 text-gray-500">=</span>
+                                        <span class="text-teal-400 font-bold text-lg">5 <i class="fas fa-vote-yea"></i></span>
+                                    </div>
+                                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 text-center">
+                                        <span class="text-amber-400 font-bold text-lg">100 <i class="fas fa-coins"></i></span>
+                                        <span class="mx-2 text-gray-500">=</span>
+                                        <span class="text-teal-400 font-bold text-lg">5 <i class="fas fa-vote-yea"></i></span>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <p class="text-[10px] text-blue-500 uppercase font-bold">Recursos disponibles:</p>
+                                    <p id="exchangeAvailableDiamonds" class="text-xl font-bold text-white">0 <i class="fas fa-gem text-blue-400"></i> | 0 <i class="fas fa-coins text-amber-400"></i></p>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3">
+                                    <button onclick="exchangeDiamondsForVote()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg uppercase tracking-wider transition transform hover:scale-105 text-sm">
+                                        1 Diamante
+                                    </button>
+                                    <button onclick="exchangeCoinsForVote()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg uppercase tracking-wider transition transform hover:scale-105 text-sm">
+                                        100 Monedas
+                                    </button>
+                                </div>
+                                <p class="text-[9px] text-gray-500 mt-1 italic">Elige una opción para obtener 1 voto extra</p>
+                            </div>
+
+                            <!-- Botón para Intercambiar cartas -->
+                            <div class="mt-4 pt-4 border-t border-slate-700">
+                                <p class="text-xs text-gray-300 mb-2">Intercambia cartas con otros jugadores</p>
+                                <button onclick="exchangeCards()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg uppercase tracking-wider transition transform hover:scale-105 text-sm">
+                                    INTERCAMBIAR STORICARDS
+                                </button>
+                                <p class="text-[9px] text-gray-500 mt-1 italic">Próximamente disponible</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="lg:col-span-1 space-y-8">
+                <section>
+                    <h3 class="text-xl font-bold mb-4 text-teal-300 flex items-center">
+                        <i class="fas fa-award mr-2"></i> Mi Rango
+                    </h3>
+                    <div id="userRankContainer" class="bg-slate-800 p-4 rounded-xl border border-teal-700"></div>
+                </section>
+
+                <section>
+                    <h3 class="text-xl font-bold mb-4 text-amber-400 flex items-center">
+                        <i class="fas fa-star mr-2"></i> Objetivos Semanales
+                    </h3>
+                    <div id="missionsContainer" class="space-y-3 bg-slate-800/50 p-4 rounded-xl border border-amber-600/20"></div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+            authDomain: "laiamusical-4fba7.firebaseapp.com",
+            projectId: "laiamusical-4fba7",
+            storageBucket: "laiamusical-4fba7.firebasestorage.app",
+            messagingSenderId: "49783369602",
+            appId: "1:49783369602:web:91e287c094a8f2403d699b",
+            measurementId: "G-WC2JT6DRF4"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let userProfileData = {};
+        let selectedCardForPurchase = null;
+
+        // Base de datos de canciones (sincronizada con reproductor.html)
+        const songsList = [
+            // LITERATURA
+            { id: 5, title: "El lenguaje del mundo", cover: "./imagenportada/lit_lenguajedelmundo.png" },
+            { id: 21, title: "La herencia del olvido", cover: "./imagenportada/lit_herencia.png" },
+            { id: 7, title: "El ojo que todo lo ve", cover: "./imagenportada/lit_1984.png" },
+            { id: 8, title: "El ruido de la conciencia", cover: "./imagenportada/lit_ruidodelaconciencia.png" },
+            { id: 17, title: "La conversion", cover: "./imagenportada/lit_conversion.png" },
+            { id: 18, title: "La cicatriz invisible", cover: "./imagenportada/lit_cicatriz.png" },
+            { id: 22, title: "El señor de los locos y sabios", cover: "./imagenportada/lit_quijote.png" },
+            { id: 23, title: "El largo regreso a Ítaca", cover: "./imagenportada/lit_regresoitaca.png" },
+            { id: 24, title: "Amor y conveniencias", cover: "./imagenportada/lit_amoryconveniencias.png" },
+            
+            // ÓPERA Y CONCIERTOS
+            { id: 1, title: "La novena sinfonía del mundo", cover: "./imagenportada/opera_sinfoniamundo.png" },
+            { id: 2, title: "Un amor para morir", cover: "./imagenportada/opera_amorparamorir.png" },
+            { id: 100, title: "Vivir en un suspiro", cover: "./imagenportada/opera_vivirenunsuspiro.png" },
+            { id: 101, title: "El reloj de la naturaleza", cover: "./imagenportada/opera_relojdelanaturaleza.png" },
+            { id: 102, title: "Donde muere la noche", cover: "./imagenportada/opera_dondemuerelanoche.png" },
+            { id: 103, title: "Sinfonía de los jardines reales", cover: "./imagenportada/opera_jardinesreales.png" },
+            { id: 104, title: "El Ave sin jaula", cover: "./imagenportada/opera_avesinjaula.png" },
+            
+            // CINE
+            { id: 13, title: "Tiempospeligrosos", cover: "./imagenportada/cine_tiempospeligrosos.png" },
+            { id: 14, title: "La línea temporal perdida", cover: "./imagenportada/cine_lineatemporal.png" },
+            { id: 15, title: "Biblioteca de horizontes", cover: "./imagenportada/cine_bibliotecadehorizontes.png" },
+            { id: 16, title: "Alas de libertad", cover: "./imagenportada/cine_alasdelibertad.png" },
+            { id: 19, title: "El Elegido", cover: "./imagenportada/cine_elegido.png" },
+            { id: 20, title: "El imperio del trueno", cover: "./imagenportada/cine_imperiodeltrueno.png" },
+            { id: 26, title: "Voces entre chapas", cover: "./imagenportada/cine_vocesentrechapas.png" },
+            { id: 27, title: "Semilla de luz", cover: "./imagenportada/cine_semilladeluz.png" },
+            { id: 28, title: "El Destino", cover: "./imagenportada/cine_eldestino.png" },
+            { id: 29, title: "El grito en el espacio", cover: "./imagenportada/cine_grito.png" },
+            
+            
+            // DIBUJOS ANIMADOS
+            { id: 200, title: "Una jungladivertida", cover: "./imagenportada/animacion_jungladivertida.png" },
+            { id: 201, title: "Despierta mi constelación", cover: "./imagenportada/animacion_miconstelacion.png" },
+            { id: 202, title: "La aventura de tu vida", cover: "./imagenportada/animacion_aventuradetuvida.png" },
+            { id: 203, title: "Latidos de papel", cover: "./imagenportada/animacion_latidosdepapel.png" },
+            { id: 204, title: "¡Qué pasó!, mun mundo es un desmadre genial", cover: "./imagenportada/animacion_mimundo.png" },
+            { id: 205, title: "Compañeros de juguete", cover: "./imagenportada/animacion_compañeros.png" },
+            { id: 206, title: "La capa interior", cover: "./imagenportada/animacion_capainterior.png" },
+            
+            // TEATRO Y MUSICALES
+            { id: 300, title: "El eco de la libertad", cover: "./imagenportada/teatro_ecodelalibertad.png" },
+            { id: 301, title: "El ángel de la música", cover: "./imagenportada/teatro_angeldelamusica.png" },
+            { id: 302, title: "El ladrón de historias", cover: "./imagenportada/teatro_ladrondehistorias.png" },
+            { id: 303, title: "El brillo del pecado", cover: "./imagenportada/teatro_brillodelpecado.png" },
+            { id: 304, title: "Sin más día que hoy", cover: "./imagenportada/teatro_sinmasdiaquehoy.png" },
+            { id: 305, title: "Un verano prohibido", cover: "./imagenportada/teatro_veranoprohibido.png" },
+            { id: 306, title: "El vuelo de dos mundos", cover: "./imagenportada/teatro_vuelodedosmundos.png" },
+            
+            // SERIES
+            { id: 400, title: "Canto de Escarcha", cover: "./imagenportada/series_cantoescarcha.png" },
+            { id: 401, title: "El club del faro", cover: "./imagenportada/series_clubdelfaro.png" },
+            { id: 402, title: "El precio de la tierra", cover: "./imagenportada/series_preciodelatierra.png" },
+            { id: 403, title: "Albion Heritage", cover: "./imagenportada/series_albionheritage.png" },
+            { id: 404, title: "El juego ha comenzado", cover: "./imagenportada/series_juegocomenzado.png" },
+            { id: 405, title: "La fuente de los buenos tiempos", cover: "./imagenportada/series_fuentebuenostiempos.png" },
+            { id: 406, title: "La niña estelar", cover: "./imagenportada/series_niñaestelar.png" },
+            
+            // ANIME
+            { id: 500, title: "El juramento de las murallas", cover: "./imagenportada/anime_juramentomurallas.png" },
+            { id: 501, title: "Loto de sangre", cover: "./imagenportada/anime_lotodesangre.png" },
+            { id: 502, title: "Rumbo al amanecer", cover: "./imagenportada/anime_rumboalamanecer.png" },
+            { id: 503, title: "Blue Bird", cover: "./imagenportada/anime_bluebird.png" },
+            { id: 504, title: "The Day", cover: "./imagenportada/anime_theday.png" },
+            { id: 505, title: "La rueda de las sombras", cover: "./imagenportada/anime_ruedasombras.png" },
+            { id: 506, title: "The World", cover: "./imagenportada/anime_deathnote.png" },
+            { id: 25, title: "Sin rostro", cover: "./imagenportada/anime_sinrostro.png" },
+            
+            // DOCUMENTALES Y USUARIOS
+            { id: 600, title: "Planeta tierra", cover: "./imagenportada/doc_planetatierra.png" },
+            { id: 601, title: "El baile de hielo", cover: "./imagenportada/doc_bailedehielo.png" },
+            { id: 602, title: "Gravedad cero", cover: "./imagenportada/doc_gravedadcero.png" },
+            { id: 604, title: "Sombras en el cristal", cover: "./imagenportada/doc_sombrasenelcristal.png" },
+            { id: 605, title: "El algoritmo silencioso", cover: "./imagenportada/doc_algoritmosilencioso.png" },
+            { id: 606, title: "User Generated Content Theme", cover: "./imagenportada/user_usuarios.png" }
+        ];
+
+        // Sistema de rangos con 50 niveles - NUEVO SISTEMA
+        const rankingSystem = [
+            // NIVEL 1-8: RANGO NOVATO
+            { name: "Oyente Curioso", minStars: 0, maxStars: 50, icon: "fa-ear-listen", color: "text-teal-400", tier: "novato" },
+            { name: "Explorador de Ritmos", minStars: 51, maxStars: 100, icon: "fa-compass", color: "text-teal-400", tier: "novato" },
+            { name: "Tarareador Aficionado", minStars: 101, maxStars: 150, icon: "fa-music", color: "text-teal-400", tier: "novato" },
+            { name: "Seguidor de Melodías", minStars: 151, maxStars: 200, icon: "fa-wave-square", color: "text-teal-400", tier: "novato" },
+            { name: "Aspirante a Melómano", minStars: 201, maxStars: 250, icon: "fa-heart", color: "text-teal-400", tier: "novato" },
+            { name: "Entusiasta del Sonido", minStars: 251, maxStars: 300, icon: "fa-volume-up", color: "text-teal-400", tier: "novato" },
+            { name: "Rítmico en Ciernes", minStars: 301, maxStars: 350, icon: "fa-drum", color: "text-teal-400", tier: "novato" },
+            { name: "Buscador de Armonías", minStars: 351, maxStars: 400, icon: "fa-guitar", color: "text-teal-400", tier: "novato" },
+            
+            // NIVEL 9-16: RANGO APRENDIZ
+            { name: "Aprendiz de Solfeo", minStars: 401, maxStars: 500, icon: "fa-book-music", color: "text-green-400", tier: "aprendiz" },
+            { name: "Estudiante de Compás", minStars: 501, maxStars: 600, icon: "fa-metronome", color: "text-green-400", tier: "aprendiz" },
+            { name: "Practicante de Acordes", minStars: 601, maxStars: 700, icon: "fa-piano", color: "text-green-400", tier: "aprendiz" },
+            { name: "Intérprete Principiante", minStars: 701, maxStars: 800, icon: "fa-play", color: "text-green-400", tier: "aprendiz" },
+            { name: "Guardián de Notas", minStars: 801, maxStars: 900, icon: "fa-staff", color: "text-green-400", tier: "aprendiz" },
+            { name: "Guía de Melodías", minStars: 901, maxStars: 1000, icon: "fa-signs-language", color: "text-green-400", tier: "aprendiz" },
+            { name: "Discípulo del Ritmo", minStars: 1001, maxStars: 1100, icon: "fa-prescription-bottle", color: "text-green-400", tier: "aprendiz" },
+            { name: "Promesa Musical", minStars: 1101, maxStars: 1200, icon: "fa-star-half-stroke", color: "text-green-400", tier: "aprendiz" },
+            
+            // NIVEL 17-24: RANGO MELÓMANO
+            { name: "Melómano Coleccionista", minStars: 1201, maxStars: 1400, icon: "fa-compact-disc", color: "text-blue-400", tier: "melomano" },
+            { name: "Crítico de Oído Fino", minStars: 1401, maxStars: 1600, icon: "fa-ear-deaf", color: "text-blue-400", tier: "melomano" },
+            { name: "Conocedor de Clásicos", minStars: 1601, maxStars: 1800, icon: "fa-record-vinyl", color: "text-blue-400", tier: "melomano" },
+            { name: "Analista de Partituras", minStars: 1801, maxStars: 2000, icon: "fa-sheet-plastic", color: "text-blue-400", tier: "melomano" },
+            { name: "Curador de Playlists", minStars: 2001, maxStars: 2200, icon: "fa-list-music", color: "text-blue-400", tier: "melomano" },
+            { name: "Erudito del Ritmo", minStars: 2201, maxStars: 2400, icon: "fa-bullseye", color: "text-blue-400", tier: "melomano" },
+            { name: "Devoto de la Acústica", minStars: 2401, maxStars: 2600, icon: "fa-speaker-high", color: "text-blue-400", tier: "melomano" },
+            { name: "Guardián de Géneros", minStars: 2601, maxStars: 2800, icon: "fa-fingerprint", color: "text-blue-400", tier: "melomano" },
+            
+            // NIVEL 25-32: RANGO VIRTUOSO
+            { name: "Virtuoso en Escena", minStars: 2801, maxStars: 3100, icon: "fa-masks-theater", color: "text-purple-400", tier: "virtuoso" },
+            { name: "Ejecutante Brillante", minStars: 3101, maxStars: 3400, icon: "fa-wand-magic-sparkles", color: "text-purple-400", tier: "virtuoso" },
+            { name: "Maestro del Instrumento", minStars: 3401, maxStars: 3700, icon: "fa-banjo", color: "text-purple-400", tier: "virtuoso" },
+            { name: "Prodigio de la Mezcla", minStars: 3701, maxStars: 4000, icon: "fa-sliders", color: "text-purple-400", tier: "virtuoso" },
+            { name: "Talento Consagrado", minStars: 4001, maxStars: 4300, icon: "fa-award", color: "text-purple-400", tier: "virtuoso" },
+            { name: "Arquitecto de Sonidos", minStars: 4301, maxStars: 4600, icon: "fa-hammer", color: "text-purple-400", tier: "virtuoso" },
+            { name: "Solista de Élite", minStars: 4601, maxStars: 4900, icon: "fa-microphone-lines", color: "text-purple-400", tier: "virtuoso" },
+            { name: "Genio Armónico", minStars: 4901, maxStars: 5200, icon: "fa-brain", color: "text-purple-400", tier: "virtuoso" },
+            
+            // NIVEL 33-40: RANGO MAESTRO
+            { name: "Maestro de Orquesta", minStars: 5201, maxStars: 5600, icon: "fa-music-note", color: "text-amber-400", tier: "maestro" },
+            { name: "Compositor de Épicas", minStars: 5601, maxStars: 6000, icon: "fa-feather-pointed", color: "text-amber-400", tier: "maestro" },
+            { name: "Director de Sinfonías", minStars: 6001, maxStars: 6400, icon: "fa-bat", color: "text-amber-400", tier: "maestro" },
+            { name: "Mentor de Talentos", minStars: 6401, maxStars: 6800, icon: "fa-chalkboard-user", color: "text-amber-400", tier: "maestro" },
+            { name: "Visionario del Pentagrama", minStars: 6801, maxStars: 7200, icon: "fa-eye", color: "text-amber-400", tier: "maestro" },
+            { name: "Eminencia Musical", minStars: 7201, maxStars: 7600, icon: "fa-crown", color: "text-amber-400", tier: "maestro" },
+            { name: "Gran Orquestador", minStars: 7601, maxStars: 8000, icon: "fa-horn", color: "text-amber-400", tier: "maestro" },
+            { name: "Filántropo del Sonido", minStars: 8001, maxStars: 8500, icon: "fa-hand-holding-heart", color: "text-amber-400", tier: "maestro" },
+            
+            // NIVEL 41-50: RANGO LEYENDA MUSICAL
+            { name: "Leyenda del Escenario", minStars: 8501, maxStars: 9000, icon: "fa-star", color: "text-red-400", tier: "leyenda" },
+            { name: "Icono de la Historia", minStars: 9001, maxStars: 9500, icon: "fa-book-skull", color: "text-red-400", tier: "leyenda" },
+            { name: "Inmortal del Ritmo", minStars: 9501, maxStars: 10000, icon: "fa-infinity", color: "text-red-400", tier: "leyenda" },
+            { name: "Deidad de la Melodía", minStars: 10001, maxStars: 10500, icon: "fa-ghost", color: "text-red-400", tier: "leyenda" },
+            { name: "Mito del Espectáculo", minStars: 10501, maxStars: 11000, icon: "fa-mask-face", color: "text-red-400", tier: "leyenda" },
+            { name: "Patrimonio de la IA Musical", minStars: 11001, maxStars: 11500, icon: "fa-landmark", color: "text-red-400", tier: "leyenda" },
+            { name: "Oráculo Sonoro", minStars: 11501, maxStars: 12000, icon: "fa-wand-magic", color: "text-red-400", tier: "leyenda" },
+            { name: "Eterno del Arte", minStars: 12001, maxStars: 12500, icon: "fa-hourglass-half", color: "text-red-400", tier: "leyenda" },
+            { name: "Soberano de la Armonía", minStars: 12501, maxStars: 13000, icon: "fa-shield-halved", color: "text-red-400", tier: "leyenda" },
+            { name: "DIOS DE LA IA MUSICAL", minStars: 13001, maxStars: 999999, icon: "fa-sun", color: "text-yellow-400", tier: "legend" }
+        ];
+
+        function getUserRank(stars) {
+            for (let i = 0; i < rankingSystem.length; i++) {
+                if (stars >= rankingSystem[i].minStars && stars <= rankingSystem[i].maxStars) {
+                    return {
+                        current: rankingSystem[i],
+                        next: rankingSystem[i + 1] || null,
+                        level: i + 1
+                    };
+                }
+            }
+            return {
+                current: rankingSystem[rankingSystem.length - 1],
+                next: null,
+                level: rankingSystem.length
+            };
+        }
+
+        // Función para verificar si una carta ya fue comprada
+        function isCardPurchased(songId) {
+            if (!userProfileData.purchasedCards) return false;
+            return userProfileData.purchasedCards.some(card => card.id == songId);
+        }
+
+        // Función para abrir modal de compra
+        function openPurchaseModal(song, voteData) {
+            selectedCardForPurchase = { song, voteData };
+            
+            const currentStars = userProfileData.userStars || 0;
+            const currentDiamonds = userProfileData.userDiamonds || 0;
+            
+            const canAffordStars = currentStars >= 500;
+            const canAffordDiamonds = currentDiamonds >= 5;
+            
+            document.getElementById('cardInfoDisplay').innerHTML = `
+                <img src="${song.cover}" class="w-32 h-32 object-cover rounded-lg mx-auto mb-3 border-2 border-green-500">
+                <p class="text-xl font-bold text-white">${song.title}</p>
+            `;
+            
+            document.getElementById('userResourcesDisplay').innerHTML = `
+                <div class="flex justify-center gap-6 text-sm">
+                    <div class="text-center">
+                        <p class="text-gray-400 mb-1">Tus estrellas:</p>
+                        <p class="font-bold ${canAffordStars ? 'text-green-400' : 'text-red-400'}">
+                            ${currentStars} ⭐
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-gray-400 mb-1">Tus diamantes:</p>
+                        <p class="font-bold ${canAffordDiamonds ? 'text-green-400' : 'text-red-400'}">
+                            ${currentDiamonds} 💎
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            const confirmBtn = document.getElementById('confirmPurchaseBtn');
+            if (!canAffordStars && !canAffordDiamonds) {
+                confirmBtn.disabled = true;
+                confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                confirmBtn.innerHTML = 'Recursos insuficientes';
+            } else {
+                confirmBtn.disabled = false;
+                confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                confirmBtn.innerHTML = 'Comprar';
+            }
+            
+            document.getElementById('purchaseModal').style.display = 'flex';
+        }
+
+        function closePurchaseModal() {
+            document.getElementById('purchaseModal').style.display = 'none';
+            selectedCardForPurchase = null;
+        }
+
+        // Función para confirmar la compra de la carta
+        async function confirmPurchaseCard() {
+            if (!selectedCardForPurchase) return;
+            
+            const { song, voteData } = selectedCardForPurchase;
+            const currentStars = userProfileData.userStars || 0;
+            const currentDiamonds = userProfileData.userDiamonds || 0;
+            
+            let paymentMethod = '';
+            let updateData = {};
+            
+            // Determinar método de pago
+            if (currentStars >= 500) {
+                paymentMethod = 'stars';
+                updateData.userStars = firebase.firestore.FieldValue.increment(-500);
+            } else if (currentDiamonds >= 5) {
+                paymentMethod = 'diamonds';
+                updateData.userDiamonds = firebase.firestore.FieldValue.increment(-5);
+            } else {
+                alert('No tienes suficientes recursos para comprar esta carta.');
+                return;
+            }
+
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+            
+            try {
+                // Preparar los datos de la carta comprada
+                const purchasedCard = {
+                    id: song.id,
+                    title: song.title,
+                    cover: song.cover,
+                    purchasedAt: new Date().toISOString(),
+                    paymentMethod: paymentMethod,
+                    voteData: voteData
+                };
+                
+                updateData.purchasedCards = firebase.firestore.FieldValue.arrayUnion(purchasedCard);
+                updateData.activityLog = firebase.firestore.FieldValue.arrayUnion({
+                    type: 'card_purchase',
+                    description: `Compraste la carta "${song.title}" por ${paymentMethod === 'stars' ? '500⭐' : '5💎'}`,
+                    timestamp: new Date().toISOString()
+                });
+                
+                await userRef.update(updateData);
+                
+                closePurchaseModal();
+                alert(`¡Compra exitosa! Has adquirido la carta "${song.title}".`);
+                
+            } catch (error) {
+                console.error("Error en la compra:", error);
+                alert("Error al procesar la compra. Inténtalo de nuevo.");
+            }
+        }
+
+        // Renderizar cartas votadas con información detallada y opción de compra
+        async function renderVotedSongs(voteLog) {
+            const container = document.getElementById('votedSongsContainerWrapper');
+
+            if (!voteLog || Object.keys(voteLog).length === 0) {
+                container.innerHTML = '<div class="w-full text-center py-10 text-gray-500 text-sm">Aún no has votado por ninguna canción. ¡Ve al reproductor y vota!</div>';
+                return;
+            }
+
+            // Obtener datos del ranking global
+            const rankingRef = db.collection('ranking').doc('stars');
+            const rankingDoc = await rankingRef.get();
+            const globalRanking = rankingDoc.exists ? rankingDoc.data().rankingStars || {} : {};
+
+            container.innerHTML = '';
+
+            for (const [songId, voteData] of Object.entries(voteLog)) {
+                const song = songsList.find(s => s.id == songId);
+                if (!song) continue;
+
+                const isPurchased = isCardPurchased(songId);
+
+                // Obtener estrellas que dio el usuario al votar
+                let userStarsGiven = 0;
+                if (typeof voteData === 'object' && voteData.starsGiven) {
+                    userStarsGiven = voteData.starsGiven;
+                } else if (typeof voteData === 'number') {
+                    userStarsGiven = voteData;
+                } else if (voteData === true) {
+                    userStarsGiven = 0;
+                }
+
+                // Obtener estrellas del quiz
+                let quizStars = 0;
+                if (userProfileData.quizLog && userProfileData.quizLog[songId]) {
+                    const quizData = userProfileData.quizLog[songId];
+                    if (typeof quizData === 'object' && quizData.stars) {
+                        quizStars = quizData.stars;
+                    } else if (quizData === true) {
+                        quizStars = 0;
+                    }
+                }
+
+                // Obtener diamantes del quiz
+                let quizDiamonds = 0;
+                if (userProfileData.quizLog && userProfileData.quizLog[songId]) {
+                    const quizData = userProfileData.quizLog[songId];
+                    if (typeof quizData === 'object' && quizData.diamonds) {
+                        quizDiamonds = quizData.diamonds;
+                    }
+                }
+
+                // Obtener estrellas globales de la canción
+                const globalStars = globalRanking[songId] || 0;
+
+                const card = document.createElement('div');
+                card.className = `song-card overflow-hidden shadow-2xl ${!isPurchased ? 'purchaseable' : 'purchased'}`;
+
+                // Solo hacer la carta clicable si no ha sido comprada
+                if (!isPurchased) {
+                    card.style.cursor = 'pointer';
+                    card.onclick = () => openPurchaseModal(song, voteData);
+                }
+
+                card.innerHTML = `
+                    <div class="relative">
+                        <img src="${song.cover}" class="w-full h-36 object-cover">
+                        ${isPurchased ? '<div class="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded-full text-xs font-bold"><i class="fas fa-check mr-1"></i>COMPRADA</div>' : ''}
+                    </div>
+                    <div class="p-4 bg-slate-800">
+                        <h4 class="text-sm font-black truncate text-white mb-3 uppercase tracking-tight">${song.title}</h4>
+
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center text-[11px] bg-slate-900/80 p-2 rounded">
+                                <span class="text-gray-400 flex items-center">
+                                    <i class="fas fa-vote-yea mr-2 text-teal-400"></i> Tu Voto
+                                </span>
+                                <span class="text-yellow-400 font-bold text-sm">${userStarsGiven}⭐</span>
+                            </div>
+
+                            <div class="flex justify-between items-center text-[11px] bg-slate-900/80 p-2 rounded">
+                                <span class="text-gray-400 flex items-center">
+                                    <i class="fas fa-star mr-2 text-purple-400"></i> Estrellas Quiz
+                                </span>
+                                <span class="text-teal-400 font-bold text-sm">${quizStars}⭐</span>
+                            </div>
+
+                            <div class="flex justify-between items-center text-[11px] bg-slate-900/80 p-2 rounded">
+                                <span class="text-gray-400 flex items-center">
+                                    <i class="fas fa-gem mr-2 text-blue-400"></i> Diamantes Quiz
+                                </span>
+                                <span class="text-blue-400 font-bold text-sm">${quizDiamonds}💎</span>
+                            </div>
+
+                            <div class="flex justify-between items-center text-[11px] bg-gradient-to-r from-amber-900/50 to-slate-900/80 p-2 rounded border border-amber-700/30">
+                                <span class="text-amber-300 flex items-center font-semibold">
+                                    <i class="fas fa-globe mr-2"></i> Votos Globales
+                                </span>
+                                <span class="text-amber-400 font-bold text-base">${globalStars}⭐</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+
+        // Renderizar cartas compradas
+        function renderPurchasedCards(purchasedCards) {
+            const container = document.getElementById('purchasedCardsContainerWrapper');
+
+            if (!purchasedCards || purchasedCards.length === 0) {
+                container.innerHTML = '<div class="w-full text-center py-10 text-gray-500 text-sm">Aún no has comprado ninguna carta. ¡Haz clic en tus cartas votadas para comprarlas!</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+
+            purchasedCards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'song-card overflow-hidden shadow-2xl';
+                cardElement.innerHTML = `
+                    <div class="relative">
+                        <img src="${card.cover}" class="w-full h-24 object-cover">
+                        <div class="absolute top-1 right-1 bg-purple-600 text-white px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+                            <i class="fas fa-crown mr-0.5"></i>TU CARTA
+                        </div>
+                    </div>
+                    <div class="p-2 bg-slate-800">
+                        <h4 class="text-[11px] font-black truncate text-white mb-2 uppercase tracking-tight">${card.title}</h4>
+
+                        <div class="space-y-1">
+                            <div class="flex justify-between items-center text-[9px] bg-slate-900/80 p-1 rounded">
+                                <span class="text-gray-400 flex items-center">
+                                    <i class="fas fa-calendar mr-1 text-teal-400"></i> Comprada
+                                </span>
+                                <span class="text-teal-400 font-bold text-[10px]">${new Date(card.purchasedAt).toLocaleDateString()}</span>
+                            </div>
+
+                            <div class="flex justify-between items-center text-[9px] bg-slate-900/80 p-1 rounded">
+                                <span class="text-gray-400 flex items-center">
+                                    <i class="fas fa-wallet mr-1 text-purple-400"></i> Pagaste con
+                                </span>
+                                <span class="text-purple-400 font-bold text-[10px]">
+                                    ${card.paymentMethod === 'stars' ? '500⭐' : '5💎'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(cardElement);
+            });
+        }
+
+        // --- FUNCIONES COMPLETAS Y CORREGIDAS ---
+
+        async function claimDailyCoins() {
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+            const today = new Date().toISOString().split('T')[0];
+
+            if (userProfileData.lastDailyCoins === today) {
+                alert('Ya has reclamado tus monedas hoy. Vuelve mañana.');
+                return;
+            }
+
+            try {
+                await userRef.update({
+                    userCoins: firebase.firestore.FieldValue.increment(10),
+                    lastDailyCoins: today,
+                    activityLog: firebase.firestore.FieldValue.arrayUnion({
+                        type: 'reward',
+                        description: 'Reclamaste 10 monedas diarias',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                alert('¡Has reclamado 10 monedas! 🎁');
+                
+            } catch (error) {
+                console.error("Error al reclamar premio:", error);
+                alert('Error al reclamar el premio. Inténtalo de nuevo.');
+            }
+        }
+
+        async function claimPodcastReward() {
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+            const today = new Date().toISOString().split('T')[0];
+
+            if (userProfileData.lastPodcastReward === today) {
+                alert('Ya has reclamado este premio hoy.');
+                return;
+            }
+
+            try {
+                await userRef.update({
+                    userStars: firebase.firestore.FieldValue.increment(25),
+                    lastPodcastReward: today,
+                    activityLog: firebase.firestore.FieldValue.arrayUnion({
+                        type: 'reward',
+                        description: 'Escuchaste el podcast - +25⭐',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                alert('¡Has ganado 25 estrellas por entrar a conocer nuestros Podcast IA! 🎧 Redirigiendo...');
+                window.location.href = 'podcast.html';
+
+            } catch (error) {
+                console.error("Error al reclamar premio:", error);
+                alert('Error al reclamar el premio.');
+            }
+        }
+
+        async function claimYoutubeReward() {
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+            const today = new Date().toISOString().split('T')[0];
+            
+            if (userProfileData.lastYoutubeReward === today) {
+                alert('Ya has reclamado este premio hoy.');
+                return;
+            }
+
+    window.open('https://youtube.com/@laliteraturamusical?si=2REHNCZB0USFqmgt', '_blank');
+
+            try {
+                await userRef.update({
+                    userStars: firebase.firestore.FieldValue.increment(25),
+                    lastYoutubeReward: today,
+                    activityLog: firebase.firestore.FieldValue.arrayUnion({
+                        type: 'reward',
+                        description: 'Visitaste nuestra página de YouTube - +25⭐',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                alert('¡Has ganado 25 estrellas por visitar nuestra página de YouTube! 📺');
+                
+            } catch (error) {
+                console.error("Error al reclamar premio:", error);
+                alert('Error al reclamar el premio.');
+            }
+        }
+
+        async function showShareModal() {
+            const inviteId = generateInviteId();
+            await saveInviteToFirebase(inviteId);
+            document.getElementById('shareModal').style.display = 'flex';
+        }
+
+        function generateInviteId() {
+            return `${auth.currentUser.uid}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        }
+
+        async function saveInviteToFirebase(inviteId) {
+            try {
+                await db.collection('invitations').doc(inviteId).set({
+                    inviterId: auth.currentUser.uid,
+                    inviterEmail: auth.currentUser.email,
+                    createdAt: new Date().toISOString(),
+                    status: 'pending',
+                    rewardClaimed: false
+                });
+                
+                const userRef = db.collection('users').doc(auth.currentUser.uid);
+                await userRef.update({
+                    pendingInvitations: firebase.firestore.FieldValue.arrayUnion(inviteId)
+                });
+                
+                window.currentInviteId = inviteId;
+                
+            } catch (error) {
+                console.error("Error guardando invitación:", error);
+            }
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareModal').style.display = 'none';
+        }
+
+        function shareOnFacebook() {
+            const inviteUrl = getInviteUrl();
+            const text = '¡Descubre La IA Musical! Una experiencia única donde la inteligencia artificial crea música inspirada en grandes obras de la literatura y el cine.';
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(inviteUrl)}&quote=${encodeURIComponent(text)}`, '_blank');
+            showLinkCopiedNotice();
+        }
+
+        function shareOnX() {
+            const inviteUrl = getInviteUrl();
+            const text = '¡Descubre La IA Musical! Una experiencia única donde la inteligencia artificial crea música inspirada en grandes obras de la literatura y el cine.';
+            window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(text)}`, '_blank');
+            showLinkCopiedNotice();
+        }
+
+        function shareOnWhatsApp() {
+            const inviteUrl = getInviteUrl();
+            const text = '¡Descubre La IA Musical! Una experiencia única donde la inteligencia artificial crea música inspirada en grandes obras de la literatura y el cine. ' + inviteUrl;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+            showLinkCopiedNotice();
+        }
+
+        function shareOnTelegram() {
+            const inviteUrl = getInviteUrl();
+            const text = '¡Descubre La IA Musical! Una experiencia única donde la inteligencia artificial crea música inspirada en grandes obras de la literatura y el cine.';
+            window.open(`https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(text)}`, '_blank');
+            showLinkCopiedNotice();
+        }
+
+        function shareOnTikTok() {
+            const inviteUrl = getInviteUrl();
+            window.open(`https://www.tiktok.com/@yourusername?lang=es`, '_blank');
+            showLinkCopiedNotice();
+        }
+
+        function shareOnReddit() {
+            const inviteUrl = getInviteUrl();
+            const text = '¡Descubre La IA Musical! Una experiencia única donde la inteligencia artificial crea música inspirada en grandes obras de la literatura y el cine.';
+            window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(inviteUrl)}&title=${encodeURIComponent(text)}`, '_blank');
+            showLinkCopiedNotice();
+        }
+
+        function shareOnEmail() {
+            const inviteUrl = getInviteUrl();
+            const subject = '¡Descubre La IA Musical!';
+            const body = '¡Descubre La IA Musical! Una experiencia única donde la inteligencia artificial crea música inspirada en grandes obras de la literatura y el cine. ' + inviteUrl;
+            window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+            showLinkCopiedNotice();
+        }
+
+        function copyLink() {
+            const inviteUrl = getInviteUrl();
+            navigator.clipboard.writeText(inviteUrl).then(() => {
+                showLinkCopiedNotice();
+            }).catch(err => {
+                console.error('Error al copiar:', err);
+                alert('Error al copiar el enlace');
+            });
+        }
+
+        function getInviteUrl() {
+            return 'https://youtube.com/@laliteraturamusical?si=2REHNCZB0USFqmgt';
+        }
+
+        function showLinkCopiedNotice() {
+            document.getElementById('linkCopiedNotice').classList.remove('hidden');
+        }
+
+        async function exchangeStars() {
+            const currentStars = userProfileData.userStars || 0;
+            const cost = 50;
+            const rewardCoins = 20;
+
+            if (currentStars < cost) {
+                alert(`Necesitas al menos ${cost} estrellas para realizar el intercambio.`);
+                return;
+            }
+
+            if (!confirm(`¿Deseas intercambiar ${cost} estrellas por ${rewardCoins} monedas?`)) {
+                return;
+            }
+
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+
+            try {
+                await userRef.update({
+                    userStars: firebase.firestore.FieldValue.increment(-cost),
+                    userCoins: firebase.firestore.FieldValue.increment(rewardCoins),
+                    activityLog: firebase.firestore.FieldValue.arrayUnion({
+                        type: 'exchange',
+                        description: `Canjeaste ${cost}⭐ por ${rewardCoins} monedas`,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                alert('¡Intercambio exitoso! Has recibido 20 monedas.');
+
+            } catch (error) {
+                console.error("Error en el intercambio:", error);
+                alert("Error al procesar el intercambio.");
+            }
+        }
+
+        async function exchangeDiamondsForVote() {
+            const currentDiamonds = userProfileData.userDiamonds || 0;
+            const cost = 1;
+            const rewardVotes = 1;
+
+            if (currentDiamonds < cost) {
+                alert(`Necesitas al menos ${cost} diamante para realizar el intercambio.`);
+                return;
+            }
+
+            if (!confirm(`¿Deseas intercambiar 1 diamante por 5 votos extra?`)) {
+                return;
+            }
+
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+
+            try {
+                await userRef.update({
+                    userDiamonds: firebase.firestore.FieldValue.increment(-cost),
+                    votesRemaining: firebase.firestore.FieldValue.increment(5),
+                    activityLog: firebase.firestore.FieldValue.arrayUnion({
+                        type: 'exchange',
+                        description: `Canjeaste 1💎 por 5 votos extra`,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                alert('¡Intercambio exitoso! Has recibido 1 voto extra.');
+
+            } catch (error) {
+                console.error("Error en el intercambio:", error);
+                alert("Error al procesar el intercambio.");
+            }
+        }
+
+        async function exchangeCoinsForVote() {
+            const currentCoins = userProfileData.userCoins || 0;
+            const cost = 100;
+            const rewardVotes = 1;
+
+            if (currentCoins < cost) {
+                alert(`Necesitas al menos ${cost} monedas para realizar el intercambio.`);
+                return;
+            }
+
+            if (!confirm(`¿Deseas intercambiar 100 monedas por 5 votos extra?`)) {
+                return;
+            }
+
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+
+            try {
+                await userRef.update({
+                    userCoins: firebase.firestore.FieldValue.increment(-cost),
+                    votesRemaining: firebase.firestore.FieldValue.increment(5),
+                    activityLog: firebase.firestore.FieldValue.arrayUnion({
+                        type: 'exchange',
+                        description: `Canjeaste 100🪙 por 5 votos extra`,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                alert('¡Intercambio exitoso! Has recibido 1 voto extra.');
+
+            } catch (error) {
+                console.error("Error en el intercambio:", error);
+                alert("Error al procesar el intercambio.");
+            }
+        }
+
+        function exchangeCards() {
+            alert('⚠️ Función de intercambio de cartas próximamente disponible.\n\nPodrás intercambiar tus cartas con otros jugadores.');
+        }
+
+        function updateRewardButtons(data) {
+            const today = new Date().toISOString().split('T')[0];
+
+            const coinsBtn = document.getElementById('dailyCoinsBtn');
+            const coinsTimer = document.getElementById('dailyCoinsTimer');
+            const coinsCard = document.getElementById('dailyCoinsCard');
+            
+            if (data.lastDailyCoins === today) {
+                coinsBtn.disabled = true;
+                coinsBtn.innerHTML = 'RECLAMADO';
+                coinsTimer.classList.remove('hidden');
+                coinsCard.classList.add('claimed');
+            } else {
+                coinsBtn.disabled = false;
+                coinsBtn.innerHTML = 'RECLAMAR 10 <i class="fas fa-coins text-yellow-400 ml-1"></i>';
+                coinsTimer.classList.add('hidden');
+                coinsCard.classList.remove('claimed');
+            }
+
+            const podcastBtn = document.getElementById('podcastBtn');
+            const podcastTimer = document.getElementById('podcastTimer');
+            const podcastCard = document.getElementById('podcastCard');
+            
+            if (data.lastPodcastReward === today) {
+                podcastBtn.disabled = true;
+                podcastBtn.innerHTML = 'COMPLETADO';
+                podcastTimer.classList.remove('hidden');
+                podcastCard.classList.add('claimed');
+            } else {
+                podcastBtn.disabled = false;
+                podcastBtn.innerHTML = 'GANAR 25 <i class="fas fa-star text-yellow-400 ml-1"></i>';
+                podcastTimer.classList.add('hidden');
+                podcastCard.classList.remove('claimed');
+            }
+
+            const youtubeBtn = document.getElementById('youtubeBtn');
+            const youtubeTimer = document.getElementById('youtubeTimer');
+            const youtubeCard = document.getElementById('youtubeCard');
+            
+            if (data.lastYoutubeReward === today) {
+                youtubeBtn.disabled = true;
+                youtubeBtn.innerHTML = 'COMPLETADO';
+                youtubeTimer.classList.remove('hidden');
+                youtubeCard.classList.add('claimed');
+            } else {
+                youtubeBtn.disabled = false;
+                youtubeBtn.innerHTML = 'GANAR 25 <i class="fas fa-star text-yellow-400 ml-1"></i>';
+                youtubeTimer.classList.add('hidden');
+                youtubeCard.classList.remove('claimed');
+            }
+
+            const shareBtn = document.getElementById('shareBtn');
+            const shareTimer = document.getElementById('shareTimer');
+            const shareCard = document.getElementById('shareCard');
+            
+            shareBtn.disabled = false;
+            shareBtn.onclick = showShareModal;
+            shareBtn.innerHTML = 'GANAR 50 <i class="fas fa-star text-yellow-400 ml-1"></i>';
+            shareTimer.classList.remove('hidden');
+            shareCard.classList.remove('claimed');
+        }
+
+        async function renderRankings() {
+            try {
+                const usersSnapshot = await db.collection('users').get();
+                const users = [];
+
+                usersSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    users.push({
+                        id: doc.id,
+                        username: data.username || 'Anónimo',
+                        userStars: data.userStars || 0,
+                        weeklyStars: calculateWeeklyStars(data.activityLog || [])
+                    });
+                });
+
+                const weeklyTop = [...users].sort((a, b) => b.weeklyStars - a.weeklyStars).slice(0, 3);
+                renderRankingList('weeklyRankingContainer', weeklyTop, 'weekly');
+
+                const generalTop = [...users].sort((a, b) => b.userStars - a.userStars).slice(0, 3);
+                renderRankingList('generalRankingContainer', generalTop, 'general');
+
+            } catch (error) {
+                console.error("Error cargando rankings:", error);
+            }
+        }
+
+        function calculateWeeklyStars(activityLog) {
+            const oneWeekAgo = new Date().getTime() - (7 * 24 * 60 * 60 * 1000);
+            let weeklyStars = 0;
+
+            activityLog.forEach(entry => {
+                if (entry.timestamp && new Date(entry.timestamp).getTime() > oneWeekAgo) {
+                    if (entry.starsGained) weeklyStars += entry.starsGained;
+                    if (entry.type === 'reward' && entry.description.includes('+5⭐')) weeklyStars += 5;
+                    if (entry.type === 'exchange') weeklyStars += 50;
+                }
+            });
+
+            return weeklyStars;
+        }
+
+        function renderRankingList(containerId, topUsers, type) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            if (topUsers.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-xs text-center py-4">Sin datos disponibles</p>';
+                return;
+            }
+
+            const trophyColors = ['trophy-gold', 'trophy-silver', 'trophy-bronze'];
+            const trophyIcons = ['fa-trophy', 'fa-medal', 'fa-award'];
+
+            topUsers.forEach((user, index) => {
+                const starsToShow = type === 'weekly' ? user.weeklyStars : user.userStars;
+                const div = document.createElement('div');
+                div.className = `flex items-center justify-between p-3 bg-slate-800/60 rounded-lg border border-slate-700/50 hover:bg-slate-700/60 transition`;
+                
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <i class="fas ${trophyIcons[index]} ${trophyColors[index]} text-xl"></i>
+                        <div>
+                            <p class="font-bold text-white text-sm">${user.username}</p>
+                            <p class="text-gray-400 text-xs">#${index + 1}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-yellow-400 font-bold text-lg">${starsToShow}</p>
+                        <p class="text-gray-400 text-xs">estrellas</p>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderActivity(log) {
+            const container = document.getElementById('activityLogContainer');
+            container.innerHTML = '';
+            
+            if (!log || log.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-xs py-4">Sin actividad reciente registrada.</p>';
+                return;
+            }
+
+            log.slice(-5).reverse().forEach((entry, index) => {
+                const div = document.createElement('div');
+                div.className = "activity-item flex items-center p-3 bg-slate-800/60 rounded-lg border border-slate-700/50 text-[11px] hover:bg-slate-700/60 transition";
+                div.style.animationDelay = `${index * 0.05}s`;
+                
+                let icon = 'fa-star text-yellow-500';
+                let badge = 'VOTO';
+                let description = entry.description || 'Actividad registrada';
+                
+                if (entry.type === 'reward') {
+                    icon = 'fa-gift text-amber-500';
+                    badge = 'PREMIO';
+                } else if (entry.type === 'quiz') {
+                    icon = 'fa-question-circle text-teal-500';
+                    badge = 'QUIZ';
+                    description = `Quiz completado: ${entry.songTitle || 'Canción'} (${entry.score || 0}/5)`;
+                } else if (entry.type === 'vote') {
+                    description = `Votaste por "${entry.songTitle || 'Canción'}" con ${entry.starsGiven || 0}⭐`;
+                } else if (entry.type === 'exchange') {
+                    icon = 'fa-exchange-alt text-green-400';
+                    badge = 'CANJE';
+                } else if (entry.type === 'card_purchase') {
+                    icon = 'fa-shopping-cart text-purple-500';
+                    badge = 'COMPRA';
+                }
+                
+                const timeAgo = entry.timestamp ? getTimeAgo(entry.timestamp) : 'Hace un momento';
+                
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 flex-1">
+                        <i class="fas ${icon} text-lg"></i>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="bg-teal-600 text-white px-2 py-0.5 rounded text-[9px] font-bold">${badge}</span>
+                                <span class="text-gray-500 text-[9px]">${timeAgo}</span>
+                            </div>
+                            <span class="text-gray-300">${description}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function getTimeAgo(timestamp) {
+            const now = new Date();
+            const past = new Date(timestamp);
+            const diffMs = now - past;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'Ahora';
+            if (diffMins < 60) return `Hace ${diffMins}m`;
+            if (diffHours < 24) return `Hace ${diffHours}h`;
+            return `Hace ${diffDays}d`;
+        }
+
+        async function renderMissions(data) {
+            const container = document.getElementById('missionsContainer');
+
+            const currentMonday = getCurrentWeekMonday();
+            const weeklyActivity = (data.activityLog || []).filter(a => new Date(a.timestamp) >= currentMonday);
+            
+            const weeklyVotes = weeklyActivity.filter(a => a.type === 'vote').length;
+            const rewardsCollected = weeklyActivity.filter(a => a.type === 'reward').length;
+            const quizzesCompleted = Object.keys(data.quizLog || {}).filter(songId => {
+                // This is slightly inaccurate as quizLog doesn't have timestamps, but it's the best we can do
+                // without changing the data structure.
+                return true; 
+            }).length;
+            const perfectQuizzes = weeklyActivity.filter(a => a.type === 'quiz' && a.score === 5).length;
+            const songsVoted = Object.keys(data.voteLog || {}).length;
+            const cardsPurchased = (data.purchasedCards || []).length;
+            const exchangesMade = weeklyActivity.filter(a => a.type === 'exchange').length;
+
+            const missions = [
+                { id: "votes_weekly", t: "Votos Semanales", c: weeklyVotes, g: 5, r: "50⭐", icon: "fa-vote-yea", rewardType: "stars", rewardAmount: 50 },
+                { id: "rewards_daily", t: "Premios Diarios", c: rewardsCollected, g: 7, r: "25⭐", icon: "fa-gift", rewardType: "stars", rewardAmount: 25 },
+                { id: "quizzes_completed", t: "Quizzes Completados", c: quizzesCompleted, g: 5, r: "100⭐", icon: "fa-question-circle", rewardType: "stars", rewardAmount: 100 },
+                { id: "quizzes_perfect", t: "Tres quizzes perfectos", c: perfectQuizzes, g: 3, r: "3💎", icon: "fa-gem", rewardType: "diamonds", rewardAmount: 3 },
+                { id: "songs_voted", t: "Storycards Votadas", c: songsVoted, g: 10, r: "200⭐", icon: "fa-music", rewardType: "stars", rewardAmount: 200 },
+                { id: "cards_purchased", t: "Cartas Compradas", c: cardsPurchased, g: 5, r: "💎", icon: "fa-shopping-cart", rewardType: "diamonds", rewardAmount: 1 },
+                { id: "exchange_made", t: "Intercambios", c: exchangesMade, g: 5, r: "100⭐", icon: "fa-exchange-alt", rewardType: "stars", rewardAmount: 100 },
+                { id: "perfect_quiz_streak", t: "Quiz Impecable", c: perfectQuizzes, g: 5, r: "💎", icon: "fa-bolt", rewardType: "diamonds", rewardAmount: 1 },
+                { id: "song_voter", t: "Explorador Musical", c: songsVoted, g: 20, r: "200⭐", icon: "fa-search", rewardType: "stars", rewardAmount: 200 },
+                { id: "card_owner", t: "Dueño de Cartas", c: cardsPurchased, g: 3, r: "💎", icon: "fa-id-card", rewardType: "diamonds", rewardAmount: 1 },
+                { id: "vote_enthusiast", t: "Entusiasta del Voto", c: weeklyVotes, g: 50, r: "500⭐", icon: "fa-vote-yea", rewardType: "stars", rewardAmount: 500 },
+                { id: "active_player", t: "Jugador Activo", c: weeklyActivity.length, g: 100, r: "💎", icon: "fa-gamepad", rewardType: "diamonds", rewardAmount: 1 }
+            ];
+
+            // Check if we need to reset missions weekly
+            const lastReset = data.lastMissionReset ? new Date(data.lastMissionReset) : null;
+
+            if (!lastReset || lastReset < currentMonday) {
+                const userRef = db.collection('users').doc(auth.currentUser.uid);
+                const completedMissions = data.completedMissions || [];
+                const lostMissions = data.lostMissions || [];
+                
+                // Identify missions that were visible but not completed last week
+                const toLose = missions
+                    .filter(m => !completedMissions.includes(m.id) && !lostMissions.includes(m.id))
+                    .slice(0, 5)
+                    .map(m => m.id);
+
+                await userRef.update({
+                    completedMissions: [],
+                    lostMissions: firebase.firestore.FieldValue.arrayUnion(...toLose),
+                    lastMissionReset: currentMonday.toISOString()
+                });
+                
+                data.completedMissions = [];
+                data.lostMissions = [...(data.lostMissions || []), ...toLose];
+            }
+
+            const currentCompleted = data.completedMissions || [];
+            const currentLost = data.lostMissions || [];
+
+            const incompleteMissions = missions.filter(mission => 
+                !currentCompleted.includes(mission.id) && 
+                !currentLost.includes(mission.id)
+            );
+            
+            // Always try to show 5 missions
+            const visibleMissions = incompleteMissions.slice(0, 5);
+
+            container.innerHTML = '';
+            visibleMissions.forEach(mission => {
+                const progress = Math.min(mission.c / mission.g, 1);
+                const isCompleted = progress >= 1;
+
+                if (isCompleted && !currentCompleted.includes(mission.id)) {
+                    if (!window.completingMissions) window.completingMissions = new Set();
+                    if (!window.completingMissions.has(mission.id)) {
+                        window.completingMissions.add(mission.id);
+                        completeMission(mission).then(() => {
+                            window.completingMissions.delete(mission.id);
+                        });
+                    }
+                    return;
+                }
+
+                const div = document.createElement('div');
+                div.className = 'mission-item p-3 rounded-lg';
+                div.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <i class="fas ${mission.icon} text-teal-400"></i>
+                            <span class="text-white font-semibold text-sm">${mission.t}</span>
+                        </div>
+                        <span class="text-teal-400 font-bold text-sm">${mission.r}</span>
+                    </div>
+                    <div class="w-full bg-slate-700 rounded-full h-2 mb-2">
+                        <div class="bg-teal-500 h-2 rounded-full" style="width: ${progress * 100}%"></div>
+                    </div>
+                    <div class="text-right text-xs text-gray-400">${mission.c}/${mission.g}</div>
+                `;
+                container.appendChild(div);
+            });
+
+            // If no missions are shown, display a message
+            if (container.children.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-xs text-center py-4">Todas las misiones semanales completadas. ¡Nuevas misiones disponibles el lunes!</p>';
+            }
+        }
+
+        async function completeMission(mission) {
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+
+            try {
+                const updateData = {
+                    completedMissions: firebase.firestore.FieldValue.arrayUnion(mission.id),
+                    activityLog: firebase.firestore.FieldValue.arrayUnion({
+                        type: 'mission_completed',
+                        description: `Misión completada: ${mission.t} - +${mission.rewardAmount}${mission.rewardType === 'stars' ? '⭐' : '💎'}`,
+                        timestamp: new Date().toISOString()
+                    })
+                };
+
+                if (mission.rewardType === 'stars') {
+                    updateData.userStars = firebase.firestore.FieldValue.increment(mission.rewardAmount);
+                } else if (mission.rewardType === 'diamonds') {
+                    updateData.userDiamonds = firebase.firestore.FieldValue.increment(mission.rewardAmount);
+                }
+
+                await userRef.update(updateData);
+
+                // Show completion notification
+                showMissionCompletionNotification(mission);
+
+            } catch (error) {
+                console.error("Error completando misión:", error);
+            }
+        }
+
+        function showMissionCompletionNotification(mission) {
+            // Create a temporary notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            notification.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Misión completada: ${mission.t}</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Mapeo de categorías de rango a nombres mostrados
+        const tierNames = {
+            "novato": "NOVATO",
+            "aprendiz": "APRENDIZ",
+            "melomano": "MELÓMANO",
+            "virtuoso": "VIRTUOSO",
+            "maestro": "MAESTRO",
+            "leyenda": "LEYENDA MUSICAL",
+            "legend": "LEYENDA MUSICAL"
+        };
+
+        function renderUserRank(data) {
+            const rank = getUserRank(data.userStars || 0);
+            const container = document.getElementById('userRankContainer');
+            const tierName = tierNames[rank.current.tier] || "RANGO";
+            
+            container.innerHTML = `
+                <div class="text-center relative">
+                    <a href="maparanking.html" class="absolute top-0 right-0 text-teal-400 hover:text-teal-300 text-xs font-bold underline">
+                        Ver mapa
+                    </a>
+                    <i class="fas ${rank.current.icon} ${rank.current.color} text-4xl mb-2"></i>
+                    <h3 class="text-xl font-bold text-white mb-1">${rank.current.name}</h3>
+                    <p class="text-teal-400 text-sm font-bold mb-3">${tierName}</p>
+                    <div class="bg-slate-700 rounded-full h-3 mb-2">
+                        <div class="bg-teal-500 h-3 rounded-full" style="width: ${(data.userStars - rank.current.minStars) / (rank.current.maxStars - rank.current.minStars) * 100}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-400">${data.userStars}/${rank.current.maxStars} estrellas</p>
+                    ${rank.next ? `<p class="text-xs text-teal-400 mt-1">Próximo: ${rank.next.name} (${rank.next.minStars - data.userStars}⭐ restantes)</p>` : '<p class="text-xs text-yellow-400 mt-1">¡Máximo rango alcanzado!</p>'}
+                    <p class="text-xs text-gray-400 mt-2">Intercambiar estrellas reduce el rango</p>
+                </div>
+            `;
+        }
+
+        function logout() {
+            auth.signOut().then(() => {
+                window.location.href = 'index.html';
+            }).catch((error) => {
+                console.error('Error al cerrar sesión:', error);
+            });
+        }
+
+        function getCurrentWeekMonday() {
+            const now = new Date();
+            const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+            const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Adjust to get Monday
+            const monday = new Date(now);
+            monday.setDate(now.getDate() + diff);
+            monday.setHours(0, 0, 0, 0);
+            return monday;
+        }
+
+        async function checkAndResetVotesWeekly(data) {
+            const currentMonday = getCurrentWeekMonday();
+            const lastReset = data.lastVoteReset ? new Date(data.lastVoteReset) : null;
+
+            if (!lastReset || lastReset < currentMonday) {
+                // Reset votes to 5 and update lastVoteReset
+                const userRef = db.collection('users').doc(auth.currentUser.uid);
+                await userRef.update({
+                    votesRemaining: 5,
+                    lastVoteReset: currentMonday.toISOString(),
+                    activityLog: firebase.firestore.FieldValue.arrayUnion({
+                        type: 'reset',
+                        description: 'Votos reiniciados semanalmente (lunes 00:00)',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+            }
+        }
+
+        function updateUserDisplay(data) {
+            document.getElementById('userNameDisplay').innerHTML = data.username || 'Usuario';
+            document.getElementById('userEmailDisplay').innerHTML = auth.currentUser.email;
+            document.getElementById('userStarsDisplay').innerHTML = data.userStars || 0;
+            document.getElementById('userDiamondsDisplay').innerHTML = data.userDiamonds || 0;
+            document.getElementById('userCoinsDisplay').innerHTML = data.userCoins || 0;
+            document.getElementById('votesUsedDisplay').innerHTML = `${5 - (data.votesRemaining || 0)}`;
+            const rank = getUserRank(data.userStars || 0);
+            document.getElementById('userRankIcon').className = `fas ${rank.current.icon} ${rank.current.color} text-2xl`;
+            document.getElementById('userRankLevel').innerHTML = rank.level;
+            document.getElementById('userRankName').innerHTML = rank.current.name.toUpperCase();
+            document.getElementById('exchangeAvailableStars').innerHTML = `${data.userStars || 0} <i class="fas fa-star text-yellow-400"></i>`;
+            document.getElementById('exchangeAvailableDiamonds').innerHTML = `${data.userDiamonds || 0} <i class="fas fa-gem text-blue-400"></i> | ${data.userCoins || 0} <i class="fas fa-coins text-amber-400"></i>`;
+        }
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const userRef = db.collection('users').doc(user.uid);
+                userRef.onSnapshot(async (doc) => {
+                    if (doc.exists) {
+                        userProfileData = doc.data();
+                        await checkAndResetVotesWeekly(userProfileData);
+                        updateUserDisplay(userProfileData);
+                        updateRewardButtons(userProfileData);
+                        await renderVotedSongs(userProfileData.voteLog || {});
+                        renderPurchasedCards(userProfileData.purchasedCards || []);
+                        renderActivity(userProfileData.activityLog || []);
+                        renderMissions(userProfileData);
+                        renderUserRank(userProfileData);
+                        await renderRankings();
+                    } else {
+                        // Crear perfil si no existe
+                        await userRef.set({
+                            username: user.displayName || user.email.split('@')[0],
+                            userStars: 0,
+                            userDiamonds: 0,
+                            userCoins: 0,
+                            votesRemaining: 5,
+                            voteLog: {},
+                            quizLog: {},
+                            activityLog: [],
+                            purchasedCards: [],
+                            pendingInvitations: [],
+                            voteResetFrequency: 'weekly', // Los votos se reinician semanalmente, no diariamente
+                            createdAt: new Date().toISOString()
+                        });
+                    }
+                });
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+</html>
