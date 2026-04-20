@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ranking Storycards – La IA Musical</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* ─── FONDO ─── */
+        body {
+            background-image: url('./images/fondostorycards.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: white;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 60px;
+        }
+
+        /* ─── OVERLAY SEMI-OPACO PARA LEGIBILIDAD ─── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 12, 28, 0.72);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Todos los hijos directos de body por encima del overlay */
+        header, main, .fixed-footer {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ─── SCROLLBAR ─── */
+        ::-webkit-scrollbar { width: 7px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #0d9488; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #14b8a6; }
+
+        /* ─── PODIO: BRILLO INTERMITENTE TOP 3 ─── */
+        @keyframes glow-gold {
+            0%, 100% {
+                box-shadow: 0 0 18px 4px rgba(250,204,21,0.55),
+                            0 8px 32px rgba(0,0,0,0.6),
+                            inset 0 1px 0 rgba(255,255,255,0.12);
+                border-color: rgba(250,204,21,0.7);
+            }
+            50% {
+                box-shadow: 0 0 42px 12px rgba(250,204,21,0.9),
+                            0 8px 48px rgba(0,0,0,0.7),
+                            inset 0 1px 0 rgba(255,255,255,0.18);
+                border-color: rgba(250,204,21,1);
+            }
+        }
+        @keyframes glow-silver {
+            0%, 100% {
+                box-shadow: 0 0 16px 3px rgba(209,213,219,0.45),
+                            0 8px 32px rgba(0,0,0,0.6),
+                            inset 0 1px 0 rgba(255,255,255,0.10);
+                border-color: rgba(209,213,219,0.6);
+            }
+            50% {
+                box-shadow: 0 0 38px 10px rgba(209,213,219,0.85),
+                            0 8px 48px rgba(0,0,0,0.65),
+                            inset 0 1px 0 rgba(255,255,255,0.16);
+                border-color: rgba(209,213,219,0.95);
+            }
+        }
+        @keyframes glow-bronze {
+            0%, 100% {
+                box-shadow: 0 0 16px 3px rgba(180,120,60,0.5),
+                            0 8px 32px rgba(0,0,0,0.6),
+                            inset 0 1px 0 rgba(255,255,255,0.08);
+                border-color: rgba(180,120,60,0.65);
+            }
+            50% {
+                box-shadow: 0 0 36px 10px rgba(210,140,70,0.88),
+                            0 8px 48px rgba(0,0,0,0.65),
+                            inset 0 1px 0 rgba(255,255,255,0.14);
+                border-color: rgba(210,140,70,0.95);
+            }
+        }
+
+        @keyframes badge-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.15); opacity: 0.8; }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ─── PODIO CARDS ─── */
+        .podium-card {
+            background: rgba(10, 25, 47, 0.82);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 22px;
+            border: 2px solid transparent;
+            overflow: hidden;
+            transition: transform 0.3s;
+            animation-duration: 1.8s;
+            animation-iteration-count: infinite;
+            animation-timing-function: ease-in-out;
+        }
+        .podium-card:hover { transform: translateY(-6px) scale(1.02); }
+
+        .podium-card.rank-1 {
+            animation-name: glow-gold;
+            border-color: rgba(250,204,21,0.8);
+        }
+        .podium-card.rank-2 {
+            animation-name: glow-silver;
+            border-color: rgba(209,213,219,0.7);
+        }
+        .podium-card.rank-3 {
+            animation-name: glow-bronze;
+            border-color: rgba(180,120,60,0.7);
+        }
+
+        .podium-card .cover-wrap {
+            position: relative;
+            overflow: hidden;
+        }
+        .podium-card .cover-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.5s;
+        }
+        .podium-card:hover .cover-wrap img { transform: scale(1.07); }
+
+        /* ─── BADGE POSICIÓN ─── */
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 1.15rem;
+            font-weight: 900;
+            animation: badge-pulse 1.8s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+        .rank-badge.gold   { background: linear-gradient(135deg,#f59e0b,#fbbf24); color:#422006; box-shadow: 0 0 18px rgba(251,191,36,0.7); }
+        .rank-badge.silver { background: linear-gradient(135deg,#9ca3af,#e5e7eb); color:#1f2937; box-shadow: 0 0 14px rgba(209,213,219,0.6); }
+        .rank-badge.bronze { background: linear-gradient(135deg,#b45309,#d97706); color:#fff; box-shadow: 0 0 14px rgba(180,120,60,0.6); }
+
+        /* ─── STARS DISPLAY ─── */
+        .stars-display {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .star-filled { color: #fbbf24; }
+        .star-empty  { color: #374151; }
+
+        /* ─── SHIMMER TEXT (título 1er puesto) ─── */
+        .shimmer-text {
+            background: linear-gradient(90deg, #fde68a 0%, #fbbf24 30%, #fff 50%, #fbbf24 70%, #fde68a 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 2.5s linear infinite;
+        }
+
+        /* ─── RANKING LIST ─── */
+        .ranking-row {
+            background: rgba(13, 30, 55, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(45, 212, 191, 0.12);
+            border-radius: 14px;
+            transition: transform 0.2s, background 0.2s, border-color 0.2s;
+            animation: slideInLeft 0.4s ease-out both;
+        }
+        .ranking-row:hover {
+            transform: translateX(6px);
+            background: rgba(13, 45, 70, 0.85);
+            border-color: rgba(45, 212, 191, 0.35);
+        }
+        .ranking-row .row-position {
+            min-width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(13, 148, 136, 0.18);
+            border: 1px solid rgba(45, 212, 191, 0.25);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            flex-shrink: 0;
+        }
+        .ranking-row .row-thumb {
+            width: 52px;
+            height: 52px;
+            border-radius: 10px;
+            object-fit: contain;
+            background: #0f172a;
+            flex-shrink: 0;
+        }
+
+        /* ─── TOPIC PILL ─── */
+        .topic-pill {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(13, 148, 136, 0.22);
+            border: 1px solid rgba(45, 212, 191, 0.3);
+            color: #5eead4;
+            white-space: nowrap;
+        }
+
+        /* ─── HEADER TITLE ─── */
+        .page-title {
+            background: linear-gradient(90deg, #2dd4bf, #38bdf8, #a78bfa, #2dd4bf);
+            background-size: 300% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 4s linear infinite;
+        }
+
+        /* ─── LOADER ─── */
+        .loader-ring {
+            display: inline-block;
+            width: 56px; height: 56px;
+            border: 5px solid rgba(45, 212, 191, 0.2);
+            border-top-color: #2dd4bf;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── PODIO SECTION TITLE ─── */
+        .section-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        /* ─── PROGRESS BAR STARS ─── */
+        .star-bar-bg {
+            height: 5px;
+            border-radius: 999px;
+            background: rgba(45, 212, 191, 0.12);
+            overflow: hidden;
+        }
+        .star-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #fbbf24, #f59e0b);
+            transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ─── PODIO: card central 1° más alto ─── */
+        .podium-center { margin-top: -28px; }
+
+        /* ─── FLOATING TROPHY ─── */
+        .floating-trophy {
+            animation: float 2.5s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        /* ─── DELAY ANIMATIONS RANKING LIST ─── */
+        .delay-1 { animation-delay: 0.05s; }
+        .delay-2 { animation-delay: 0.10s; }
+        .delay-3 { animation-delay: 0.15s; }
+        .delay-4 { animation-delay: 0.20s; }
+        .delay-5 { animation-delay: 0.25s; }
+        .delay-6 { animation-delay: 0.30s; }
+
+        /* ─── MOBILE: PODIO EN COLUMNA ORDENADO POR POSICIÓN ─── */
+        @media (max-width: 767px) {
+            #podiumGrid {
+                grid-template-columns: 1fr !important;
+                align-items: stretch !important;
+                gap: 1rem !important;
+                max-width: 380px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            /* Reordenar visualmente: 1º arriba, luego 2º, luego 3º */
+            #podiumGrid .podium-card.rank-1 { order: 1; }
+            #podiumGrid .podium-card.rank-2 { order: 2; }
+            #podiumGrid .podium-card.rank-3 { order: 3; }
+
+            /* Eliminar el efecto de elevación del 1er puesto en móvil */
+            .podium-center { margin-top: 0 !important; }
+
+            /* Altura de portada uniforme en columna */
+            #podiumGrid .podium-card .cover-wrap {
+                height: 200px !important;
+            }
+
+            /* Quitar hover translateY en móvil (no tiene hover real) */
+            .podium-card:hover { transform: none; }
+        }
+
+        /* ─── REFRESH BTN ─── */
+        .refresh-btn {
+            background: rgba(13, 148, 136, 0.25);
+            border: 1px solid rgba(45, 212, 191, 0.4);
+            color: #2dd4bf;
+            padding: 8px 20px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .refresh-btn:hover { background: rgba(13, 148, 136, 0.5); transform: scale(1.04); }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════ HEADER ══════════════════════════ -->
+<header class="sticky top-0 z-50 bg-black/50 backdrop-blur-lg border-b border-teal-800/40 shadow-2xl">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+        <a href="temas.html" class="flex items-center gap-3 hover:opacity-80 transition">
+            <i class="fas fa-music text-teal-400 text-xl"></i>
+            <span class="font-bold text-lg tracking-wide hidden sm:block">La IA Musical</span>
+        </a>
+
+        <div class="flex flex-col items-center">
+            <h1 class="page-title text-xl md:text-2xl font-black tracking-wide leading-tight">
+                <span class="floating-trophy">🏆</span> Ranking Storycards
+            </h1>
+            <p class="text-xs text-gray-500 mt-0.5">Todas las salas · Top 30</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button onclick="loadRanking()" class="refresh-btn flex items-center gap-2">
+                <i class="fas fa-sync-alt text-xs"></i>
+                <span class="hidden sm:inline">Actualizar</span>
+            </button>
+            <button onclick="logout()" class="text-gray-400 hover:text-white transition text-sm flex items-center gap-1">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- ══════════════════════════ MAIN ══════════════════════════ -->
+<main class="max-w-5xl mx-auto px-4 pt-8 pb-10">
+
+    <!-- INFO BAR -->
+    <div id="infoBar" class="hidden mb-8 flex flex-wrap items-center justify-between gap-3 bg-black/30 backdrop-blur-sm rounded-xl px-5 py-3 border border-teal-900/40">
+        <div class="flex items-center gap-2 text-sm text-gray-300">
+            <i class="fas fa-layer-group text-teal-400"></i>
+            <span>Total storycards: <strong id="totalCards" class="text-white">–</strong></span>
+        </div>
+        <div class="flex items-center gap-2 text-sm text-gray-300">
+            <i class="fas fa-star text-yellow-400"></i>
+            <span>Total estrellas: <strong id="totalStarsGlobal" class="text-white">–</strong></span>
+        </div>
+        <div class="flex items-center gap-2 text-sm text-gray-300">
+            <i class="fas fa-clock text-teal-400"></i>
+            <span>Actualizado: <strong id="lastUpdate" class="text-white">–</strong></span>
+        </div>
+    </div>
+
+    <!-- ── LOADER ── -->
+    <div id="loader" class="flex flex-col items-center justify-center py-20 gap-4">
+        <div class="loader-ring"></div>
+        <p class="text-teal-300 text-sm animate-pulse">Cargando ranking desde Firebase…</p>
+    </div>
+
+    <!-- ── PODIO TOP 3 ── -->
+    <div id="podiumSection" class="hidden mb-10">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="h-px flex-1 bg-gradient-to-r from-transparent via-yellow-500/40 to-transparent"></div>
+            <span class="section-label text-yellow-400/80">Storycards Premiadas</span>
+            <div class="h-px flex-1 bg-gradient-to-r from-transparent via-yellow-500/40 to-transparent"></div>
+        </div>
+
+        <!-- PODIO GRID: 2º · 1º · 3º -->
+        <div id="podiumGrid" class="grid grid-cols-3 gap-4 md:gap-6 items-end max-w-3xl mx-auto">
+            <!-- Se rellena con JS -->
+        </div>
+    </div>
+
+    <!-- ── DIVISOR ── -->
+    <div id="divider" class="hidden flex items-center gap-3 mb-6">
+        <div class="h-px flex-1 bg-gradient-to-r from-transparent via-teal-600/40 to-transparent"></div>
+        <span class="section-label">Posiciones 4 – 60</span>
+        <div class="h-px flex-1 bg-gradient-to-r from-transparent via-teal-600/40 to-transparent"></div>
+    </div>
+
+    <!-- ── LISTA 4-60 ── -->
+    <div id="rankingList" class="space-y-2.5">
+        <!-- Se rellena con JS -->
+    </div>
+
+    <!-- ── EMPTY STATE ── -->
+    <div id="emptyState" class="hidden text-center py-16">
+        <i class="fas fa-star text-gray-600 text-5xl mb-4"></i>
+        <p class="text-gray-400 text-lg">Aún no hay votos registrados.</p>
+        <p class="text-gray-500 text-sm mt-1">¡Sé el primero en votar en el reproductor!</p>
+    </div>
+
+</main>
+
+<!-- ══════════════════════════ SCRIPT ══════════════════════════ -->
+<script>
+// ── 1. FIREBASE CONFIG ──
+const firebaseConfig = {
+    apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+    authDomain: "laiamusical-4fba7.firebaseapp.com",
+    projectId: "laiamusical-4fba7",
+    storageBucket: "laiamusical-4fba7.firebasestorage.app",
+    messagingSenderId: "49783369602",
+    appId: "1:49783369602:web:91e287c094a8f2403d699b",
+    measurementId: "G-WC2JT6DRF4"
+};
+
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+// ── 2. SONGS CATALOG (id · title · cover · topic · category) ──
+const songs = [
+    // LITERATURA
+    { id: 5,   title: "El lenguaje del mundo",         cover: "./imagenportada/lit_lenguajedelmundo.png", topic: "Literatura",            category: "AVENTURA" },
+    { id: 21,  title: "La herencia del olvido",        cover: "./imagenportada/lit_herencia.png",         topic: "Literatura",            category: "REALISMO MÁGICO" },
+    { id: 7,   title: "El ojo que todo lo ve",         cover: "./imagenportada/lit_1984.png",             topic: "Literatura",            category: "DISTOPÍA" },
+    { id: 8,   title: "El ruido de la conciencia",     cover: "./imagenportada/lit_ruidodelaconciencia.png", topic: "Literatura",         category: "PSICOLÓGICA" },
+    { id: 17,  title: "La conversión",                 cover: "./imagenportada/lit_conversion.png",       topic: "Literatura",            category: "FICCIÓN FILOSÓFICA" },
+    { id: 18,  title: "La cicatriz invisible",         cover: "./imagenportada/lit_cicatriz.png",         topic: "Literatura",            category: "GÓTICO" },
+    { id: 22,  title: "El Señor de los locos y sabios",cover: "./imagenportada/lit_quijote.png",          topic: "Literatura",            category: "SATÍRICA/AVENTURA" },
+    { id: 23,  title: "El largo regreso a Ítaca",      cover: "./imagenportada/lit_regresoitaca.png",     topic: "Literatura",            category: "ÉPICA" },
+    { id: 24,  title: "Amor y conveniencias",          cover: "./imagenportada/lit_amoryconveniencias.png", topic: "Literatura",          category: "ROMANCE/COSTUMBRISTA" },
+
+    // ÓPERA Y CONCIERTOS
+    { id: 1,   title: "La novena sinfonía del mundo",        cover: "./imagenportada/opera_sinfoniamundo.png",  topic: "Ópera y conciertos",    category: "CLÁSICA" },
+    { id: 2,   title: "Amar eternamente",                 cover: "./imagenportada/opera_amareternamente.png",  topic: "Ópera y conciertos",    category: "ÓPERA" },
+    { id: 100,   title: "Vivir en un suspiro",           cover: "./imagenportada/opera_vivirenunsuspiro.png",   topic: "Ópera y conciertos",    category: "ÓPERA" },
+    { id: 101,   title: "El reloj de la naturaleza",             cover: "./imagenportada/opera_relojdelanaturaleza.png",      topic: "Ópera y conciertos",    category: "CONCIERTO" },
+    { id: 102,   title: "Donde muere la noche",                cover: "./imagenportada/opera_dondemuerelanoche.png",        topic: "Ópera y conciertos",    category: "ÓPERA" },
+    { id: 103,   title: "Sinfonía de los jardines reales",                   cover: "./imagenportada/opera_jardinesreales.png",       topic: "Ópera y conciertos",    category: "ÓPERA" },
+    { id: 104,  title: "El ave sin jaula",             cover: "./imagenportada/opera_avesinjaula.png", topic: "Ópera y conciertos",  category: "ÓPERA" },
+
+    // CINE
+    { id: 13,  title: "Tiempos peligrosos",             cover: "./imagenportada/cine_tiempospeligrosos.png", topic: "Cine",                 category: "CRIMEN" },
+    { id: 14,  title: "La línea temporal perdida",             cover: "./imagenportada/cine_lineatemporal.png", topic: "Cine",                 category: "FICCIÓN/FUTURÍSTICA" },
+    { id: 15,  title: "Biblioteca de horizontes",             cover: "./imagenportada/cine_bibliotecadehorizontes.png", topic: "Cine",                 category: "CIENCIA FICCIÓN" },
+    { id: 16,  title: "Alas de libertad",             cover: "./imagenportada/cine_alasdelibertad.png", topic: "Cine",                 category: "PENITENCIARIO" },
+    { id: 19,  title: "El elegido",             cover: "./imagenportada/cine_elegido.png", topic: "Cine",                 category: "CIENCIA FICCIÓN" },
+    { id: 20,  title: "El imperio del trueno",             cover: "./imagenportada/cine_imperiodeltrueno.png", topic: "Cine",                 category: "ACCIÓN POST-APOCALÍPTICA" },
+    { id: 26,  title: "Voces entre chapas",                cover: "./imagenportada/cine_vocesentrechapas.png",    topic: "Cine",                  category: "DRAMA SOCIAL" },
+    { id: 27,  title: "Semilla de luz",                cover: "./imagenportada/cine_semilladeluz.png",    topic: "Cine",                  category: "CIENCIA FICCIÓN/FAMILIAR" },
+    { id: 28,  title: "El Destino",                    cover: "./imagenportada/cine_eldestino.png",       topic: "Cine",                  category: "ÓPERA ESPACIAL" },
+    { id: 29,  title: "El grito en el espacio",        cover: "./imagenportada/cine_grito.png",           topic: "Cine",                  category: "CIENCIA FICCIÓN/TERROR" },
+  
+    // ANIMACIÓN
+    { id: 200, title: "Una jungla divertida",          cover: "./imagenportada/animacion_jungladivertida.png", topic: "Animación",           category: "MUSICAL" },
+    { id: 201, title: "Despierta mi constelación",     cover: "./imagenportada/animacion_miconstelacion.png", topic: "Animación",         category: "MUSICAL" },
+    { id: 202, title: "La aventura de tu vida",        cover: "./imagenportada/animacion_aventuradetuvida.png", topic: "Animación",       category: "MUSICAL" },
+    { id: 203, title: "Latidos de papel",              cover: "./imagenportada/animacion_latidosdepapel.png", topic: "Animación",         category: "MUSICAL" },
+    { id: 204, title: "¡Qué pasó!, mi mundo es un desmadre genial", cover: "./imagenportada/animacion_mimundo.png", topic: "Animación",  category: "COMEDIA MUSICAL" },
+    { id: 205, title: "Compañeros de juguete",         cover: "./imagenportada/animacion_compañeros.png",  topic: "Animación",           category: "MUSICAL" },
+    { id: 206, title: "La capa interior",              cover: "./imagenportada/animacion_capainterior.png", topic: "Animación",           category: "ACCIÓN FAMILIAR" },
+   
+    // TEATRO Y MUSICALES
+    { id: 300, title: "El eco de la libertad",         cover: "./imagenportada/teatro_ecodelalibertad.png",    topic: "Teatro y musicales",    category: "MUSICAL ÉPICO" },
+    { id: 301, title: "El ángel de la música",         cover: "./imagenportada/teatro_angeldelamusica.png",      topic: "Teatro y musicales",    category: "MUSICAL GÓTICO" },
+    { id: 302, title: "El ladrón de historias",      cover: "./imagenportada/teatro_ladrondehistorias.png",      topic: "Teatro y musicales",    category: "MUSICAL HIP-HOP" },
+    { id: 303, title: "El brillo del pecado",          cover: "./imagenportada/teatro_brillodelpecado.png",       topic: "Teatro y musicales",    category: "MUSICAL JAZZ" },
+    { id: 304, title: "Sin más día que hoy",           cover: "./imagenportada/teatro_sinmasdiaquehoy.png",          topic: "Teatro y musicales",    category: "MUSICAL CONTEMPORÁNEO" },
+    { id: 305, title: "Verano prohibido",           cover: "./imagenportada/teatro_veranoprohibido.png", topic: "Teatro y musicales",    category: "MUSICAL CLÁSICO" },
+    { id: 306, title: "El vuelo de dos mundos",            cover: "./imagenportada/teatro_vuelodedosmundos.png",          topic: "Teatro y musicales",    category: "MUSICAL FANTÁSTICO" },
+   
+    // SERIES
+    { id: 400, title: "Canto de Escarcha",             cover: "./imagenportada/series_cantoescarcha.png",           topic: "Series",                category: "FANTASÍA ÉPICA" },
+    { id: 401, title: "El club del faro",              cover: "./imagenportada/series_clubdelfaro.png",topic: "Series",                category: "SCI-FI HORROR" },
+    { id: 402, title: "El precio de la tierra",                cover: "./imagenportada/series_preciodelatierra.png",   topic: "Series",                category: "DRAMA CRIMINAL" },
+    { id: 403, title: "Albion heritage",        cover: "./imagenportada/series_albionheritage.png", topic: "Series",               category: "DRAMA HISTÓRICO" },
+    { id: 404, title: "El juego ha comenzado",           cover: "./imagenportada/series_juegocomenzado.png",       topic: "Series",                category: "ACCIÓN/SATÍRICA" },
+    { id: 405, title: "La fuente de los buenos tiempos",                  cover: "./imagenportada/series_fuentebuenostiempos.png",         topic: "Series",                category: "SITCOM" },
+    { id: 406, title: "La niña estelar",                  cover: "./imagenportada/series_niñaestelar.png",         topic: "Series",                category: "SPACE WESTERN" },
+
+    // ANIME
+    { id: 500, title: "El juramento de las murallas", cover: "./imagenportada/anime_juramentomurallas.png", topic: "Anime", category: "SHOUNEN" },
+    { id: 501, title: "Loto de sangre", cover: "./imagenportada/anime_lotodesangre.png", topic: "Anime", category: "SHOUNEN" },
+    { id: 502, title: "Rumbo al amanecer", cover: "./imagenportada/anime_rumboalamanecer.png", topic: "Anime", category: "SHOUNEN" },
+    { id: 503, title: "Blue Bird", cover: "./imagenportada/anime_bluebird.png", topic: "Anime", category: "SHOUNEN" },
+    { id: 504, title: "The Day", cover: "./imagenportada/anime_theday.png", topic: "Anime", category: "SUPERHÉROES" },
+    { id: 505, title: "La rueda de las sombras", cover: "./imagenportada/anime_ruedasombras.png", topic: "Anime", category: "SUPERNATURAL" },
+    { id: 506, title: "The World", cover: "./imagenportada/anime_theworld.png", topic: "Anime", category: "PSYCHOLOGICAL THRILLER" },
+    { id: 25, title: "Sin rostro", cover: "./imagenportada/anime_sinrostro.png", topic: "Anime", category: "FANTASÍA" },
+ 
+    // DOCUMENTALES
+    { id: 600, title: "Planteta tierra",               cover: "./imagenportada/doc_planetatierra.png",    topic: "Documentales y usuarios", category: "MEDIOAMBIENTE" },
+    { id: 601, title: "El baile de hielo",              cover: "./imagenportada/doc_bailedehielo.png",  topic: "Documentales y usuarios", category: "HISTORIA" },
+    { id: 602, title: "Grabedad cero",          cover: "./imagenportada/doc_gravedadcero.png",        topic: "Documentales y usuarios", category: "CIENCIA" },
+    { id: 604, title: "Sombras en el cristal",             cover: "./imagenportada/doc_sombrasenelcristal.png",        topic: "Documentales y usuarios", category: "NATURALEZA" },
+    { id: 605, title: "El algoritmo silencioso",       cover: "./imagenportada/doc_algoritmosilencioso.png", topic: "Documentales y usuarios", category: "TECNOLOGÍA" },
+    { id: 606, title: "User Generated Content Theme",  cover: "./images/usuarios.png",                    topic: "Documentales y usuarios", category: "USUARIO" },
+    ];
+
+// ── 3. TOPIC → COLOR ──
+const topicColors = {
+    "Literatura":            { bg: "rgba(124,58,237,0.2)",  border: "rgba(167,139,250,0.5)", text: "#a78bfa" },
+    "Ópera y conciertos":    { bg: "rgba(220,38,38,0.18)",  border: "rgba(252,165,165,0.4)", text: "#fca5a5" },
+    "Cine":                  { bg: "rgba(234,179,8,0.15)",  border: "rgba(253,224,71,0.4)",  text: "#fde047" },
+    "Animación":             { bg: "rgba(249,115,22,0.18)", border: "rgba(253,186,116,0.4)", text: "#fdba74" },
+    "Teatro y musicales":    { bg: "rgba(236,72,153,0.18)", border: "rgba(249,168,212,0.4)", text: "#f9a8d4" },
+    "Series":                { bg: "rgba(16,185,129,0.18)", border: "rgba(110,231,183,0.4)", text: "#6ee7b7" },
+    "Anime":                 { bg: "rgba(239,68,68,0.18)",  border: "rgba(252,165,165,0.4)", text: "#fca5a5" },
+    "Documentales y usuarios":{ bg: "rgba(14,165,233,0.18)",border: "rgba(125,211,252,0.4)", text: "#7dd3fc" },
+};
+
+// ── 4. HELPERS ──
+function getTopicStyle(topic) {
+    return topicColors[topic] || { bg: "rgba(45,212,191,0.12)", border: "rgba(45,212,191,0.3)", text: "#2dd4bf" };
+}
+
+function renderStars(count, max = 5) {
+    // Show dots representing votes (max 5-star icons for readability)
+    const display = Math.min(count, 500); // cap visual
+    const numFull = Math.min(5, Math.ceil(count / Math.max(1, 10)));
+    let html = '';
+    for (let i = 0; i < 5; i++) {
+        html += `<i class="fas fa-star text-xs ${i < numFull ? 'star-filled' : 'star-empty'}"></i>`;
+    }
+    return html;
+}
+
+function formatStars(n) {
+    if (n >= 1000) return (n/1000).toFixed(1) + 'k';
+    return n;
+}
+
+function formatTime(d) {
+    return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+// ── 5. BUILD PODIUM CARD HTML ──
+function buildPodiumCard(song, rank, maxStars, topUserName) {
+    const trophyIcon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉';
+    const trophyClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : 'bronze';
+    const titleClass  = rank === 1 ? 'shimmer-text text-lg' : 'text-base text-white font-bold';
+    const ts = getTopicStyle(song.topic);
+    const coverH = rank === 1 ? '220px' : '180px';
+    const pct = maxStars > 0 ? Math.round((song.totalStars / maxStars) * 100) : 0;
+
+    return `
+    <div class="podium-card rank-${rank} ${rank === 1 ? 'podium-center' : ''} flex flex-col" style="animation-delay: ${(rank-1)*0.2}s">
+        <!-- COVER -->
+        <div class="cover-wrap" style="height:${coverH}; background:#0a1628;">
+            <img src="${song.cover}" alt="${song.title}" loading="lazy"
+                 onerror="this.src='./imagenportada/proximamente.png'">
+            <!-- RANK OVERLAY -->
+            <div class="absolute top-3 left-3">
+                <div class="rank-badge ${trophyClass}">${rank}</div>
+            </div>
+            <!-- TROPHY -->
+            <div class="absolute top-2 right-3 text-2xl">${trophyIcon}</div>
+        </div>
+
+        <!-- BODY -->
+        <div class="p-3 flex flex-col gap-2 flex-1" style="background: rgba(5,15,30,0.6)">
+            <!-- TOPIC PILL -->
+            <div>
+                <span class="topic-pill" style="background:${ts.bg}; border-color:${ts.border}; color:${ts.text}">
+                    ${song.topic}
+                </span>
+            </div>
+
+            <!-- TITLE -->
+            <h3 class="${titleClass} leading-snug line-clamp-2 text-sm md:text-base">${song.title}</h3>
+
+            <!-- STARS COUNT -->
+            <div class="flex items-center justify-between mt-auto">
+                <div class="stars-display">
+                    ${renderStars(song.totalStars)}
+                    <span class="text-xs text-gray-400 ml-1">${formatStars(song.totalStars)}</span>
+                </div>
+                <span class="text-xs text-gray-500">${song.category}</span>
+            </div>
+
+            <p class="text-xs text-teal-200/90 mt-2">Usuario con más estrellas: <span class="font-semibold text-white">${topUserName}</span></p>
+
+            <!-- BAR -->
+            <div class="star-bar-bg">
+                <div class="star-bar-fill" style="width:${pct}%"></div>
+            </div>
+        </div>
+    </div>`;
+}
+
+// ── 6. BUILD RANKING ROW HTML ──
+function buildRow(song, rank, maxStars, delayClass) {
+    const ts = getTopicStyle(song.topic);
+    const pct = maxStars > 0 ? Math.round((song.totalStars / maxStars) * 100) : 0;
+    return `
+    <div class="ranking-row flex items-center gap-3 px-3 py-2.5 ${delayClass}">
+        <!-- POSITION -->
+        <div class="row-position">#${rank}</div>
+
+        <!-- THUMB -->
+        <img src="${song.cover}" alt="${song.title}" class="row-thumb"
+             onerror="this.src='./imagenportada/proximamente.png'" loading="lazy">
+
+        <!-- INFO -->
+        <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-1.5 mb-0.5">
+                <span class="topic-pill" style="background:${ts.bg}; border-color:${ts.border}; color:${ts.text}">
+                    ${song.topic}
+                </span>
+                <span class="text-xs text-gray-500">${song.category}</span>
+            </div>
+            <p class="font-bold text-sm text-gray-100 truncate">${song.title}</p>
+            <div class="star-bar-bg mt-1" style="width:80%">
+                <div class="star-bar-fill" style="width:${pct}%"></div>
+            </div>
+        </div>
+
+        <!-- STARS -->
+        <div class="flex flex-col items-end gap-1 flex-shrink-0">
+            <div class="stars-display">${renderStars(song.totalStars)}</div>
+            <span class="text-xs font-bold text-yellow-400">${formatStars(song.totalStars)} <i class="fas fa-star text-yellow-500 text-[10px]"></i></span>
+        </div>
+    </div>`;
+}
+
+// ── 7. LOAD RANKING FROM FIREBASE ──
+async function loadRanking() {
+    // Show loader
+    document.getElementById('loader').classList.remove('hidden');
+    document.getElementById('podiumSection').classList.add('hidden');
+    document.getElementById('divider').classList.add('hidden');
+    document.getElementById('rankingList').innerHTML = '';
+    document.getElementById('emptyState').classList.add('hidden');
+    document.getElementById('infoBar').classList.add('hidden');
+
+    try {
+        const rankingRef = db.collection('ranking').doc('stars');
+        const snap = await rankingRef.get();
+        const data = snap.data() || {};
+        const rankingStars = data.rankingStars || {};
+
+        // Assign stars to each song
+        const ranked = songs.map(s => ({
+            ...s,
+            totalStars: rankingStars[s.id] || 0
+        }));
+
+        // Sort descending by stars
+        ranked.sort((a, b) => b.totalStars - a.totalStars);
+
+        // Slice to top 30
+        const top30 = ranked.slice(0, 30);
+        const top3   = top30.slice(0, 3);
+        const rest   = top30.slice(3);
+
+        const maxStars = top30[0]?.totalStars || 1;
+        const totalVotes = ranked.reduce((acc, s) => acc + s.totalStars, 0);
+
+        // Get the general top star user from Firebase
+        const topUserQuery = await db.collection('users').orderBy('userStars', 'desc').limit(1).get();
+        const topUserDoc = topUserQuery.docs[0];
+        const topUserName = topUserDoc ? (topUserDoc.data().username || topUserDoc.data().displayName || 'Anónimo') : 'Anónimo';
+
+        // Hide loader
+        document.getElementById('loader').classList.add('hidden');
+
+        // ── INFO BAR ──
+        document.getElementById('totalCards').textContent = songs.length;
+        document.getElementById('totalStarsGlobal').textContent = formatStars(totalVotes);
+        document.getElementById('lastUpdate').textContent = formatTime(new Date());
+        document.getElementById('infoBar').classList.remove('hidden');
+
+        if (top3.length === 0 || top3.every(s => s.totalStars === 0)) {
+            document.getElementById('emptyState').classList.remove('hidden');
+            return;
+        }
+
+        // ── PODIO ──
+        // Layout: 2nd - 1st - 3rd (visual podium)
+        const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
+        const rankMap = {};
+        top3.forEach((s, i) => { rankMap[s.id] = i + 1; });
+
+        const podiumGrid = document.getElementById('podiumGrid');
+        podiumGrid.innerHTML = podiumOrder.map(s => buildPodiumCard(s, rankMap[s.id], maxStars, topUserName)).join('');
+        document.getElementById('podiumSection').classList.remove('hidden');
+
+        // Animate star bars after render
+        setTimeout(() => {
+            podiumGrid.querySelectorAll('.star-bar-fill').forEach(el => {
+                el.style.width = el.style.width; // trigger reflow
+            });
+        }, 100);
+
+        // ── LIST 4-30 ──
+        if (rest.length > 0) {
+            const delays = ['delay-1','delay-2','delay-3','delay-4','delay-5','delay-6'];
+            const listHTML = rest.map((s, i) => {
+                const rank = i + 4;
+                const delay = delays[i % delays.length];
+                return buildRow(s, rank, maxStars, delay);
+            }).join('');
+
+            document.getElementById('rankingList').innerHTML = listHTML;
+            document.getElementById('divider').classList.remove('hidden');
+        }
+
+    } catch (err) {
+        console.error("Error al cargar el ranking:", err);
+        document.getElementById('loader').classList.add('hidden');
+        document.getElementById('emptyState').classList.remove('hidden');
+        document.getElementById('emptyState').innerHTML = `
+            <i class="fas fa-exclamation-triangle text-red-500 text-5xl mb-4"></i>
+            <p class="text-red-400 text-lg">Error al conectar con Firebase.</p>
+            <p class="text-gray-500 text-sm mt-1">${err.message}</p>
+        `;
+    }
+}
+
+// ── 8. AUTH + INIT ──
+function logout() {
+    auth.signOut().then(() => window.location.href = 'index.html').catch(console.error);
+}
+
+auth.onAuthStateChanged(user => {
+    if (user) {
+        loadRanking();
+    } else {
+        window.location.href = 'index.html';
+    }
+});
+
+// Auto-refresh cada 60 segundos
+setInterval(loadRanking, 60000);
+</script>
+</body>
+</html>
