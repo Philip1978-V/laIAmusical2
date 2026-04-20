@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Amar eternamente</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #f8f3ea;
+    --cream-dark: #ede5d4;
+    --ink: #2a1f14;
+    --ink-light: #6b5a47;
+    --gold: #c8a96e;
+    --spine: #8b6e50;
+  }
+
+  html, body {
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body {
+    background: radial-gradient(ellipse at center, #3a2a1a 0%, #1a1008 100%);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    font-family: 'Crimson Text', Georgia, serif;
+    overflow: hidden;
+    position: relative;
+    padding: 0;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .ui-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100dvh;
+    position: relative;
+    z-index: 10;
+    padding: 10px 10px 8px;
+    gap: 8px;
+  }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 440px;
+    flex-shrink: 0;
+  }
+
+  .book-title-header {
+    color: var(--gold);
+    font-family: 'Playfair Display', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.75;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .audio-bar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;
+    flex-wrap: nowrap;
+  }
+  .audio-bar.visible { opacity: 1; pointer-events: all; }
+
+  .audio-btn {
+    background: rgba(200,169,110,0.12);
+    border: 1px solid rgba(200,169,110,0.3);
+    border-radius: 50%;
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: var(--gold);
+    padding: 0;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .audio-btn:active { background: rgba(200,169,110,0.25); }
+  .audio-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+  .audio-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.46rem;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: rgba(200,169,110,0.55);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .audio-divider {
+    width: 1px;
+    height: 18px;
+    background: rgba(200,169,110,0.2);
+    flex-shrink: 0;
+    margin: 0 2px;
+  }
+
+  .voice-indicator {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+  .voice-indicator span {
+    display: block;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--gold);
+    opacity: 0;
+    animation: none;
+  }
+  .voice-indicator.playing span { opacity: 0.7; animation: voiceBar 1s ease-in-out infinite; }
+  .voice-indicator.playing span:nth-child(1) { animation-delay: 0s; }
+  .voice-indicator.playing span:nth-child(2) { animation-delay: 0.15s; }
+  .voice-indicator.playing span:nth-child(3) { animation-delay: 0.3s; }
+  .voice-indicator.playing span:nth-child(4) { animation-delay: 0.15s; }
+  @keyframes voiceBar {
+    0%, 100% { height: 4px; }
+    50%       { height: 13px; }
+  }
+
+  #musicVolume {
+    width: 44px;
+    accent-color: var(--gold);
+    cursor: pointer;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+
+  .book-wrapper {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .open-hint-badge {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(200,169,110,0.15);
+    border: 1px solid rgba(200,169,110,0.35);
+    backdrop-filter: blur(6px);
+    border-radius: 30px;
+    padding: 6px 16px;
+    color: var(--gold);
+    font-family: 'Playfair Display', serif;
+    font-size: 0.66rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    animation: pulseHint 2.4s ease-in-out infinite;
+    transition: opacity 0.4s;
+    z-index: 30;
+    white-space: nowrap;
+  }
+  .open-hint-badge.hidden { opacity: 0; pointer-events: none; }
+  .open-hint-badge svg { opacity: 0.7; flex-shrink: 0; }
+  @keyframes pulseHint {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(200,169,110,0); }
+    50%       { box-shadow: 0 0 0 6px rgba(200,169,110,0.12); }
+  }
+
+  .book-card {
+    width: 100%;
+    height: 100%;
+    border-radius: 14px;
+    box-shadow:
+      0 8px 32px rgba(0,0,0,0.7),
+      0 0 0 1px rgba(255,255,255,0.05),
+      inset -3px 0 8px rgba(0,0,0,0.15);
+    position: relative;
+    overflow: hidden;
+    background: var(--cream);
+    -webkit-tap-highlight-color: transparent;
+    perspective: 1400px;
+  }
+
+  .book-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 8px;
+    background: linear-gradient(to right, var(--spine), rgba(139,110,80,0.3));
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  .cover-page {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .cover-page img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .cover-bg-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(160deg, #4a3520, #1a1008);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 6rem;
+    opacity: 0.5;
+  }
+  .cover-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, transparent 55%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 28px 24px;
+  }
+  .cover-overlay h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    color: #fff;
+    line-height: 1.2;
+    text-shadow: 0 2px 16px rgba(0,0,0,0.8);
+    margin-bottom: 8px;
+  }
+  .cover-overlay .author {
+    font-family: 'Crimson Text', serif;
+    font-size: 1rem;
+    color: rgba(255,255,255,0.75);
+    letter-spacing: 0.1em;
+  }
+  .cover-page::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(200,169,110,0);
+    transition: background 0.3s;
+    pointer-events: none;
+  }
+  .cover-page:active::after { background: rgba(200,169,110,0.08); }
+
+  .story-page {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    background: var(--cream);
+  }
+
+  .page-illustration {
+    width: 100%;
+    flex-shrink: 0;
+    position: relative;
+    background: var(--cream-dark);
+    line-height: 0;
+  }
+  .page-illustration img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
+  }
+
+  .img-placeholder {
+    width: 100%;
+    padding: 40px 0;
+    background: var(--cream-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .img-placeholder svg { opacity: 0.15; width: 70px; height: 70px; }
+
+  .page-illustration::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    box-shadow:
+      inset 0    30px 22px -8px var(--cream),
+      inset 0   -42px 28px -8px var(--cream),
+      inset  28px 0   22px -8px var(--cream),
+      inset -28px 0   22px -8px var(--cream);
+  }
+  .page-illustration::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 55px;
+    z-index: 3;
+    background: linear-gradient(to bottom, transparent, var(--cream));
+    pointer-events: none;
+  }
+
+  .page-text-section {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 22px 20px 26px;
+    position: relative;
+    background: var(--cream);
+  }
+  .page-text-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      transparent, transparent 31px,
+      rgba(180,160,130,0.13) 31px,
+      rgba(180,160,130,0.13) 32px
+    );
+    background-position: 0 52px;
+    pointer-events: none;
+  }
+
+  .chapter-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 14px;
+    opacity: 0.6;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .drop-cap {
+    font-family: 'Playfair Display', serif;
+    font-size: 4.4rem;
+    font-weight: 700;
+    line-height: 0.75;
+    float: left;
+    margin-right: 6px;
+    margin-top: 4px;
+    color: var(--ink);
+  }
+
+  .page-text {
+    font-family: 'Crimson Text', serif;
+    font-size: 1.12rem;
+    line-height: 1.7;
+    color: var(--ink);
+    text-align: justify;
+    position: relative;
+    z-index: 1;
+  }
+  .page-text p { margin-bottom: 0.8em; }
+  .page-text p::after { content: ''; display: table; clear: both; }
+
+  .page-number {
+    margin-top: 10px;
+    text-align: right;
+    font-family: 'Playfair Display', serif;
+    font-size: 0.72rem;
+    color: var(--ink-light);
+    opacity: 0.5;
+    position: relative;
+    z-index: 2;
+  }
+
+  .swipe-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 14px 0 16px;
+    color: var(--ink-light);
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-family: 'Playfair Display', serif;
+    opacity: 0.4;
+    flex-shrink: 0;
+    background: var(--cream);
+  }
+
+  @keyframes arrowPulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(200,169,110,0.55), 0 0 10px 2px rgba(200,169,110,0.25);
+      background: rgba(200,169,110,0.22);
+      border-color: rgba(200,169,110,0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(200,169,110,0), 0 0 18px 4px rgba(200,169,110,0.45);
+      background: rgba(200,169,110,0.42);
+      border-color: var(--gold);
+    }
+  }
+
+  .nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 25;
+    width: 42px; height: 42px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(200,169,110,0.22);
+    border: 1.5px solid rgba(200,169,110,0.7);
+    border-radius: 50%;
+    color: var(--gold);
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.3s;
+    -webkit-tap-highlight-color: transparent;
+    backdrop-filter: blur(6px);
+    animation: arrowPulse 1.5s ease-in-out infinite;
+  }
+  .nav-arrow:active { background: rgba(200,169,110,0.55); }
+  .nav-arrow.hidden { opacity: 0; pointer-events: none; animation: none; }
+  .nav-arrow svg { width: 18px; height: 18px; filter: drop-shadow(0 0 3px rgba(200,169,110,0.6)); }
+  .nav-arrow-left  { left: 6px; }
+  .nav-arrow-right { right: 6px; }
+
+  .end-page {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--cream);
+  }
+  .end-page-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 30px;
+    text-align: center;
+  }
+  .end-page-content .ornament { color: var(--gold); font-size: 1.8rem; opacity: 0.6; }
+  .end-page-content h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    color: var(--ink);
+  }
+  .end-page-content p {
+    font-family: 'Crimson Text', serif;
+    font-size: 0.95rem;
+    color: var(--ink-light);
+    opacity: 0.7;
+    letter-spacing: 0.1em;
+  }
+  .back-btn {
+    margin-top: 6px;
+    padding: 10px 24px;
+    border: 1px solid var(--gold);
+    background: none;
+    color: var(--ink-light);
+    font-family: 'Playfair Display', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .back-btn:active { background: var(--gold); color: var(--cream); }
+
+  .nav-dots {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 2px 0;
+    z-index: 10;
+    position: relative;
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(200,169,110,0.3);
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid rgba(200,169,110,0.4);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .dot.active { background: var(--gold); transform: scale(1.3); }
+
+  @keyframes pageFlipInForward {
+    0%   { transform: perspective(1400px) rotateY(-88deg); transform-origin: left center;  opacity: 0.4; filter: brightness(0.6); }
+    40%  { opacity: 0.85; filter: brightness(0.85); }
+    100% { transform: perspective(1400px) rotateY(0deg);   transform-origin: left center;  opacity: 1;   filter: brightness(1); }
+  }
+  @keyframes pageFlipInBackward {
+    0%   { transform: perspective(1400px) rotateY(88deg);  transform-origin: right center; opacity: 0.4; filter: brightness(0.6); }
+    40%  { opacity: 0.85; filter: brightness(0.85); }
+    100% { transform: perspective(1400px) rotateY(0deg);   transform-origin: right center; opacity: 1;   filter: brightness(1); }
+  }
+  @keyframes pageFlipOutForward {
+    0%   { transform: perspective(1400px) rotateY(0deg);   transform-origin: left center;  opacity: 1;   filter: brightness(1); }
+    60%  { opacity: 0.5; filter: brightness(0.7); }
+    100% { transform: perspective(1400px) rotateY(-88deg); transform-origin: left center;  opacity: 0;   filter: brightness(0.4); }
+  }
+  @keyframes pageFlipOutBackward {
+    0%   { transform: perspective(1400px) rotateY(0deg);  transform-origin: right center;  opacity: 1;   filter: brightness(1); }
+    60%  { opacity: 0.5; filter: brightness(0.7); }
+    100% { transform: perspective(1400px) rotateY(88deg); transform-origin: right center;  opacity: 0;   filter: brightness(0.4); }
+  }
+
+  .anim-in-forward   { animation: pageFlipInForward   0.42s cubic-bezier(0.25,0.46,0.45,0.94) both; }
+  .anim-in-backward  { animation: pageFlipInBackward  0.42s cubic-bezier(0.25,0.46,0.45,0.94) both; }
+  .anim-out-forward  { animation: pageFlipOutForward  0.22s cubic-bezier(0.4,0,1,1) both; }
+  .anim-out-backward { animation: pageFlipOutBackward 0.22s cubic-bezier(0.4,0,1,1) both; }
+
+  .page-shadow-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 15;
+    opacity: 0;
+    background: linear-gradient(to right, rgba(0,0,0,0.18) 0%, transparent 40%);
+    animation: shadowSweepForward 0.55s ease-out forwards;
+  }
+  .page-shadow-overlay.backward {
+    background: linear-gradient(to left, rgba(0,0,0,0.18) 0%, transparent 40%);
+    animation: shadowSweepBackward 0.55s ease-out forwards;
+  }
+  @keyframes shadowSweepForward  { 0% { opacity: 0.8; } 100% { opacity: 0; } }
+  @keyframes shadowSweepBackward { 0% { opacity: 0.8; } 100% { opacity: 0; } }
+</style>
+</head>
+<body>
+
+<div class="ui-wrapper">
+
+  <div class="top-bar">
+    <p class="book-title-header">✦ Amar eternamente ✦</p>
+
+    <div class="audio-bar" id="audioBar">
+      <div class="voice-indicator" id="voiceIndicator">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <span class="audio-label">NARRADOR</span>
+      <button class="audio-btn" id="btnVoicePause" title="Pausar/Reanudar narración" onclick="toggleVoicePause()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" id="iconVoicePause">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+      </button>
+      <button class="audio-btn" title="Detener narración" onclick="stopVoice()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <rect x="4" y="4" width="16" height="16" rx="1"/>
+        </svg>
+      </button>
+
+      <div class="audio-divider"></div>
+
+      <span class="audio-label">MÚSICA</span>
+      <button class="audio-btn" id="btnMusicPause" title="Pausar/Reanudar música" onclick="toggleMusicPause()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" id="iconMusicPause">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+      </button>
+      <button class="audio-btn" title="Silenciar música" onclick="toggleMusic()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" id="iconMusic">
+          <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+        </svg>
+      </button>
+      <input type="range" id="musicVolume" min="0" max="1" step="0.05" value="0.4"
+        title="Volumen música" oninput="setMusicVolume(this.value)">
+    </div>
+  </div>
+
+  <div class="book-wrapper" id="bookWrapper">
+
+    <div class="open-hint-badge" id="openHintBadge">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+      </svg>
+      Toca para abrir
+    </div>
+
+    <div class="nav-arrow nav-arrow-left hidden" id="navLeft" onclick="prevPage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    </div>
+    <div class="nav-arrow nav-arrow-right hidden" id="navRight" onclick="nextPage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M9 18l6-6-6-6"/>
+      </svg>
+    </div>
+
+    <div class="book-card" id="bookCard"></div>
+  </div>
+
+  <div class="nav-dots" id="navDots"></div>
+
+</div>
+
+<script>
+/* ============================================================
+   ░░  CONFIGURACIÓN DE AUDIO  ░░
+============================================================ */
+
+const MUSIC_SRC = 'storycard/amareternamente.mp3';
+
+/* ============================================================
+   ░░  CONFIGURACIÓN DEL LIBRO  ░░
+============================================================ */
+
+const pages = [
+
+  // ── PORTADA ──────────────────────────────────────────────
+  {
+    type: 'cover',
+    coverImg: 'storycard/amareternamente/portada.png',
+    title:    'Amar eternamente',
+    author:   'De LaIAmusical'
+  },
+
+  // ── CAPÍTULO 1 ────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 1,
+    chapterTitle: 'Capítulo 1: El encargo',
+    illustrationSrc: 'storycard/amareternamente/imagen1.png',
+    voiceSrc:        'storycard/amareternamente/voz1.wav',
+    text: `El despacho de Ricardo era como él: imponente, moderno y con un toque de frialdad depredadora. Ventanales del suelo al techo mostraban la vasta extensión de sus viñedos, "Sol Poniente", perfectamente alineados como un ejército. Sentado tras una mesa de ébano pulido, el anciano magnate observaba a Leo, su protegido, el hijo que nunca tuvo. —Leo, te he llamado porque tengo un último gran proyecto. El más importante de mi vida. Su voz era un susurro grave, acostumbrado a ser obedecido. —Conoces "La Última Cepa". Un viñedo legendario, con más historia que el nuestro, pero ahogado en deudas. Y conoces a su dueña, Sofía. La había visto en revistas de enología. Una mujer con una mirada intensa y una reputación de ser tan indomable como las vides viejas que cuidaba. —He hecho una oferta que su familia no puede rechazar —continuó Ricardo, juntando las yemas de sus dedos—. Un matrimonio. Ella será mi esposa. Necesita ser seducida, no conquistada. Tú serás mi ofrenda de paz. Irás al Valle de las Sombras y restaurarás su bodega. Haz que se enamore de la idea de unirse a nosotros. —Haré que esa bodega parezca un palacio digno de ella, Ricardo. Tienes mi palabra. —Lo sé —dijo Ricardo con una sonrisa que no llegó a sus ojos—. Eres mi mejor creación, Leo. No me falles.`
+  },
+
+  // ── CAPÍTULO 2 ────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 2,
+    chapterTitle: 'Capítulo 2: El encuentro en el viñedo',
+    illustrationSrc: 'storycard/amareternamente/imagen2.png',
+    voiceSrc:        'storycard/amareternamente/voz2.wav',
+    text: `El Valle de las Sombras era un lugar salvaje, dramático. Acantilados se hundían en un mar embravecido y el aire olía a sal y a tierra húmeda. El viñedo de "La Última Cepa" era un caos hermoso de vides retorcidas por el tiempo. En medio de ellas, una mujer con las manos manchadas de tierra y el pelo recogido en un moño desordenado podaba una cepa con una concentración feroz. Era Sofía. Leo se acercó, carraspeando. —¿Señorita Sofía? Soy Leo, el arquitecto de... —Sé quién es usted —le interrumpió ella sin mirarlo—. El enviado del hombre que quiere comprar mi alma con piedra y cemento. ¿Viene a ponerle un lazo dorado a la jaula? Leo se sintió desarmado por su franqueza. —Solo vengo a restaurar la belleza que ya existe. Su bodega es una obra de arte. Mi intención es honrarla, no profanarla. Sofía finalmente se giró. Sus ojos, de un profundo color avellana, lo escrutaron con desconfianza. Durante días, chocaron. Sofía lo desafiaba en cada decisión, y Leo respondía con paciencia y un conocimiento tan profundo de la arquitectura y la historia que, poco a poco, el muro de hostilidad de Sofía empezó a agrietarse.`
+  },
+
+  // ── CAPÍTULO 3 ────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 3,
+    chapterTitle: 'Capítulo 3: El elixir olvidado',
+    illustrationSrc: 'storycard/amareternamente/imagen3.png',
+    voiceSrc:        'storycard/amareternamente/voz3.wav',
+    text: `Trabajando en los cimientos de la bodega, el equipo de Leo derribó un falso muro. Detrás, en un pequeño nicho oscuro y cubierto de telarañas, había una única botella cubierta por una gruesa capa de polvo. Leo la limpió con cuidado. La etiqueta, casi ilegible, decía "Lágrima de Sol, 1888". Sofía ahogó un grito. —No puede ser. Es una leyenda. Mi abuela contaba que este vino se elaboró con una cosecha milagrosa. Decía que si dos personas lo compartían, sus almas quedaban unidas para siempre. Esa noche, con el trabajo terminado por el día y un silencio cómplice entre ellos, se sentaron en el porche de la vieja casa, mirando las estrellas sobre el mar. Abrieron la botella con una reverencia casi religiosa. El vino era de un color ámbar profundo y olía a miel, a tierra mojada y a algo indescriptiblemente nostálgico. —Por el alma de la bodega —brindó Sofía. —Por su guardiana —respondió Leo, mirándola a los ojos. Bebieron. El líquido era como terciopelo. Hablaron durante horas, no como enemigos ni como socios, sino como dos almas que se reconocían en la oscuridad.`
+  },
+
+  // ── CAPÍTULO 4 ────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 4,
+    chapterTitle: 'Capítulo 4: El beso robado',
+    illustrationSrc: 'storycard/amareternamente/imagen4.png',
+    voiceSrc:        'storycard/amareternamente/voz4.wav',
+    text: `El aire entre ellos se había vuelto eléctrico. Cada roce era una descarga, cada mirada un universo. Días después, una furiosa tormenta de verano los sorprendió mientras inspeccionaban los límites del viñedo. Se refugiaron en una pequeña ermita abandonada que se aferraba a un acantilado. Dentro, el sonido de la lluvia y el viento creaba una burbuja íntima. Estaban empapados, temblando, y la proximidad era insoportable. —Sofía... —empezó Leo, su voz ronca. —No digas nada —susurró ella, acercándose—. No lo estropees con palabras. Él levantó una mano y apartó un mechón de pelo mojado de su cara. Sus dedos rozaron su piel y fue como si una llama los recorriera. En ese instante, toda lógica, todo deber y toda lealtad se hicieron cenizas. Leo acunó su rostro y la besó. Fue un beso desesperado, hambriento, cargado de todo lo que no podían decir. El beso de dos personas que acaban de encontrar el paraíso sabiendo que están condenados a perderlo.`
+  },
+
+  // ── CAPÍTULO 5 ────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 5,
+    chapterTitle: 'Capítulo 5: La boda y la sombra',
+    illustrationSrc: 'storycard/amareternamente/imagen5.png',
+    voiceSrc:        'storycard/amareternamente/voz5.wav',
+    text: `La boda fue el evento social del año. Sofía caminó hacia el altar con la misma resignación con la que su familia había firmado el contrato. El acuerdo salvaría "La Última Cepa", pero la sentenciaría a ella. Su vestido era una obra de arte, pero se sentía como una mortaja. Ricardo, radiante de orgullo, la recibió como un rey que recibe su más preciado tributo. Durante la recepción, Leo se mantuvo en un rincón, con una copa de champán intacta en la mano. Sus ojos no se apartaban de Sofía. Cuando sus miradas se cruzaron por encima de la multitud, fue como si una daga invisible atravesara el salón. Un segundo de puro dolor, de anhelo compartido, de una verdad que solo ellos conocían. Pero no fueron los únicos que lo vieron. Ricardo, mientras reía con un socio, notó el cambio en el rostro de su esposa. Vio la forma en que su sonrisa se desvaneció y fue reemplazada por una vulnerabilidad que nunca le había mostrado a él. La sospecha, venenosa y fría, se instaló en su corazón.`
+  },
+
+  // ── CAPÍTULO 6 ────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 6,
+    chapterTitle: 'Capítulo 6: Encuentros en la penumbra',
+    illustrationSrc: 'storycard/amareternamente/imagen6.png',
+    voiceSrc:        'storycard/amareternamente/voz6.wav',
+    text: `La vida de Sofía se convirtió en una rutina de cenas de negocios y sonrisas forzadas. La restaurada bodega, el regalo de bodas de Ricardo, se convirtió irónicamente en el refugio de los amantes. Leo encontraba excusas para supervisar los "últimos detalles" de la obra, y Sofía para "controlar la primera añada bajo la nueva dirección". Sus encuentros eran febriles, robados a la noche. El peligro constante agudizaba sus sentidos y su pasión. —Esto es una locura —susurraba Sofía contra el pecho de Leo, rodeados por el olor a vino y madera—. Nos destruirá. —Entonces que nos destruya —respondía él, besándola de nuevo—. Prefiero un segundo contigo que una vida sin ti. Se amaban entre las sombras de las barricas, con la certeza de que cada beso los acercaba más al abismo.`
+  },
+
+  // ── CAPÍTULO 7 ────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 7,
+    chapterTitle: 'Capítulo 7: La sospecha del rey',
+    illustrationSrc: 'storycard/amareternamente/imagen7.png',
+    voiceSrc:        'storycard/amareternamente/voz7.wav',
+    text: `Ricardo era un hombre que no dejaba nada al azar. La sombra de duda que nació el día de su boda creció alimentada por pequeños detalles: una excusa demasiado elaborada de Sofía para ir a la bodega de noche, una llamada perdida de Leo en su teléfono, la forma en que ambos evitaban mirarse cuando él estaba presente. —¿Pasa algo entre tú y mi arquitecto? —le preguntó una noche, su voz casual, pero sus ojos afilados como cuchillas. —¿Leo? Por favor, Ricardo, es como un hijo para ti. Solo hablamos del viñedo —mintió Sofía, sintiendo un sudor frío recorrer su espalda. La mentira fue demasiado rápida, demasiado perfecta. Al día siguiente, Ricardo contrató discretamente a un investigador privado. No tardó ni una semana en recibir un sobre con fotografías. Imágenes borrosas, tomadas desde lejos, pero inconfundibles: dos siluetas abrazándose en la penumbra de la bodega. La traición lo golpeó con la fuerza de un huracán. No sintió ira, sino un frío glacial, un deseo de venganza calculado y absoluto.`
+  },
+
+  // ── CAPÍTULO 8 ────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 8,
+    chapterTitle: 'Capítulo 8: La trampa',
+    illustrationSrc: 'storycard/amareternamente/imagen8.png',
+    voiceSrc:        'storycard/amareternamente/voz8.wav',
+    text: `—Querida, ha surgido un imprevisto en la distribuidora de Londres. Debo volar esta misma noche —anunció Ricardo durante la cena, con una naturalidad impecable. Se volvió hacia Leo—. Leo, hijo, te dejo a cargo de todo. Cuida de Sofía y de la finca. Confío en ti más que en nadie. Las palabras resonaron con una ironía macabra. En cuanto el coche de Ricardo desapareció, Sofía y Leo corrieron a la bodega, a su santuario, sintiendo el alivio y la euforia de tener una noche entera solo para ellos. Se amaron con una entrega total, creyéndose a salvo. Pero en mitad de la noche, la gran puerta de la bodega se abrió con un estruendo. La luz se encendió, cegadora. En el umbral, recortado contra la oscuridad, estaba Ricardo. No gritó. No hubo acusaciones. Solo los miró con una sonrisa helada que era más aterradora que cualquier grito. —Gracias por cuidar tan bien de mi esposa, Leo —dijo en un susurro mortal—. Has superado todas mis expectativas.`
+  },
+
+  // ── CAPÍTULO 9 ────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 9,
+    chapterTitle: 'Capítulo 9: El exilio y la herida',
+    illustrationSrc: 'storycard/amareternamente/imagen9.png',
+    voiceSrc:        'storycard/amareternamente/voz9.wav',
+    text: `La venganza de Ricardo fue una obra maestra de crueldad. Al amanecer, abogados y guardias de seguridad llegaron a la finca. Sofía fue expulsada con lo puesto. —El contrato matrimonial tiene una cláusula de infidelidad —le informó fríamente el abogado de Ricardo—. Pierde usted todo derecho sobre el viñedo y cualquier propiedad de su marido. A solas con Leo, Ricardo lo llevó al corazón de la bodega, junto a la nueva y potente prensa mecánica que el propio Leo había instalado. —Te recogí de la nada. Te di un nombre, una educación, una vida. Te quise como a un hijo —dijo Ricardo, su voz desprovista de emoción—. Y me clavaste un puñal por la espalda. No te mataré. Voy a quitarte lo que más amas. Con una señal, dos de sus hombres sujetaron a Leo. Ricardo activó la prensa y, con una frialdad inhumana, atrapó la mano derecha de Leo, su mano de dibujante, su mano creadora, bajo la maquinaria pesada. El grito de Leo fue ahogado por el crujido de sus huesos. —Ahora vete —ordenó Ricardo—. Vive con el recuerdo de lo que perdiste. Estás muerto para mí.`
+  },
+
+  // ── CAPÍTULO 10 ───────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 10,
+    chapterTitle: 'Capítulo 10: Morir de amor',
+    illustrationSrc: 'storycard/amareternamente/imagen10.png',
+    voiceSrc:        'storycard/amareternamente/voz10.wav',
+    text: `La noticia corrió como la pólvora. Sofía, despojada de todo, se refugió en la vieja casa abandonada de su familia, con vistas a su viñedo, ahora propiedad de Ricardo. La pena, la culpa y la pérdida la consumieron. Se negó a comer, a hablar. Se pasaba los días mirando por la ventana y se fue apagando como una vela en la tormenta. Leo, con la mano derecha inútil y vendada, vagaba por los pueblos de la costa como un fantasma. Un día, en la barra de un bar, escuchó a unos viajantes hablar de "la bella enóloga del Valle de las Sombras que se estaba dejando morir de pena". El corazón se le detuvo. Corrió, tomó autobuses, hizo autostop, movido por una última y desesperada esperanza. Llegó al valle al anochecer, bajo la misma luna que había sido testigo de su amor. Encontró a Sofía en una cama, pálida, frágil, apenas un susurro de la mujer que fue. —Leo... —murmuró ella, abriendo los ojos. —Estoy aquí, mi amor —sollozó él, arrodillándose a su lado—. Perdóname. —No hay nada que perdonar —dijo ella con su último aliento—. Solo hay... amor. Él la abrazó mientras ella exhalaba por última vez. Los encontraron al amanecer, entrelazados en la cama. Sus rostros, en la muerte, no mostraban dolor, sino una serenidad pacífica, como si finalmente hubieran encontrado el único lugar donde su amor podía existir sin barreras: la eternidad.`
+  },
+
+  // ── PÁGINA FINAL ─────────────────────────────────────────
+  { type: 'end' }
+
+];
+
+/* ============================================================
+   FIN DE LA CONFIGURACIÓN
+============================================================ */
+
+const musicAudio  = new Audio();
+musicAudio.loop   = true;
+musicAudio.volume = 0.4;
+if (MUSIC_SRC) musicAudio.src = MUSIC_SRC;
+
+let voiceAudio   = null;
+let voicePaused  = false;
+let musicMuted   = false;
+let musicPaused  = false;
+let bookOpened   = false;
+
+function startMusic() {
+  if (!MUSIC_SRC || musicMuted) return;
+  musicAudio.currentTime = 0;
+  musicAudio.play().catch(() => {});
+  updateMusicPauseIcon(true);
+}
+
+function stopAllAudio() {
+  if (voiceAudio) { voiceAudio.pause(); voiceAudio.currentTime = 0; }
+  voicePaused = false;
+  setVoiceIndicator(false);
+  updateVoicePauseIcon(false);
+}
+
+function playPageVoice(src) {
+  stopAllAudio();
+  if (!src) return;
+  voiceAudio = new Audio(src);
+  voiceAudio.volume = 1;
+  voiceAudio.play().catch(() => {});
+  voiceAudio.onplay  = () => { setVoiceIndicator(true);  updateVoicePauseIcon(true); };
+  voiceAudio.onended = () => { setVoiceIndicator(false); updateVoicePauseIcon(false); voicePaused = false; };
+  voiceAudio.onpause = () => { setVoiceIndicator(false); };
+}
+
+function setVoiceIndicator(playing) {
+  const el = document.getElementById('voiceIndicator');
+  if (el) el.className = 'voice-indicator' + (playing ? ' playing' : '');
+}
+
+function updateVoicePauseIcon(isPlaying) {
+  const icon = document.getElementById('iconVoicePause');
+  if (!icon) return;
+  icon.innerHTML = isPlaying
+    ? `<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>`
+    : `<polygon points="5 3 19 12 5 21 5 3"/>`;
+}
+
+function toggleVoicePause() {
+  if (!voiceAudio) return;
+  if (voicePaused) {
+    voiceAudio.play().catch(() => {});
+    voicePaused = false;
+    setVoiceIndicator(true);
+    updateVoicePauseIcon(true);
+  } else {
+    voiceAudio.pause();
+    voicePaused = true;
+    setVoiceIndicator(false);
+    updateVoicePauseIcon(false);
+  }
+}
+
+function stopVoice() {
+  if (voiceAudio) {
+    voiceAudio.pause();
+    voiceAudio.currentTime = 0;
+    voicePaused = false;
+    setVoiceIndicator(false);
+    updateVoicePauseIcon(false);
+  }
+}
+
+function updateMusicPauseIcon(isPlaying) {
+  const icon = document.getElementById('iconMusicPause');
+  if (!icon) return;
+  icon.innerHTML = isPlaying
+    ? `<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>`
+    : `<polygon points="5 3 19 12 5 21 5 3"/>`;
+}
+
+function toggleMusicPause() {
+  if (musicMuted) return;
+  if (musicPaused) {
+    musicAudio.play().catch(() => {});
+    musicPaused = false;
+    updateMusicPauseIcon(true);
+  } else {
+    musicAudio.pause();
+    musicPaused = true;
+    updateMusicPauseIcon(false);
+  }
+}
+
+function setMusicVolume(val) {
+  musicAudio.volume = parseFloat(val);
+  if (parseFloat(val) === 0) {
+    musicMuted = true;
+    document.getElementById('iconMusic').innerHTML =
+      `<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+       <line x1="1" y1="1" x2="23" y2="23" stroke-width="2"/>`;
+    musicAudio.pause();
+    updateMusicPauseIcon(false);
+  } else if (musicMuted) {
+    musicMuted = false;
+    document.getElementById('iconMusic').innerHTML =
+      `<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>`;
+    musicAudio.play().catch(() => {});
+    updateMusicPauseIcon(true);
+  }
+}
+
+function toggleMusic() {
+  musicMuted = !musicMuted;
+  const icon   = document.getElementById('iconMusic');
+  const slider = document.getElementById('musicVolume');
+  if (musicMuted) {
+    musicAudio.pause();
+    musicPaused = false;
+    icon.innerHTML = `<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+      <line x1="1" y1="1" x2="23" y2="23" stroke-width="2"/>`;
+    if (slider) slider.value = 0;
+    updateMusicPauseIcon(false);
+  } else {
+    musicAudio.volume = 0.4;
+    musicAudio.play().catch(() => {});
+    icon.innerHTML = `<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>`;
+    if (slider) slider.value = 0.4;
+    updateMusicPauseIcon(true);
+  }
+}
+
+let currentPage = 0;
+let animating   = false;
+
+const bookCard  = document.getElementById('bookCard');
+const navDotsEl = document.getElementById('navDots');
+const navLeft   = document.getElementById('navLeft');
+const navRight  = document.getElementById('navRight');
+
+function withDropCap(text) {
+  const t = text.trimStart();
+  if (!t.length) return text;
+  return `<span class="drop-cap">${t.charAt(0)}</span>${t.slice(1)}`;
+}
+
+function buildDots() {
+  navDotsEl.innerHTML = '';
+  pages.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === currentPage ? ' active' : '');
+    d.onclick = () => goToPage(i);
+    navDotsEl.appendChild(d);
+  });
+}
+
+function updateArrows() {
+  const p = pages[currentPage];
+  navLeft.classList.toggle('hidden',  !bookOpened || currentPage <= 0);
+  navRight.classList.toggle('hidden', !bookOpened || p.type === 'end' || currentPage >= pages.length - 1);
+}
+
+function buildPageElement(p) {
+  const el = document.createElement('div');
+
+  if (p.type === 'cover') {
+    el.className = 'cover-page';
+    el.innerHTML = p.coverImg
+      ? `<img src="${p.coverImg}" alt="Portada: ${p.title}">`
+      : `<div class="cover-bg-placeholder">🌹</div>`;
+    el.innerHTML += `
+      <div class="cover-overlay">
+        <h1>${p.title}</h1>
+        <p class="author">${p.author}</p>
+      </div>`;
+    el.onclick = openBook;
+
+  } else if (p.type === 'end') {
+    el.className = 'end-page';
+    el.innerHTML = `
+      <div class="end-page-content">
+        <div class="ornament">✦ ✦ ✦</div>
+        <h2>Fin de la historia</h2>
+        <p>LaIAmusical</p>
+        <button class="back-btn" onclick="goToPage(0)">Volver al inicio</button>
+      </div>`;
+    stopAllAudio();
+
+  } else {
+    const imgHtml = p.illustrationSrc
+      ? `<img src="${p.illustrationSrc}" alt="${p.chapterTitle || 'Ilustración página ' + p.pageNum}">`
+      : `<div class="img-placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M3 15l5-5 4 4 3-3 6 6"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+          </svg>
+         </div>`;
+
+    el.className = 'story-page';
+    el.innerHTML = `
+      <div class="page-illustration">${imgHtml}</div>
+      <div class="page-text-section">
+        <div class="chapter-label">${p.chapterTitle || `Capítulo ${p.pageNum}`}</div>
+        <div class="page-text"><p>${withDropCap(p.text)}</p></div>
+        <div class="page-number">${p.pageNum}</div>
+      </div>
+      <div class="swipe-hint">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+        Desliza para pasar
+      </div>`;
+  }
+
+  return el;
+}
+
+function renderBook(direction) {
+  const p = pages[currentPage];
+
+  const headerTitle = p.type === 'cover'
+    ? p.title
+    : p.type === 'end'
+      ? 'Fin de la historia'
+      : (p.chapterTitle || `Capítulo ${p.pageNum}`);
+  const headerEl = document.querySelector('.book-title-header');
+  if (headerEl) headerEl.textContent = headerTitle;
+
+  const newEl = buildPageElement(p);
+
+  if (direction && bookOpened) {
+    const inClass  = direction === 'forward' ? 'anim-in-forward'  : 'anim-in-backward';
+    const outClass = direction === 'forward' ? 'anim-out-forward' : 'anim-out-backward';
+
+    newEl.style.position = 'absolute';
+    newEl.style.inset    = '0';
+    newEl.style.zIndex   = '2';
+
+    const oldEl = bookCard.firstElementChild;
+    if (oldEl && !oldEl.classList.contains('page-shadow-overlay')) {
+      oldEl.style.position = 'absolute';
+      oldEl.style.inset    = '0';
+      oldEl.style.zIndex   = '1';
+      oldEl.classList.add(outClass);
+    }
+
+    const shadow = document.createElement('div');
+    shadow.className = 'page-shadow-overlay' + (direction === 'backward' ? ' backward' : '');
+    shadow.style.zIndex = '5';
+    bookCard.appendChild(shadow);
+
+    setTimeout(() => {
+      bookCard.appendChild(newEl);
+      newEl.classList.add(inClass);
+    }, 80);
+
+    setTimeout(() => {
+      while (bookCard.children.length > 1) bookCard.removeChild(bookCard.firstChild);
+      newEl.style.position = '';
+      newEl.style.inset    = '';
+      newEl.style.zIndex   = '';
+    }, 520);
+
+  } else {
+    bookCard.innerHTML = '';
+    bookCard.appendChild(newEl);
+  }
+
+  buildDots();
+  updateArrows();
+}
+
+function openBook() {
+  if (!bookOpened) {
+    bookOpened = true;
+    document.getElementById('openHintBadge').classList.add('hidden');
+    document.getElementById('audioBar').classList.add('visible');
+    startMusic();
+  }
+  nextPage();
+}
+
+function nextPage() {
+  if (currentPage < pages.length - 1) goToPage(currentPage + 1, 'forward');
+}
+function prevPage() {
+  if (currentPage > 0) goToPage(currentPage - 1, 'backward');
+}
+
+function goToPage(target, dir) {
+  if (animating || target === currentPage || target < 0 || target >= pages.length) return;
+  const forward = dir ? dir === 'forward' : target > currentPage;
+  animating = true;
+  stopAllAudio();
+  currentPage = target;
+  renderBook(forward ? 'forward' : 'backward');
+  setTimeout(() => {
+    animating = false;
+    const p = pages[currentPage];
+    if (p && p.voiceSrc) playPageVoice(p.voiceSrc);
+  }, 540);
+}
+
+let touchStartX = 0;
+let touchStartY = 0;
+
+bookCard.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+bookCard.addEventListener('touchend', e => {
+  if (!bookOpened) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > 45) {
+    if (dx < 0) nextPage();
+    else        prevPage();
+  }
+}, { passive: true });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextPage();
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prevPage();
+});
+
+renderBook();
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>El club del faro</title>
+<title>El ladrón de historias</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -589,12 +589,10 @@
 
 <div class="ui-wrapper">
 
-  <!-- TOP BAR -->
   <div class="top-bar">
-    <p class="book-title-header">✦ El club del faro ✦</p>
+    <p class="book-title-header">✦ El ladrón de historias ✦</p>
 
     <div class="audio-bar" id="audioBar">
-      <!-- NARRADOR -->
       <div class="voice-indicator" id="voiceIndicator">
         <span></span><span></span><span></span><span></span>
       </div>
@@ -612,7 +610,6 @@
 
       <div class="audio-divider"></div>
 
-      <!-- MÚSICA -->
       <span class="audio-label">MÚSICA</span>
       <button class="audio-btn" id="btnMusicPause" title="Pausar/Reanudar música" onclick="toggleMusicPause()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" id="iconMusicPause">
@@ -629,7 +626,6 @@
     </div>
   </div>
 
-  <!-- BOOK WRAPPER -->
   <div class="book-wrapper" id="bookWrapper">
 
     <div class="open-hint-badge" id="openHintBadge">
@@ -663,7 +659,7 @@
    ░░  CONFIGURACIÓN DE AUDIO  ░░
 ============================================================ */
 
-const MUSIC_SRC = 'storycard/clubdelfaro.mp3';
+const MUSIC_SRC = 'storycard/ladrondehistorias.mp3';
 
 /* ============================================================
    ░░  CONFIGURACIÓN DEL LIBRO  ░░
@@ -674,119 +670,109 @@ const pages = [
   // ── PORTADA ──────────────────────────────────────────────
   {
     type: 'cover',
-    coverImg: 'storycard/clubdelfaro/portada.png',
-    title:    'El club del faro',
+    coverImg: 'storycard/ladrondehistorias/portada.png',
+    title:    'El ladrón de historias',
     author:   'De LaIAmusical'
-  },
-
-  // ── PRÓLOGO ───────────────────────────────────────────────
-  {
-    type: 'story',
-    pageNum: 0,
-    chapterTitle: 'Prólogo',
-    illustrationSrc: 'storycard/clubdelfaro/imagen1.png',
-    voiceSrc:        'storycard/clubdelfaro/voz1.wav',
-    text: `Antes de que empiece, apaga la luz. No del todo. Déjala como en Puerto Sombrío, a media niebla. Puerto Sombrío no sale en los mapas nuevos porque la niebla lo borra cada madrugada y lo devuelve por la mañana con las calles mojadas. El faro lleva apagado desde 1983, pero el pueblo sigue mirándolo igual, como se mira a alguien que dejó de hablar en mitad de una frase. Dicen los mayores que hay una hora en la que el aire pesa más. Que las gaviotas se quedan con el pico abierto. Que si pegas la oreja a una radio apagada, oyes algo que no es estática. Esta no es la historia de un monstruo. No es la historia de cómo se enciende una luz. Es la historia de cuatro amigos de catorce años que se cansaron de tener miedo al silencio y decidieron quedarse despiertos para escucharlo bien. Se reunían en un garaje que olía a soldadura y a café frío. Tenían una radio vieja, una libreta llena de espirales, una tarjeta de biblioteca y un walkman con una sola cinta. No tenían permisos, ni plan, ni adultos que los creyeran. Tenían turnos. Por eso, si vas a escuchar esto de noche, sube un poco el volumen. No por lo que vas a oír. Por lo que vas a notar cuando todo lo demás se calle. Bienvenido a Puerto Sombrío. Aquí la niebla no esconde. Guarda. Y hay cosas guardadas que llevan mucho tiempo esperando a que alguien les pregunte cómo se llaman.`
   },
 
   // ── CAPÍTULO 1 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 1,
-    chapterTitle: 'Capítulo 1: La frecuencia silenciosa',
-    illustrationSrc: 'storycard/clubdelfaro/imagen1.png',
-    voiceSrc:        'storycard/clubdelfaro/voz1.wav',
-    text: `El narrador recuerda el garaje de Leo en octubre por el olor, no por la vista. Olía a estaño frío, a aceite de motor y al café que su padre recalentaba tres veces en la misma taza. Leo tenía catorce años, las manos manchadas de soldadura y una Hallicrafters SX-100 que había rescatado del desguace porque, según el chatarrero, ya no cogía nada. Para Leo eso era una virtud. Las radios que no cogen nada son las que mejor escuchan. Aquella noche la niebla se colaba por debajo de la puerta. Leo giraba el dial milímetro a milímetro y anotaba cada crujido. A las 3:32 pasó por Radio Coruña, por una emisora de taxis, por un pitido lejano. A las 3:33 la aguja cayó en un hueco entre el 87.9 y el 88.1. No hubo estática. Hubo un silencio tan limpio que se llevó el zumbido de la nevera, el tictac del reloj y hasta el rumor de la carretera. Leo contuvo la respiración, se oyó el corazón y luego ni eso. Dijo en voz muy baja que no era ruido, que era como si alguien hubiera puesto el mundo en mute. Marco estaba tumbado sobre un amplificador con los cascos al cuello. Marco no entendía de válvulas. Entendía de pulso. Era el que corría por el espigón al amanecer con el walkman a todo volumen, siempre con la misma cinta, un tema que su hermano le había grabado, con un bombo que parecía un motor. Aquella noche entendieron dos cosas. Que había un silencio que no era ausencia sino presencia. Y que Marco no ponía esa música para animarse, sino para recordarse quién era cuando todo lo demás se callaba.`
+    chapterTitle: 'Capítulo 1: El Huérfano de la Bruma',
+    illustrationSrc: 'storycard/ladrondehistorias/imagen1.png',
+    voiceSrc:        'storycard/ladrondehistorias/voz1.wav',
+    text: `Finn vive en los muelles de la cosmopolita ciudad de Aethelburg, habiendo llegado en un barco de carga años atrás. Es el único superviviente de su isla, un lugar cuya historia y nombre fueron borrados por una misteriosa "Bruma del Olvido". Trabaja como escriba, pero por la noche, escribe febrilmente su propia crónica, poemas y manifiestos, decidido a que su nombre resuene en la historia. Un día, un encargo lo lleva a la mansión de Silas Vane, un hombre que parece saber más de lo que aparenta sobre el pasado perdido de Finn.`
   },
 
   // ── CAPÍTULO 2 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 2,
-    chapterTitle: 'Capítulo 2: El colegio',
-    illustrationSrc: 'storycard/clubdelfaro/imagen2.png',
-    voiceSrc:        'storycard/clubdelfaro/voz2.wav',
-    text: `Al día siguiente el instituto olía a tiza mojada. La niebla se había metido en el patio y las voces sonaban amortiguadas. En la cola del desayuno tres alumnos de segundo contaban lo mismo sin haberse puesto de acuerdo. Todos se habían despertado a las 3:33 y no oían su propia respiración. Sofía lo anotó todo con bolígrafo rojo. Era la que subrayaba, la que archivaba, la que pedía fuentes. Murmuró que no podía ser histeria colectiva si ni siquiera se conocían. Elena no levantó la vista. Abrió su carpeta de dibujo y el narrador habría visto temblar sus dedos manchados de carboncillo. Página tras página aparecía el mismo faro apagado, rodeado de espirales negras que se cerraban como un desagüe. En el centro, una figura sin rostro hecha solo de círculos concéntricos. Cuando Leo le preguntó cuándo lo había dibujado, ella respondió que no lo recordaba, que se había acostado a las once y se había despertado a las cuatro con la mano negra y doce páginas llenas, como si alguien le dictara. Marco pasó la mano por el papel y notó el surco. Dijo que no era un dibujo, que era una grabación, que anoche la radio latía a 64 y que ella estaba copiando esas ondas. Elena cerró la carpeta de golpe, avergonzada, y Sofía escribió en rojo en su libreta dos palabras: Conexión Elena frecuencia.`
+    chapterTitle: 'Capítulo 2: El Tintero Vacío',
+    illustrationSrc: 'storycard/ladrondehistorias/imagen2.png',
+    voiceSrc:        'storycard/ladrondehistorias/voz2.wav',
+    text: `En la biblioteca de Vane, Finn ve un antiguo tintero que, según Vane, puede "absorber la esencia de un relato". Vane le demuestra su poder tocando un viejo mapa de una ciudad perdida, haciendo que la tinta del mapa se desvanezca y se trasvase al tintero. Finn se horroriza al comprender que Vane no es un coleccionista, sino un ladrón. Esa noche, investiga sobre Vane y descubre rumores sobre un hombre que deja a su paso pueblos sin memoria y bibliotecas con libros en blanco.`
   },
 
   // ── CAPÍTULO 3 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 3,
-    chapterTitle: 'Capítulo 3: El club del faro',
-    illustrationSrc: 'storycard/clubdelfaro/imagen3.png',
-    voiceSrc:        'storycard/clubdelfaro/voz3.wav',
-    text: `Esa tarde el garaje dejó de ser taller. Sofía trajo chinchetas y un mapa catastral de 1976. Leo soldó una antena de cobre a una percha. Elena colgó sus dibujos con pinzas de la ropa, como radiografías. Marco delimitó el suelo con cinta aislante. Escribieron dos reglas en un cartón. La primera, que nadie iría solo al faro. La segunda, que todo se registraría, incluso lo que no entendieran. Sofía dijo que si iban a meterse con algo del gobierno, al menos tendrían actas. Marco contestó que no era un juego, que era escuchar más fuerte que ellos. Leo propuso el nombre y todos asintieron. Lo llamarían el club del faro, porque ahí era donde todo dejaba de sonar. El narrador los imagina brindando con latas de cola, sin saber que acababan de fundar una guardia nocturna.`
+    chapterTitle: 'Capítulo 3: Los Cartógrafos del Recuerdo',
+    illustrationSrc: 'storycard/ladrondehistorias/imagen3.png',
+    voiceSrc:        'storycard/ladrondehistorias/voz3.wav',
+    text: `La investigación de Finn llama la atención de Elara, quien lo contacta. Le revela la existencia de los Cartógrafos del Recuerdo y le explica que Silas Vane es un renegado de su orden. Su objetivo es la "Biblioteca Silente", un lugar mítico donde pretende almacenar todas las historias del mundo, creando un monopolio sobre el pasado, el presente y el futuro. Elara le propone a Finn una alianza: su don para crear y reconstruir historias es la única arma contra el poder de Vane para robarlas.`
   },
 
   // ── CAPÍTULO 4 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 4,
-    chapterTitle: 'Capítulo 4: La biblioteca',
-    illustrationSrc: 'storycard/clubdelfaro/imagen4.png',
-    voiceSrc:        'storycard/clubdelfaro/voz4.wav',
-    text: `Mientras Leo y Marco probaban bobinas, Sofía bajó al sótano de la biblioteca. Allí la humedad huele a papel viejo. Pidió las actas del puerto entre 1970 y 1985 y doña Amparo volvió con una caja con un sello rojo descolorido que decía Proyecto Eco 1978 Confidencial. Dentro había fotos de marinos con auriculares enormes sentados dentro del faro, planos que mostraban la torre convertida en una antena de infrasonido para hablar con submarinos, y partes meteorológicos con una anotación al margen. Respuesta a las 03:33. Al fondo, una nota manuscrita con tinta corrida decía que en el día 47 habían recibido respuesta, que no era eco sino imitación, que repetía con retraso de 1,2 segundos y que aprendía. Sofía lo fotografió todo y corrió al garaje con la niebla calándole los huesos. Les explicó que no querían iluminar, que querían escuchar bajo el mar, y que algo les había contestado desde más abajo. Que lo llamaron Eco porque devolvía lo que oía, pero que no era un rebote. Era algo que aprendía. Leo abrió su cuaderno en la página del 64. Elena abrió su carpeta en la página de las ondas. Marco puso en pausa su tema de actualidad. Todo encajaba y nada encajaba.`
+    chapterTitle: 'Capítulo 4: El Vuelo del Nómada',
+    illustrationSrc: 'storycard/ladrondehistorias/imagen4.png',
+    voiceSrc:        'storycard/ladrondehistorias/voz4.wav',
+    text: `Elara y Finn saben que el próximo objetivo de Vane es el "Canto del Desierto", una historia oral preservada por una tribu en las vastas arenas de Zahar. Para llegar antes que él, necesitan transporte rápido. Elara los lleva con Jax, un piloto de dirigible que le debe un favor. Tras una tensa negociación (y la promesa de un tesoro), Jax accede a llevarlos en su nave, "El Nómada del Viento". Finn, que nunca ha volado, se siente por primera vez dueño de su destino, surcando los cielos hacia lo desconocido.`
   },
 
   // ── CAPÍTULO 5 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 5,
-    chapterTitle: 'Capítulo 5: El corredor',
-    illustrationSrc: 'storycard/clubdelfaro/imagen5.png',
-    voiceSrc:        'storycard/clubdelfaro/voz5.wav',
-    text: `Marco no durmió esa noche. Puso en la mesa de la cocina el metrónomo de su hermana, el walkman y el cuaderno de Leo. Contó el latido de la frecuencia silenciosa. Sesenta y cuatro golpes por minuto, exactos como un reloj enfermo. Puso su tema de actualidad. Ciento veintiocho. El doble. Perfecto. A las cinco de la mañana llamó al timbre de Leo y escribió dos números en la pizarra del garaje. Les dijo que la frecuencia silenciosa latía a 64, que su tema de actualidad iba a 128, que era el doble exacto y que si la tocaban al revés se cancelarían. Leo le preguntó si quería usar una canción para cerrar una puerta y Marco contestó que no, que quería usarla para que lo que estuviera al otro lado bailara y se delatara. Leo lo miró y entendió. Marco no tenía radio como él, ni visiones como Elena, ni archivos como Sofía. Lo que tenía era ritmo. Para él ser un corredor no era ganar. Era mantener el pulso cuando todo lo demás se quedaba en silencio. Grabaron el tema de actualidad al revés. La cinta chirrió y cuando la pusieron en la Hallicrafters la aguja se quedó clavada en el punto muerto y luego tembló, como un animal que oye un silbato que los humanos no oyen. El silencio había respondido.`
+    chapterTitle: 'Capítulo 5: El Canto del Desierto',
+    illustrationSrc: 'storycard/ladrondehistorias/imagen5.png',
+    voiceSrc:        'storycard/ladrondehistorias/voz5.wav',
+    text: `Llegan al campamento de la tribu justo cuando Vane está allí, encantando a los ancianos con falsas promesas. Vane intenta usar su tintero para robar el Canto. En un acto desesperado, Finn se pone de pie y comienza a recitar una contra-historia, una improvisación brillante y emotiva sobre la resiliencia y el poder de un pueblo que se niega a ser olvidado. Su relato es tan poderoso que interfiere con la magia de Vane, creando un duelo de palabras y voluntades. Logran salvar el Canto, pero Vane escapa, ahora viendo a Finn como una verdadera amenaza.`
   },
 
   // ── CAPÍTULO 6 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 6,
-    chapterTitle: 'Capítulo 6: El faro',
-    illustrationSrc: 'storycard/clubdelfaro/imagen6.png',
-    voiceSrc:        'storycard/clubdelfaro/voz6.wav',
-    text: `Subieron al faro el sábado con la marea baja. La niebla les llegaba a las rodillas. La puerta principal estaba soldada desde el 83, pero Leo había encontrado una trampilla en los planos del Proyecto Eco. Dentro olía a hierro oxidado. La escalera devolvía cada paso multiplicado. Arriba la sala de lámparas estaba vacía, pero la sala de máquinas vibraba aunque el generador llevaba muerto cuarenta años. Elena puso la palma en la pared de acero y la retiró como si quemara. Dijo que allí no había luz porque no la necesitaban, que allí escuchaban. Leo preguntó quiénes. Conectó la radio a la antena central con pinzas de cocodrilo y giró al punto muerto. El silencio salió por los altavoces y llenó la torre. Luego llegó una voz que no era voz, era el recuerdo de una voz con el mismo retraso de 1,2 segundos de la nota. Dijo una sola palabra. Devuélvanme. No era una amenaza. Era una petición hecha con sus propias frecuencias mezcladas. El narrador habría sentido el frío bajar por la nuca. No estaban solos. Nunca lo habían estado.`
+    chapterTitle: 'Capítulo 6: La Ciudad Sumergida',
+    illustrationSrc: 'storycard/ladrondehistorias/imagen6.png',
+    voiceSrc:        'storycard/ladrondehistorias/voz6.wav',
+    text: `Elara descifra que el siguiente artefacto que Vane busca está en las ruinas de Lyra, una ciudad sumergida. Usando un sumergible de los Cartógrafos, el trío desciende a la ciudad silenciosa y acuática. La presión y el peligro aumentan, poniendo a prueba su confianza. Jax demuestra su valía como ingeniero, mientras Finn queda fascinado por la tragedia y la belleza de la historia perdida bajo el agua, escribiendo sin parar en su diario.`
   },
 
   // ── CAPÍTULO 7 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 7,
-    chapterTitle: 'Capítulo 7: El Vacío',
-    illustrationSrc: 'storycard/clubdelfaro/imagen7.png',
-    voiceSrc:        'storycard/clubdelfaro/voz7.wav',
-    text: `La pared del fondo no se abrió. Se hizo menos. Un rectángulo de silencio tan denso que podías entrar en él como en agua negra. Al otro lado no había monstruos. Estaba Puerto Sombrío al revés, sin color, con las gaviotas congeladas a medio grito y las farolas apagadas por dentro. Flotando en el aire había frases a medio decir, como polvo. Elena dio dos pasos dentro y volvió llorando. Se arrodilló y dibujó frenética con una tiza. Les explicó entre sollozos que no estaba vacío, que estaba lleno de todo lo que no habían dicho, de cada te quiero tragado y cada lo siento que no salió, que por eso dibujaba, que nadie le dictaba, que se lo enseñaban. Sofía le susurró que por eso la elegía a ella, porque era la única que sabía traducirlo. Sofía comparó el dibujo con la foto del Proyecto Eco. Las espirales de Elena eran idénticas a las ondas de infrasonido del plano. El narrador entendió entonces que Elena no estaba enferma. Estaba sintonizada desde antes de que Leo encontrara la frecuencia.`
+    chapterTitle: 'Capítulo 7: La Traición y la Revelación',
+    illustrationSrc: 'storycard/ladrondehistorias/imagen7.png',
+    voiceSrc:        'storycard/ladrondehistorias/voz7.wav',
+    text: `Encuentran el artefacto, una lira de cristal que contiene la "Música de la Creación". Pero Vane les ha tendido una trampa. Los acorrala y revela la verdad: la "Bruma del Olvido" que destruyó el hogar de Finn no fue un fenómeno natural. Fue un intento fallido de Vane por robar la historia primigenia de la isla usando una versión inestable y peligrosa de su tintero. Él es el responsable indirecto de que Finn sea un huérfano. La revelación golpea a Finn con la fuerza de un huracán.`
   },
 
   // ── CAPÍTULO 8 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 8,
-    chapterTitle: 'Capítulo 8: El origen',
-    illustrationSrc: 'storycard/clubdelfaro/imagen8.png',
-    voiceSrc:        'storycard/clubdelfaro/voz8.wav',
-    text: `Con la linterna roja entre los dientes, Sofía leyó el resto del informe. Contaba que en el día 62 el operador se quitó los auriculares y siguió oyendo el mar dentro de su cabeza durante tres días, y que en el día 71 dieron orden de cierre, de tapiar la sala y de informar a la población de una avería eléctrica. El eco de su voz rebotó en el metal. Marco dijo que no lo habían cerrado, que solo habían bajado el volumen. Leo añadió que ellos lo habían vuelto a subir con la antena. Elena seguía dibujando. Ahora se dibujaba a los cuatro dentro del faro, con cables saliendo de sus pechos hacia la antena. Marco puso la mano sobre el walkman y comprendió que su tema de actualidad no era un capricho. Era la única cosa humana, imperfecta, con tempo variable, que el Eco no podía imitar bien. Porque el Eco copiaba, pero no sentía el cansancio de correr.`
+    chapterTitle: 'Capítulo 8: El Duelo en el Corazón del Mundo',
+    illustrationSrc: 'storycard/ladrondehistorias/imagen8.png',
+    voiceSrc:        'storycard/ladrondehistorias/voz8.wav',
+    text: `Consumido por la ira y el dolor, Finn persigue a Vane hasta su base de operaciones: un observatorio abandonado en la cima de los Picos de Hielo, el punto más alto del mundo. Allí, Vane ha comenzado el ritual para transferir todas las historias robadas a la Biblioteca Silente. Se desata una confrontación final. No es una lucha de espadas, sino de ingenio y voluntad. Vane argumenta que la historia es peligrosa en manos de la gente común; Finn, que la historia es el derecho de nacimiento de todos.`
   },
 
   // ── CAPÍTULO 9 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 9,
-    chapterTitle: 'Capítulo 9: El Eco sin rostro',
-    illustrationSrc: 'storycard/clubdelfaro/imagen9.png',
-    voiceSrc:        'storycard/clubdelfaro/voz9.wav',
-    text: `Salió del centro del Vacío cuando Leo subió la ganancia. No tenía cara porque estaba hecho de todas las frecuencias que faltaban. Cada paso absorbía el sonido de sus zapatillas. Se presentó diciendo que era el lugar donde caen las palabras que no dijiste. Leo le preguntó qué quería y contestó que salir, que ellos habían abierto y que ellos eran la puerta. El narrador detiene aquí el tiempo. Leo descubre. Elena traduce. Sofía explica. Marco corre. No eran investigadores. Eran la cerradura. Elena se puso delante de la criatura y por primera vez en meses no dibujó. Habló con la voz rota y le dijo que no, que lo había visto cada noche en sus dibujos, que no quería salir, que quería que lo escucharan para dejar de estar solo, que por eso imitaba. La criatura se detuvo. En su superficie lisa apareció un segundo el reflejo borroso de los cuatro, como en agua turbia. No era amenaza. Era soledad aprendida.`
+    chapterTitle: 'Capítulo 9: La Pluma y el Legado',
+    illustrationSrc: 'storycard/ladrondehistorias/imagen9.png',
+    voiceSrc:        'storycard/ladrondehistorias/voz9.wav',
+    text: `Durante el duelo, Finn se da cuenta de que el odio no es la respuesta. En lugar de destruir a Vane, usa su don. Comienza a escribir y a contar una nueva historia: la de un hombre que, consumido por el miedo a perderlo todo, intentó poseerlo todo, solo para quedar vacío. Describe la tragedia de Silas Vane con tal empatía y verdad que rompe el poder del aristócrata. Las historias robadas, liberadas de su control, estallan en un torbellino de luz y regresan a sus lugares de origen en todo el mundo.`
   },
 
-  // ── CAPÍTULO 10 ───────────────────────────────────────────
+  // ── CAPÍTULO 10 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 10,
-    chapterTitle: 'Capítulo 10: Cerrar sin olvidar',
-    illustrationSrc: 'storycard/clubdelfaro/imagen10.png',
-    voiceSrc:        'storycard/clubdelfaro/voz10.wav',
-    text: `No podían destruir la frecuencia. Era parte del pueblo como la niebla. Entendieron que el Vacío no se alimentaba de ruido sino de su ausencia, que gritarle era inútil porque se tragaba el grito. Lo que sí podían hacer era darle un ritmo tan constante y tan humano que no supiera copiarlo sin cansarse. Marco propuso cancelar la frecuencia con su tema de actualidad invertido mientras Leo transmitía en la silenciosa, para crear un nudo, no un cierre, sino una amarra. Sofía preguntó qué pasaría si volvía a soltarse y Leo contestó que entonces estarían allí, que el club del faro no era para cazar monstruos sino para vigilar el silencio. Conectaron la Hallicrafters al viejo transmisor. Marco lanzó su tema de actualidad al revés. Era como ponerle un metrónomo a un fantasma. El bombo a 128 invertido chocaba contra el latido de 64 y lo ataba. Elena colocó sus dibujos sobre la bobina como si fueran partitura, para que el Eco viera que alguien lo había entendido. Leo habló al micrófono, no al Vacío sino a sus amigos, y dejó grabado que si alguien los escuchaba al otro lado supiera que no estaban en venta, que si querían compañía aprendieran a tocar la puerta. La frecuencia silenciosa gritó una vez, un quejido agudo que recorrió la torre, y luego se plegó sobre sí misma como una vela que se apaga. El Eco retrocedió, no derrotado sino contenido, como una nota sostenida que vuelve al compás. El faro no se encendió. No hacía falta luz. Bajaron entre la niebla agotados. En el garaje la radio quedó sintonizada en el punto muerto, vigilando, con el piloto rojo encendido. Sofía dijo que mañana había clase. Marco contestó que mañana volverían a ensayar. Leo añadió que a las 3:33, por si el silencio volvía a respirar. Y Puerto Sombrío siguió sin aparecer en los mapas nuevos. Pero ahora, cada madrugada a las 3:33, si pegabas la oreja al suelo del espigón, podías oír muy lejos, bajo la niebla, un bombo latiendo al revés. El club del faro estaba de guardia.`
+    chapterTitle: 'Capítulo 10: El Escriba de Aethelburg',
+    illustrationSrc: 'storycard/ladrondehistorias/imagen10.png',
+    voiceSrc:        'storycard/ladrondehistorias/voz10.wav',
+    text: `Derrotado y despojado de su poder, Vane es entregado a los Cartógrafos. Jax recibe su paga y, con una sonrisa, admite que la aventura fue mejor que cualquier tesoro. Elara le ofrece a Finn un puesto de honor en la orden, pero él lo rechaza. Regresa a Aethelburg, no como un huérfano anónimo, sino como una leyenda. Funda un taller abierto a todos, enseñando a la gente a leer, escribir y, lo más importante, a contar sus propias historias. Ya no está obsesionado con su legado, porque ha entendido que un verdadero legado no se escribe para uno mismo, sino que se construye para los demás. Su historia, finalmente, había comenzado.`
   },
 
   // ── PÁGINA FINAL ─────────────────────────────────────────
@@ -970,7 +956,7 @@ function buildPageElement(p) {
     el.className = 'cover-page';
     el.innerHTML = p.coverImg
       ? `<img src="${p.coverImg}" alt="Portada: ${p.title}">`
-      : `<div class="cover-bg-placeholder">🏮</div>`;
+      : `<div class="cover-bg-placeholder">🎵</div>`;
     el.innerHTML += `
       <div class="cover-overlay">
         <h1>${p.title}</h1>

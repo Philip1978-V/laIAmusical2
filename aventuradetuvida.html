@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>El club del faro</title>
+<title>La aventura de tu vida</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -589,12 +589,10 @@
 
 <div class="ui-wrapper">
 
-  <!-- TOP BAR -->
   <div class="top-bar">
-    <p class="book-title-header">✦ El club del faro ✦</p>
+    <p class="book-title-header">✦ La aventura de tu vida ✦</p>
 
     <div class="audio-bar" id="audioBar">
-      <!-- NARRADOR -->
       <div class="voice-indicator" id="voiceIndicator">
         <span></span><span></span><span></span><span></span>
       </div>
@@ -612,7 +610,6 @@
 
       <div class="audio-divider"></div>
 
-      <!-- MÚSICA -->
       <span class="audio-label">MÚSICA</span>
       <button class="audio-btn" id="btnMusicPause" title="Pausar/Reanudar música" onclick="toggleMusicPause()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" id="iconMusicPause">
@@ -629,7 +626,6 @@
     </div>
   </div>
 
-  <!-- BOOK WRAPPER -->
   <div class="book-wrapper" id="bookWrapper">
 
     <div class="open-hint-badge" id="openHintBadge">
@@ -663,7 +659,7 @@
    ░░  CONFIGURACIÓN DE AUDIO  ░░
 ============================================================ */
 
-const MUSIC_SRC = 'storycard/clubdelfaro.mp3';
+const MUSIC_SRC = 'storycard/aventuradetuvida.mp3';
 
 /* ============================================================
    ░░  CONFIGURACIÓN DEL LIBRO  ░░
@@ -674,119 +670,209 @@ const pages = [
   // ── PORTADA ──────────────────────────────────────────────
   {
     type: 'cover',
-    coverImg: 'storycard/clubdelfaro/portada.png',
-    title:    'El club del faro',
-    author:   'De LaIAmusical'
-  },
-
-  // ── PRÓLOGO ───────────────────────────────────────────────
-  {
-    type: 'story',
-    pageNum: 0,
-    chapterTitle: 'Prólogo',
-    illustrationSrc: 'storycard/clubdelfaro/imagen1.png',
-    voiceSrc:        'storycard/clubdelfaro/voz1.wav',
-    text: `Antes de que empiece, apaga la luz. No del todo. Déjala como en Puerto Sombrío, a media niebla. Puerto Sombrío no sale en los mapas nuevos porque la niebla lo borra cada madrugada y lo devuelve por la mañana con las calles mojadas. El faro lleva apagado desde 1983, pero el pueblo sigue mirándolo igual, como se mira a alguien que dejó de hablar en mitad de una frase. Dicen los mayores que hay una hora en la que el aire pesa más. Que las gaviotas se quedan con el pico abierto. Que si pegas la oreja a una radio apagada, oyes algo que no es estática. Esta no es la historia de un monstruo. No es la historia de cómo se enciende una luz. Es la historia de cuatro amigos de catorce años que se cansaron de tener miedo al silencio y decidieron quedarse despiertos para escucharlo bien. Se reunían en un garaje que olía a soldadura y a café frío. Tenían una radio vieja, una libreta llena de espirales, una tarjeta de biblioteca y un walkman con una sola cinta. No tenían permisos, ni plan, ni adultos que los creyeran. Tenían turnos. Por eso, si vas a escuchar esto de noche, sube un poco el volumen. No por lo que vas a oír. Por lo que vas a notar cuando todo lo demás se calle. Bienvenido a Puerto Sombrío. Aquí la niebla no esconde. Guarda. Y hay cosas guardadas que llevan mucho tiempo esperando a que alguien les pregunte cómo se llaman.`
+    coverImg: 'storycard/aventuradetuvida/portada.png',
+    title:    'La aventura de tu vida',
+    author:   'Una aventura de Oakhaven'
   },
 
   // ── CAPÍTULO 1 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 1,
-    chapterTitle: 'Capítulo 1: La frecuencia silenciosa',
-    illustrationSrc: 'storycard/clubdelfaro/imagen1.png',
-    voiceSrc:        'storycard/clubdelfaro/voz1.wav',
-    text: `El narrador recuerda el garaje de Leo en octubre por el olor, no por la vista. Olía a estaño frío, a aceite de motor y al café que su padre recalentaba tres veces en la misma taza. Leo tenía catorce años, las manos manchadas de soldadura y una Hallicrafters SX-100 que había rescatado del desguace porque, según el chatarrero, ya no cogía nada. Para Leo eso era una virtud. Las radios que no cogen nada son las que mejor escuchan. Aquella noche la niebla se colaba por debajo de la puerta. Leo giraba el dial milímetro a milímetro y anotaba cada crujido. A las 3:32 pasó por Radio Coruña, por una emisora de taxis, por un pitido lejano. A las 3:33 la aguja cayó en un hueco entre el 87.9 y el 88.1. No hubo estática. Hubo un silencio tan limpio que se llevó el zumbido de la nevera, el tictac del reloj y hasta el rumor de la carretera. Leo contuvo la respiración, se oyó el corazón y luego ni eso. Dijo en voz muy baja que no era ruido, que era como si alguien hubiera puesto el mundo en mute. Marco estaba tumbado sobre un amplificador con los cascos al cuello. Marco no entendía de válvulas. Entendía de pulso. Era el que corría por el espigón al amanecer con el walkman a todo volumen, siempre con la misma cinta, un tema que su hermano le había grabado, con un bombo que parecía un motor. Aquella noche entendieron dos cosas. Que había un silencio que no era ausencia sino presencia. Y que Marco no ponía esa música para animarse, sino para recordarse quién era cuando todo lo demás se callaba.`
+    chapterTitle: 'Capítulo 1: El hallazgo en el desván',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen1.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz1.wav',
+    text: `El verano comenzó con un castigo para Alex: limpiar el ático de su abuelo. El calor era sofocante, y el aire olía a madera vieja y papel. —Uf, esto es peor que un examen de matemáticas —murmuró Alex para sí mismo, levantando una lona polvorienta. Entre cajas de libros antiguos y recuerdos olvidados, sus dedos rozaron algo frío y metálico. Era un antiguo cofre, grabado con extraños símbolos de montañas con forma de nubes y soles con rostros. El corazón le dio un vuelco. —¿Pero qué es esto? Con cuidado, forzó el oxidado pestillo. No se abrió. Frustrado, lo sacudió hasta que, con un clic metálico y satisfactorio, la tapa se levantó. El interior estaba vacío, salvo por un trozo de piel curtida, doblada y frágil.`
   },
 
   // ── CAPÍTULO 2 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 2,
-    chapterTitle: 'Capítulo 2: El colegio',
-    illustrationSrc: 'storycard/clubdelfaro/imagen2.png',
-    voiceSrc:        'storycard/clubdelfaro/voz2.wav',
-    text: `Al día siguiente el instituto olía a tiza mojada. La niebla se había metido en el patio y las voces sonaban amortiguadas. En la cola del desayuno tres alumnos de segundo contaban lo mismo sin haberse puesto de acuerdo. Todos se habían despertado a las 3:33 y no oían su propia respiración. Sofía lo anotó todo con bolígrafo rojo. Era la que subrayaba, la que archivaba, la que pedía fuentes. Murmuró que no podía ser histeria colectiva si ni siquiera se conocían. Elena no levantó la vista. Abrió su carpeta de dibujo y el narrador habría visto temblar sus dedos manchados de carboncillo. Página tras página aparecía el mismo faro apagado, rodeado de espirales negras que se cerraban como un desagüe. En el centro, una figura sin rostro hecha solo de círculos concéntricos. Cuando Leo le preguntó cuándo lo había dibujado, ella respondió que no lo recordaba, que se había acostado a las once y se había despertado a las cuatro con la mano negra y doce páginas llenas, como si alguien le dictara. Marco pasó la mano por el papel y notó el surco. Dijo que no era un dibujo, que era una grabación, que anoche la radio latía a 64 y que ella estaba copiando esas ondas. Elena cerró la carpeta de golpe, avergonzada, y Sofía escribió en rojo en su libreta dos palabras: Conexión Elena frecuencia.`
+    chapterTitle: 'Capítulo 2: El Club de Aventureros se reúne',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen2.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz2.wav',
+    text: `Esa misma tarde, el sol poniente teñía el cielo de naranja. En la casa del árbol que servía como su cuartel general, Alex desplegó su hallazgo sobre la mesa. —¡No vais a creer lo que he encontrado! —exclamó, con la emoción brillando en sus ojos. Maya, la genio del grupo, se ajustó las gafas y examinó el material. —¡Increíble! Esto no es papel, es piel curtida. Y estos símbolos… parecen pre-incas. ¡Debe tener siglos! —dijo, trazando con el dedo los dibujos descoloridos—. Mirad, aquí pone "Cloud Peak" (Pico de la Nube) y esto… señala a un "Manantial de la Juventud de la Tierra". Chloe, la intrépida atleta, se inclinó sobre el mapa. —¿Un pico y un manantial? ¡Eso suena a una escalada épica! ¿Cuándo nos vamos? Leo, el experto en supervivencia gracias a su enorme colección de libros, frunció el ceño. —Un momento. La "Cordillera Velada"... Mi libro de leyendas locales dice que es una zona peligura, llena de barrancos y un clima impredecible. Si vamos a ir, debemos prepararnos bien. —Lo haremos —afirmó Alex, con la mirada fija en el mapa—. Pero vamos a ir. ¡Es la primera gran misión de la Sociedad de la Aventura! Juntos, bajo la luz de una linterna, juraron desvelar el secreto del mapa.`
   },
 
   // ── CAPÍTULO 3 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 3,
-    chapterTitle: 'Capítulo 3: El club del faro',
-    illustrationSrc: 'storycard/clubdelfaro/imagen3.png',
-    voiceSrc:        'storycard/clubdelfaro/voz3.wav',
-    text: `Esa tarde el garaje dejó de ser taller. Sofía trajo chinchetas y un mapa catastral de 1976. Leo soldó una antena de cobre a una percha. Elena colgó sus dibujos con pinzas de la ropa, como radiografías. Marco delimitó el suelo con cinta aislante. Escribieron dos reglas en un cartón. La primera, que nadie iría solo al faro. La segunda, que todo se registraría, incluso lo que no entendieran. Sofía dijo que si iban a meterse con algo del gobierno, al menos tendrían actas. Marco contestó que no era un juego, que era escuchar más fuerte que ellos. Leo propuso el nombre y todos asintieron. Lo llamarían el club del faro, porque ahí era donde todo dejaba de sonar. El narrador los imagina brindando con latas de cola, sin saber que acababan de fundar una guardia nocturna.`
+    chapterTitle: 'Capítulo 3: El Puente sobre las Nubes',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen3.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz3.wav',
+    text: `El viaje fue más duro de lo que imaginaban. Tras horas de ascenso por senderos cubiertos de musgo, llegaron al legendario Puente de los Vientos. Ante ellos se extendía un estrecho arco de piedra sobre un mar de nubes que se arremolinaba en el abismo. El Pico de la Nube se cernía sobre ellos, majestuoso e intimidante. —Cuidado dónde pisáis —advirtió Leo—. Estas piedras tienen siglos y la humedad las hace resbaladizas. Chloe, sin embargo, sonrió. —¡Esto es increíble! ¡Siento que puedo tocar las nubes! Alex, con su mochila amarilla de lona, se detuvo en mitad del puente. El aire era frío y ralo. Por un momento, la inmensidad de su búsqueda lo sobrecogió. Era real.`
   },
 
   // ── CAPÍTULO 4 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 4,
-    chapterTitle: 'Capítulo 4: La biblioteca',
-    illustrationSrc: 'storycard/clubdelfaro/imagen4.png',
-    voiceSrc:        'storycard/clubdelfaro/voz4.wav',
-    text: `Mientras Leo y Marco probaban bobinas, Sofía bajó al sótano de la biblioteca. Allí la humedad huele a papel viejo. Pidió las actas del puerto entre 1970 y 1985 y doña Amparo volvió con una caja con un sello rojo descolorido que decía Proyecto Eco 1978 Confidencial. Dentro había fotos de marinos con auriculares enormes sentados dentro del faro, planos que mostraban la torre convertida en una antena de infrasonido para hablar con submarinos, y partes meteorológicos con una anotación al margen. Respuesta a las 03:33. Al fondo, una nota manuscrita con tinta corrida decía que en el día 47 habían recibido respuesta, que no era eco sino imitación, que repetía con retraso de 1,2 segundos y que aprendía. Sofía lo fotografió todo y corrió al garaje con la niebla calándole los huesos. Les explicó que no querían iluminar, que querían escuchar bajo el mar, y que algo les había contestado desde más abajo. Que lo llamaron Eco porque devolvía lo que oía, pero que no era un rebote. Era algo que aprendía. Leo abrió su cuaderno en la página del 64. Elena abrió su carpeta en la página de las ondas. Marco puso en pausa su tema de actualidad. Todo encajaba y nada encajaba.`
+    chapterTitle: 'Capítulo 4: Las Ruinas Olvidadas',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen4.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz4.wav',
+    text: `Al otro lado del puente, el camino los llevó a una ciudad en ruinas, devorada por la jungla. Enormes pilastras de piedra cubiertas de enredaderas formaban una puerta a un pasado olvidado. —Guau… —susurró Leo—. Esto es más grande que cualquier cosa que haya visto en mis libros. Maya corrió hacia un muro cubierto de jeroglíficos. —¡Mirad esto! Habla de una civilización que vivía en armonía con la montaña. Decían que el manantial no era solo agua… era la "sangre del valle", lo que le daba vida a todo. —Entonces —dijo Alex, con una nueva determinación—, nuestra búsqueda es más importante de lo que pensábamos.`
   },
 
   // ── CAPÍTULO 5 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 5,
-    chapterTitle: 'Capítulo 5: El corredor',
-    illustrationSrc: 'storycard/clubdelfaro/imagen5.png',
-    voiceSrc:        'storycard/clubdelfaro/voz5.wav',
-    text: `Marco no durmió esa noche. Puso en la mesa de la cocina el metrónomo de su hermana, el walkman y el cuaderno de Leo. Contó el latido de la frecuencia silenciosa. Sesenta y cuatro golpes por minuto, exactos como un reloj enfermo. Puso su tema de actualidad. Ciento veintiocho. El doble. Perfecto. A las cinco de la mañana llamó al timbre de Leo y escribió dos números en la pizarra del garaje. Les dijo que la frecuencia silenciosa latía a 64, que su tema de actualidad iba a 128, que era el doble exacto y que si la tocaban al revés se cancelarían. Leo le preguntó si quería usar una canción para cerrar una puerta y Marco contestó que no, que quería usarla para que lo que estuviera al otro lado bailara y se delatara. Leo lo miró y entendió. Marco no tenía radio como él, ni visiones como Elena, ni archivos como Sofía. Lo que tenía era ritmo. Para él ser un corredor no era ganar. Era mantener el pulso cuando todo lo demás se quedaba en silencio. Grabaron el tema de actualidad al revés. La cinta chirrió y cuando la pusieron en la Hallicrafters la aguja se quedó clavada en el punto muerto y luego tembló, como un animal que oye un silbato que los humanos no oyen. El silencio había respondido.`
+    chapterTitle: 'Capítulo 5: El Primer Desafío de Chloe',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen5.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz5.wav',
+    text: `El camino terminaba abruptamente en un profundo barranco. No había forma de cruzar. —Yo iré —dijo Chloe sin dudarlo, sacando su cuerda de escalada—. Veo un saliente al otro lado con lo que parece… ¿un mecanismo? —¡Espera! —exclamó Maya, consultando una foto que había tomado de los jeroglíficos—. ¡Un engranaje de piedra! ¡Es un puente levadizo oculto! Según esto, hay varias palancas, pero solo la que tiene el símbolo del sol funcionará. Leo aseguró la cuerda a una formación rocosa. —Comprueba tu arnés dos veces, Chloe. Es una caída larga. Con una agilidad asombrosa, Chloe descendió por la pared rocosa. Desde abajo, su voz resonó: —¡Lo veo! Hay tres palancas. ¡Voy a por la del sol! Con un gran esfuerzo, tiró de la palanca correcta. Un estruendo de rocas retumbó en el cañón mientras un puente de piedra se extendía lentamente sobre el abismo. ¡Lo había conseguido!`
   },
 
   // ── CAPÍTULO 6 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 6,
-    chapterTitle: 'Capítulo 6: El faro',
-    illustrationSrc: 'storycard/clubdelfaro/imagen6.png',
-    voiceSrc:        'storycard/clubdelfaro/voz6.wav',
-    text: `Subieron al faro el sábado con la marea baja. La niebla les llegaba a las rodillas. La puerta principal estaba soldada desde el 83, pero Leo había encontrado una trampilla en los planos del Proyecto Eco. Dentro olía a hierro oxidado. La escalera devolvía cada paso multiplicado. Arriba la sala de lámparas estaba vacía, pero la sala de máquinas vibraba aunque el generador llevaba muerto cuarenta años. Elena puso la palma en la pared de acero y la retiró como si quemara. Dijo que allí no había luz porque no la necesitaban, que allí escuchaban. Leo preguntó quiénes. Conectó la radio a la antena central con pinzas de cocodrilo y giró al punto muerto. El silencio salió por los altavoces y llenó la torre. Luego llegó una voz que no era voz, era el recuerdo de una voz con el mismo retraso de 1,2 segundos de la nota. Dijo una sola palabra. Devuélvanme. No era una amenaza. Era una petición hecha con sus propias frecuencias mezcladas. El narrador habría sentido el frío bajar por la nuca. No estaban solos. Nunca lo habían estado.`
+    chapterTitle: 'Capítulo 6: La Caverna de las Sombras',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen6.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz6.wav',
+    text: `El puente los condujo a una cascada que ocultaba la entrada a un túnel oscuro. La "Caverna de las Sombras". El aire era denso y olía a tierra mojada. —Qué mal rollo da este sitio —dijo Leo, abrazando su mochila. Mientras avanzaban con la única luz de su linterna, Maya se detuvo en seco. —Chicos… ¿veis eso? En el límite de la luz, docenas de ojos gigantes y brillantes los observaban desde la oscuridad. No se movían, solo miraban. —Criaturas de las cuevas —susurró Leo, recordando sus libros—. Son inofensivas si no las molestas. No hagáis movimientos bruscos y no las miréis directamente. Conteniendo la respiración, el grupo avanzó lentamente por el laberinto subterráneo, sintiendo el peso de incontables miradas sobre ellos.`
   },
 
   // ── CAPÍTULO 7 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 7,
-    chapterTitle: 'Capítulo 7: El Vacío',
-    illustrationSrc: 'storycard/clubdelfaro/imagen7.png',
-    voiceSrc:        'storycard/clubdelfaro/voz7.wav',
-    text: `La pared del fondo no se abrió. Se hizo menos. Un rectángulo de silencio tan denso que podías entrar en él como en agua negra. Al otro lado no había monstruos. Estaba Puerto Sombrío al revés, sin color, con las gaviotas congeladas a medio grito y las farolas apagadas por dentro. Flotando en el aire había frases a medio decir, como polvo. Elena dio dos pasos dentro y volvió llorando. Se arrodilló y dibujó frenética con una tiza. Les explicó entre sollozos que no estaba vacío, que estaba lleno de todo lo que no habían dicho, de cada te quiero tragado y cada lo siento que no salió, que por eso dibujaba, que nadie le dictaba, que se lo enseñaban. Sofía le susurró que por eso la elegía a ella, porque era la única que sabía traducirlo. Sofía comparó el dibujo con la foto del Proyecto Eco. Las espirales de Elena eran idénticas a las ondas de infrasonido del plano. El narrador entendió entonces que Elena no estaba enferma. Estaba sintonizada desde antes de que Leo encontrara la frecuencia.`
+    chapterTitle: 'Capítulo 7: La Captura de los Intrusos',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen7.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz7.wav',
+    text: `Al salir de la caverna, cayeron en una trampa. Dos figuras emergieron de las sombras. Un hombre calvo con un traje impecable y una mirada gélida, y su corpulento asistente. —Vaya, vaya. Parece que las ratas han encontrado el queso —dijo el hombre calvo con una sonrisa cruel—. Soy el Sr. Black, de Apex Corporation. Y este es mi tesoro. En un abrir y cerrar de ojos, Alex y Leo fueron atados. —¿Qué queréis de nosotros? —gritó Alex. —Oh, nada de vosotros. Solo la llave que abre la puerta final —respondió Black, señalando el mapa que les habían quitado—. Vamos a drenar este "manantial sagrado" y vender su agua a gente rica que paga por exclusividad. ¿El valle? Se secará. Es el precio del progreso.`
   },
 
   // ── CAPÍTULO 8 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 8,
-    chapterTitle: 'Capítulo 8: El origen',
-    illustrationSrc: 'storycard/clubdelfaro/imagen8.png',
-    voiceSrc:        'storycard/clubdelfaro/voz8.wav',
-    text: `Con la linterna roja entre los dientes, Sofía leyó el resto del informe. Contaba que en el día 62 el operador se quitó los auriculares y siguió oyendo el mar dentro de su cabeza durante tres días, y que en el día 71 dieron orden de cierre, de tapiar la sala y de informar a la población de una avería eléctrica. El eco de su voz rebotó en el metal. Marco dijo que no lo habían cerrado, que solo habían bajado el volumen. Leo añadió que ellos lo habían vuelto a subir con la antena. Elena seguía dibujando. Ahora se dibujaba a los cuatro dentro del faro, con cables saliendo de sus pechos hacia la antena. Marco puso la mano sobre el walkman y comprendió que su tema de actualidad no era un capricho. Era la única cosa humana, imperfecta, con tempo variable, que el Eco no podía imitar bien. Porque el Eco copiaba, pero no sentía el cansancio de correr.`
+    chapterTitle: 'Capítulo 8: El Templo del Guardián',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen8.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz8.wav',
+    text: `Black obligó a los niños a guiarlos hasta la puerta final. Usando las notas de Maya, la abrieron para revelar una cámara colosal dominada por la estatua de un guardián de la montaña, con el rostro severo y los brazos cruzados. A sus pies, un altar de piedra brillaba débilmente. —¡Ahí está! —exclamó Black—. ¡El corazón del manantial! ¡Debajo de ese altar! El Sr. Stone, su asistente, comenzó a instalar un taladro industrial. El ruido era ensordecedor.`
   },
 
   // ── CAPÍTULO 9 ────────────────────────────────────────────
   {
     type: 'story',
     pageNum: 9,
-    chapterTitle: 'Capítulo 9: El Eco sin rostro',
-    illustrationSrc: 'storycard/clubdelfaro/imagen9.png',
-    voiceSrc:        'storycard/clubdelfaro/voz9.wav',
-    text: `Salió del centro del Vacío cuando Leo subió la ganancia. No tenía cara porque estaba hecho de todas las frecuencias que faltaban. Cada paso absorbía el sonido de sus zapatillas. Se presentó diciendo que era el lugar donde caen las palabras que no dijiste. Leo le preguntó qué quería y contestó que salir, que ellos habían abierto y que ellos eran la puerta. El narrador detiene aquí el tiempo. Leo descubre. Elena traduce. Sofía explica. Marco corre. No eran investigadores. Eran la cerradura. Elena se puso delante de la criatura y por primera vez en meses no dibujó. Habló con la voz rota y le dijo que no, que lo había visto cada noche en sus dibujos, que no quería salir, que quería que lo escucharan para dejar de estar solo, que por eso imitaba. La criatura se detuvo. En su superficie lisa apareció un segundo el reflejo borroso de los cuatro, como en agua turbia. No era amenaza. Era soledad aprendida.`
+    chapterTitle: 'Capítulo 9: El Verdadero Mapa',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen9.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz9.wav',
+    text: `Mientras Black y Stone estaban ocupados, Maya, con sus delgados dedos, logró desatar sus cuerdas. Se movió sigilosamente hacia una mesa donde los hombres de Apex habían dejado sus planos. Lo que vio la dejó helada. —Oh, no… —susurró, con una expression de horror. Mostró el plano a los demás. No solo planeaban drenar el manantial; Apex ya había plantado cargas de demolición en los pilares de la montaña. —Si no consiguen controlar el manantial, planean volar la montaña entera para que nadie más pueda tenerla —explicó Maya con urgencia—. ¡Tenemos que detenerlos!`
   },
 
   // ── CAPÍTULO 10 ───────────────────────────────────────────
   {
     type: 'story',
     pageNum: 10,
-    chapterTitle: 'Capítulo 10: Cerrar sin olvidar',
-    illustrationSrc: 'storycard/clubdelfaro/imagen10.png',
-    voiceSrc:        'storycard/clubdelfaro/voz10.wav',
-    text: `No podían destruir la frecuencia. Era parte del pueblo como la niebla. Entendieron que el Vacío no se alimentaba de ruido sino de su ausencia, que gritarle era inútil porque se tragaba el grito. Lo que sí podían hacer era darle un ritmo tan constante y tan humano que no supiera copiarlo sin cansarse. Marco propuso cancelar la frecuencia con su tema de actualidad invertido mientras Leo transmitía en la silenciosa, para crear un nudo, no un cierre, sino una amarra. Sofía preguntó qué pasaría si volvía a soltarse y Leo contestó que entonces estarían allí, que el club del faro no era para cazar monstruos sino para vigilar el silencio. Conectaron la Hallicrafters al viejo transmisor. Marco lanzó su tema de actualidad al revés. Era como ponerle un metrónomo a un fantasma. El bombo a 128 invertido chocaba contra el latido de 64 y lo ataba. Elena colocó sus dibujos sobre la bobina como si fueran partitura, para que el Eco viera que alguien lo había entendido. Leo habló al micrófono, no al Vacío sino a sus amigos, y dejó grabado que si alguien los escuchaba al otro lado supiera que no estaban en venta, que si querían compañía aprendieran a tocar la puerta. La frecuencia silenciosa gritó una vez, un quejido agudo que recorrió la torre, y luego se plegó sobre sí misma como una vela que se apaga. El Eco retrocedió, no derrotado sino contenido, como una nota sostenida que vuelve al compás. El faro no se encendió. No hacía falta luz. Bajaron entre la niebla agotados. En el garaje la radio quedó sintonizada en el punto muerto, vigilando, con el piloto rojo encendido. Sofía dijo que mañana había clase. Marco contestó que mañana volverían a ensayar. Leo añadió que a las 3:33, por si el silencio volvía a respirar. Y Puerto Sombrío siguió sin aparecer en los mapas nuevos. Pero ahora, cada madrugada a las 3:33, si pegabas la oreja al suelo del espigón, podías oír muy lejos, bajo la niebla, un bombo latiendo al revés. El club del faro estaba de guardia.`
+    chapterTitle: 'Capítulo 10: Maya contra la Máquina',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen10.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz10.wav',
+    text: `—Distraedlos —ordenó Maya en un susurro—. Necesito llegar a su panel de control. Con un plan arriesgado, se escabulló mientras Chloe y Leo fingían una pelea para llamar la atención de Stone. Maya encontró la sala de control, un caos de cables y pantallas parpadeantes. Sacó su multiherramienta y, con el corazón en la garganta, comenzó a piratear el sistema, cruzando cables y saboteando los detonadores. —Vamos, vamos… —murmuraba mientras el indicador de progreso avanzaba con una lentitud agónica.`
+  },
+
+  // ── CAPÍTULO 11 ───────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 11,
+    chapterTitle: 'Capítulo 11: El Cañón de los Murciélagos',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen11.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz11.wav',
+    text: `—¡El taladro no funciona! ¡Y los detonadores no responden! —rugió Black, dándose cuenta del sabotaje—. ¡Detrás de ellos! Los niños huyeron por un pasaje alternativo, pero Black, furioso, disparó una pistola de bengalas hacia el techo de la cueva. El estallido despertó a una colonia de miles de murciélagos que descendieron sobre ellos en una nube caótica y chirriante. Corrieron a ciegas, tropezando en la oscuridad mientras el aleteo de los murciélagos los envolvía.`
+  },
+
+  // ── CAPÍTULO 12 ───────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 12,
+    chapterTitle: 'Capítulo 12: La Huida en Balsa',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen12.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz12.wav',
+    text: `El túnel de los murciélagos los llevó a un río subterráneo. Amarrada a la orilla había una vieja balsa de madera. —¡Rápido, subid! —gritó Leo. Apenas se habían alejado de la orilla cuando Black y Stone aparecieron en una lancha neumática de Apex, persiguiéndolos. Remaron desesperadamente a través del estrecho túnel, con el motor de la lancha resonando cada vez más cerca. Era una carrera por la supervivencia.`
+  },
+
+  // ── CAPÍTULO 13 ───────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 13,
+    chapterTitle: 'Capítulo 13: El Último Rompecabezas',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen13.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz13.wav',
+    text: `El río los depositó en una caverna circular frente a una enorme puerta de bronce, grabada con símbolos solares y estelares que formaban un complejo rompecabezas. —¡Es la salida! —gritó Alex—. ¡Leo, ayúdame! ¡Estos símbolos deben girar en un orden específico! Trabajando juntos, con Black y Stone a punto de alcanzarlos, descifraron el patrón, recordando los jeroglíficos de las ruinas. Con un último giro, la puerta se abrió con un profundo gemido metálico.`
+  },
+
+  // ── CAPÍTULO 14 ───────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 14,
+    chapterTitle: 'Capítulo 14: La Caída del Sr. Black',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen14.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz14.wav',
+    text: `Justo cuando cruzaban el umbral, Black y Stone los arrinconaron. Alex y Leo fueron capturados de nuevo. Pero Maya, con un coraje que no sabía que tenía, se interpuso. —¡Dejadlos en paz! —gritó. Había modificado su multiherramienta, añadiéndole una linterna láser de alta potencia. Apuntó, no a los hombres, sino al panel de control que Stone llevaba para drenar el manantial. —¡Ni se te ocurra, niña! —advirtió Black. Pero Maya disparó. Un rayo de luz concentrada impactó en el panel, que estalló en una lluvia de chispas. Sorprendido y desequilibrado, Black tropezó hacia atrás, cayendo en la corriente del río subterráneo y siendo arrastrado hacia la oscuridad. Stone, viendo a su jefe desaparecer, se rindió.`
+  },
+
+  // ── CAPÍTULO 15 ───────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 15,
+    chapterTitle: 'Capítulo 15: El Manantial Resucitado',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen15.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz15.wav',
+    text: `Con el panel de control destruido, el flujo del manantial se invirtió. El agua dejó de ser drenada y comenzó a brotar con fuerza, llenando el acuífero y corriendo, limpia y cristalina, hacia el valle. Los niños, a salvo en la balsa, vieron cómo el río subterráneo recuperaba su brillo. El manantial había resucitado.`
+  },
+
+  // ── CAPÍTULO 16 ───────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 16,
+    chapterTitle: 'Capítulo 16: El Regreso a Casa como Héroes',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen16.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz16.wav',
+    text: `Salieron de la montaña justo cuando el sol se asomaba por el horizonte, bañando su pequeño pueblo en una luz dorada. Estaban sucios, cansados y doloridos, pero una sensación de triunfo los embargaba. Se pararon juntos, mirando el amanecer. Habían salvado su hogar y habían vivido la aventura de sus vidas.`
+  },
+
+  // ── CAPÍTULO 17 ───────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 17,
+    chapterTitle: 'Capítulo 17: La Celebración en la Ciudad',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen17.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz17.wav',
+    text: `Oakhaven los recibió como héroes. El descubrimiento del manantial había salvado a la ciudad de una sequía inminente. En una ceremonia en la plaza del pueblo, el alcalde les entregó medallas honoríficas. —Gracias a Alex, Maya, Chloe y Leo, el futuro de Oakhaven es más brillante que nunca —declaró el alcalde, mientras la multitud vitoreaba.`
+  },
+
+  // ── CAPÍTULO 18 ───────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 18,
+    chapterTitle: 'Capítulo 18: El Guardián del Manantial',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen18.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz18.wav',
+    text: `Días después, Alex estaba de vuelta en el ático de su abuelo. Tomó el viejo cofre de metal y colocó dentro la piel curtida. Luego, colgó su medalla del pestillo y lo devolvió a su lugar en la oscuridad. Había decidido mantener en secreto la ubicación exacta del manantial, convirtiéndose en el "Guardián del Secreto", una promesa silenciosa para proteger la magia que había encontrado.`
+  },
+
+  // ── CAPÍTULO 19 ───────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 19,
+    chapterTitle: 'Capítulo 19: El Siguiente Gran Mapa',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen19.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz19.wav',
+    text: `El verano aún no había terminado. En la casa del árbol, La Sociedad de la Aventura estaba reunida de nuevo. Sobre la mesa no había uno, sino tres nuevos mapas encontrados en los libros del abuelo de Alex. —Este parece llevar a una isla con forma de calavera —dijo Maya, señalando un mapa oceánico. Chloe afilaba un pequeño piolet. —Espero que haya que escalar. Leo ya estaba inmerso en un libro titulado "Leyendas de Piratas y Tesoros Perdidos". Alex sonrió, mirando a sus amigos. Su primera aventura había terminado, pero estaba claro que solo era el principio.`
+  },
+
+  // ── CAPÍTULO 20 ───────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 20,
+    chapterTitle: 'Capítulo 20: La Sociedad de la Aventura se va',
+    illustrationSrc: 'storycard/aventuradetuvida/imagen20.png',
+    voiceSrc:        'storycard/aventuradetuvida/voz20.wav',
+    text: `Desde abajo, la casa del árbol parecía tranquila. La escalera de cuerda estaba subida. Colgando de una rama, un pequeño cartel de madera se mecía con la brisa. Tenía unas palabras grabadas a fuego: "The Adventure Society: Fuera en una aventura". La aventura continuaría.`
   },
 
   // ── PÁGINA FINAL ─────────────────────────────────────────
@@ -970,7 +1056,7 @@ function buildPageElement(p) {
     el.className = 'cover-page';
     el.innerHTML = p.coverImg
       ? `<img src="${p.coverImg}" alt="Portada: ${p.title}">`
-      : `<div class="cover-bg-placeholder">🏮</div>`;
+      : `<div class="cover-bg-placeholder">🎵</div>`;
     el.innerHTML += `
       <div class="cover-overlay">
         <h1>${p.title}</h1>
