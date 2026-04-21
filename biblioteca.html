@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca LaIAmusical</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-brown: #A0522D;
+            --dark-brown: #8B4513;
+            --light-tan: #D2B48C;
+            --primary-red: #8B0000;
+            --dark-red: #4B0000;
+            --primary-orange: #FF8C00;
+            --dark-orange: #E67E22;
+            --primary-purple: #4B0082;
+            --dark-purple: #2E0854;
+            --primary-crimson: #C00000;
+            --dark-crimson: #800000;
+            --primary-violet: #6B46C1;
+            --dark-violet: #4C1D95;
+            --star-gold: #FFD700;
+            --bg-light: #f8f8f8;
+            --bg-dark: #1a1a1a;
+            --disabled-grey: #ccc;
+            --ia-blue: #007bff;
+        }
+
+        /* Estilos para la vista biblioteca */
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 20px; background-color: #f4f4f9; color: #333; }
+        .biblioteca-view .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .biblioteca-view h1 { color: #0056b3; text-align: center; flex-grow: 1; margin: 0; }
+        .temas-btn { background-color: #BEF264; color: #1a1a1a; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: bold; border: 1px solid #a7e555; transition: 0.3s; }
+        .temas-btn:hover { background-color: #a7e555; transform: scale(1.05); }
+        #salas-container ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 15px; }
+        #salas-container li a { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; background: #007bff; color: white; text-decoration: none; border-radius: 10px; font-weight: bold; transition: all 0.3s ease; }
+        #salas-container li a:hover { background: #0056b3; transform: translateY(-3px); box-shadow: 0 5px 10px rgba(0,0,0,0.2); }
+        .count { background: rgba(255,255,255,0.25); padding: 4px 12px; border-radius: 20px; font-size: 0.85em; }
+        .search-container { margin: 25px 0; display: flex; gap: 10px; }
+        #search-input { flex-grow: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+        .search-btn { padding: 10px 25px; background-color: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .result-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .result-item:hover { background-color: #f8fbff; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 30px 0; }
+
+        /* Estilos para las salas literarias */
+        .sala-view {
+            background-color: var(--bg-light);
+            color: #333;
+        }
+
+        .sala-view .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .sala-view h1 {
+            text-align: center;
+            border-bottom: 3px solid;
+            padding-bottom: 15px;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        
+        .header-links {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .back-link { text-decoration: none; color: #007bff; font-weight: bold; }
+
+        .info-panel {
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .ia-notice {
+            display: block;
+            margin-top: 10px;
+            font-size: 0.95em;
+            border-top: 1px solid;
+            padding-top: 10px;
+        }
+
+        .entrada-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 1px solid #eee;
+            background-color: #fff;
+        }
+
+        .titulo-autor { flex-grow: 1; text-align: left; }
+        .titulo-original { font-size: 1.1em; font-weight: bold; color: #444; }
+        .autor { font-size: 0.9em; color: #777; font-style: italic; }
+        .titulo-ia { 
+            font-size: 1.15em; 
+            font-weight: 800; 
+            color: var(--ia-blue); 
+            margin-top: 6px;
+            display: block;
+        }
+
+        .controles-votacion {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            min-width: 250px;
+            justify-content: flex-end;
+        }
+        
+        .vote-btn {
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .vote-btn:disabled { background: var(--disabled-grey); cursor: not-allowed; }
+
+        .vote-stats {
+            display: flex;
+            flex-direction: column;
+            font-size: 0.85em;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid;
+        }
+        
+        .rating-avg { color: var(--star-gold); font-weight: 800; }
+        .genre-top { color: var(--ia-blue); font-weight: 600; }
+        
+        .voted-badge { color: #10b981; font-weight: 600; }
+        .not-voted-badge { color: #999; font-weight: 400; }
+
+        .stars-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 30px 0;
+            flex-direction: row-reverse;
+        }
+
+        .stars-container i {
+            font-size: 3em;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .stars-container i:hover,
+        .stars-container i:hover ~ i {
+            color: var(--star-gold);
+        }
+
+        .modal { 
+            display: none; 
+            position: fixed; 
+            z-index: 2000; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.6); 
+            backdrop-filter: blur(4px); 
+        }
+        
+        .modal-content { 
+            background: #fff; 
+            margin: 10vh auto; 
+            padding: 40px; 
+            width: 90%; 
+            max-width: 500px; 
+            border-radius: 20px; 
+            text-align: center; 
+            position: relative; 
+        }
+        
+        .close { 
+            position: absolute; 
+            right: 20px; 
+            top: 15px; 
+            font-size: 28px; 
+            cursor: pointer; 
+            color: #aaa; 
+        }
+        
+        .genre-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 10px; 
+            margin-top: 20px; 
+        }
+        
+        .genre-btn { 
+            padding: 10px; 
+            border: 2px solid; 
+            border-radius: 8px; 
+            background: none; 
+            cursor: pointer; 
+            font-weight: bold; 
+        }
+
+        /* Estilos específicos para cada sala */
+        .sala-literaria h1 { color: var(--primary-brown); border-bottom-color: var(--primary-brown); }
+        .sala-literaria .info-panel { background: #fff8e1; border-color: #ffe082; }
+        .sala-literaria .ia-notice { color: #856404; border-top-color: #ffe082; }
+        .sala-literaria .vote-btn { background: var(--primary-brown); }
+        .sala-literaria .vote-stats { background: #f0f7ff; border-color: #d0e0f0; }
+        .sala-literaria .genre-btn { border-color: var(--primary-brown); }
+        .sala-literaria .genre-btn:hover { background: var(--primary-brown); color: #fff; }
+
+        .sala-cine h1 { color: var(--primary-red); border-bottom-color: var(--primary-red); }
+        .sala-cine .info-panel { background: #fff5f5; border-color: #ffcccc; }
+        .sala-cine .ia-notice { color: var(--primary-red); border-top-color: #ffcccc; }
+        .sala-cine .vote-btn { background: var(--primary-red); }
+        .sala-cine .vote-stats { background: #fff9e6; border-color: #ffeeba; }
+        .sala-cine .genre-btn { border-color: var(--primary-red); }
+        .sala-cine .genre-btn:hover { background: var(--primary-red); color: #fff; }
+
+        .sala-animacion h1 { color: var(--primary-orange); border-bottom-color: var(--primary-orange); }
+        .sala-animacion .info-panel { background: #fff9f0; border-color: #ffe0b2; }
+        .sala-animacion .ia-notice { color: #e65100; border-top-color: #ffe0b2; }
+        .sala-animacion .vote-btn { background: var(--primary-orange); }
+        .sala-animacion .vote-stats { background: #fffdf5; border-color: #fff3e0; }
+        .sala-animacion .genre-btn { border-color: var(--primary-orange); }
+        .sala-animacion .genre-btn:hover { background: var(--primary-orange); color: #fff; }
+
+        .sala-opera h1 { color: var(--primary-purple); border-bottom-color: var(--primary-purple); }
+        .sala-opera .info-panel { background: #f3e5f5; border-color: #d1c4e9; }
+        .sala-opera .ia-notice { color: var(--primary-purple); border-top-color: #d1c4e9; }
+        .sala-opera .vote-btn { background: var(--primary-purple); }
+        .sala-opera .vote-stats { background: #f8f0ff; border-color: #e1bee7; }
+        .sala-opera .rating-avg { color: #ccac00; }
+        .sala-opera .genre-btn { border-color: var(--primary-purple); }
+        .sala-opera .genre-btn:hover { background: var(--primary-purple); color: #fff; }
+
+        .sala-teatro { background-color: var(--bg-dark); color: #eee; }
+        .sala-teatro .container { background: #2b2b2b; }
+        .sala-teatro h1 { 
+            color: var(--primary-crimson); 
+            border-bottom-color: var(--primary-crimson);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .sala-teatro .info-panel { background: #3d0000; border-color: var(--primary-crimson); color: #ffcccc; }
+        .sala-teatro .entrada-item { border-color: #444; background-color: #333; }
+        .sala-teatro .vote-btn { background: var(--primary-crimson); }
+        .sala-teatro .vote-btn:disabled { background: #555; color: #888; }
+        .sala-teatro .vote-stats { background: #444; }
+        .sala-teatro .modal { background: rgba(0,0,0,0.85); }
+        .sala-teatro .modal-content { background: #222; color: white; border: 2px solid var(--primary-crimson); }
+        .sala-teatro .stars-container i { color: #444; }
+        .sala-teatro .genre-btn { border-color: var(--primary-crimson); color: white; }
+        .sala-teatro .genre-btn:hover { background: var(--primary-crimson); }
+        .sala-teatro .back-link { color: var(--ia-blue); }
+
+        .sala-extras h1 { color: var(--primary-violet); border-bottom-color: var(--primary-violet); }
+        .sala-extras .info-panel { background: #f3e8ff; border-color: #d8b4fe; }
+        .sala-extras .ia-notice { color: var(--primary-violet); border-top-color: #d8b4fe; }
+        .sala-extras .vote-btn { background: var(--primary-violet); }
+        .sala-extras .vote-stats { background: #f3e8ff; border-color: #d8b4fe; }
+        .sala-extras .genre-btn { border-color: var(--primary-violet); }
+        .sala-extras .genre-btn:hover { background: var(--primary-violet); color: #fff; }
+
+        .sala-anime h1 { color: var(--primary-purple); border-bottom-color: var(--primary-purple); }
+        .sala-anime .info-panel { background: #f3e5f5; border-color: #d1c4e9; }
+        .sala-anime .ia-notice { color: var(--primary-purple); border-top-color: #d1c4e9; }
+        .sala-anime .vote-btn { background: var(--primary-purple); }
+        .sala-anime .vote-stats { background: #f8f0ff; border-color: #e1bee7; }
+        .sala-anime .rating-avg { color: #ccac00; }
+        .sala-anime .genre-btn { border-color: var(--primary-purple); }
+        .sala-anime .genre-btn:hover { background: var(--primary-purple); color: #fff; }
+
+        .sala-series h1 { color: var(--dark-red); border-bottom-color: var(--dark-red); }
+        .sala-series .info-panel { background: #fff5f5; border-color: #ffcccc; }
+        .sala-series .ia-notice { color: var(--dark-red); border-top-color: #ffcccc; }
+        .sala-series .vote-btn { background: var(--dark-red); }
+        .sala-series .vote-stats { background: #fff9e6; border-color: #ffeeba; }
+        .sala-series .genre-btn { border-color: var(--dark-red); }
+        .sala-series .genre-btn:hover { background: var(--dark-red); color: #fff; }
+
+        @media (max-width: 600px) {
+            .entrada-item { flex-direction: column; text-align: center; }
+            .controles-votacion { margin-top: 15px; width: 100%; justify-content: center; }
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="biblioteca-view">
+
+<!-- Vista Biblioteca -->
+<div id="biblioteca-container" class="container">
+    <div class="header-wrapper">
+        <a href="index.html" class="temas-btn">Storycards</a>
+        <h1>Biblioteca LaIAmusical</h1>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="Buscar canción, autor o sala...">
+        <button class="search-btn" onclick="realizarBusqueda()">Buscar</button>
+    </div>
+
+    <div id="results-container"></div>
+
+    <hr>
+    <h3>Explorar por Salas:</h3>
+    <div id="salas-container"></div>
+</div>
+
+<!-- Vista Sala -->
+<div id="sala-container" class="container hidden">
+    <div class="header-links">
+        <a href="javascript:void(0)" onclick="volverABiblioteca()" class="back-link">← Atrás</a>
+        <a href="temas.html" class="temas-btn">Storycards</a>
+    </div>
+
+    <h1 id="titulo-sala"></h1>
+    
+    <div class="info-panel">
+        <div id="votos-info">Los votos se sincronizan con el reproductor</div>
+        <span class="ia-notice" id="ia-notice-text"></span>
+    </div>
+
+    <div id="lista-entradas"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script>
+    // Mismo SDK compat que reproductor.html para total compatibilidad
+    const firebaseConfig = {
+        apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+        authDomain: "laiamusical-4fba7.firebaseapp.com",
+        projectId: "laiamusical-4fba7",
+        storageBucket: "laiamusical-4fba7.firebasestorage.app",
+        messagingSenderId: "49783369602",
+        appId: "1:49783369602:web:91e287c094a8f2403d699b"
+    };
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Variables para las salas
+    let currentSala = '';
+    let salaConfig = {};
+
+    // Canciones sincronizadas con reproductor.html
+    const songs = [
+        // LITERATURA
+        { id: 5, title: "El lenguaje del mundo", originalTitle: "El Alquimista", author: "Paulo Coelho", year: 1988, category: "AVENTURA", topic: "Literatura" },
+        { id: 21, title: "La herencia del olvido", originalTitle: "Cien años de soledad", author: "Gabriel García Márquez", year: 1967, category: "REALISMO MÁGICO", topic: "Literatura" },
+        { id: 7, title: "El ojo que todo lo ve", originalTitle: "1984", author: "George Orwell", year: 1949, category: "DISTOPÍA", topic: "Literatura" },
+        { id: 8, title: "El ruido de la conciencia", originalTitle: "Crimen y castigo", author: "Fyodor Dostoevsky", year: 1866, category: "PSICOLÓGICA", topic: "Literatura" },
+        { id: 17, title: "La conversion", originalTitle: "La Metamorfosis", author: "Franz Kafka", year: 1915, category: "FICCIÓN FILOSÓFICA", topic: "Literatura" },
+        { id: 18, title: "La cicatriz invisible", originalTitle: "El retrato de Dorian Gray", author: "Oscar Wilde", year: 1890, category: "GÓTICO", topic: "Literatura" },
+        { id: 22, title: "El señor de los locos y sabios", originalTitle: "Don Quijote de la Mancha", author: "Miguel de Cervantes", year: 1605, category: "SATÍRICA/AVENTURA", topic: "Literatura" },
+        { id: 23, title: "El largo regreso a Ítaca", originalTitle: "La Odisea", author: "Homero", year: -800, category: "ÉPICA", topic: "Literatura" },
+        { id: 24, title: "Amor y conveniencias", originalTitle: "Orgullo y Prejuicio", author: "Jane Austen", year: 1813, category: "ROMANCE/COSTUMBRISTA", topic: "Literatura" },
+        
+        // ÓPERA Y CONCIERTOS
+        { id: 1, title: "La novena sinfonía del mundo", originalTitle: "Sinfonía n.º 9 (Dvořák)", author: "Antonín Dvořák", year: 1893, category: "CLÁSICA", topic: "Ópera y conciertos" },
+        { id: 2, title: "Amar eternamente", originalTitle: "Tristán e Isolda (Liebestod)", author: "Richard Wagner", year: 1865, category: "ÓPERA", topic: "Ópera y conciertos" },
+        { id: 100, title: "Vivir en un suspiro", originalTitle: "La Traviata", author: "Giuseppe Verdi", year: 1853, category: "ÓPERA", topic: "Ópera y conciertos" },
+        { id: 101, title: "El reloj de la naturaleza", originalTitle: "Le quattro stagioni", author: "Antonio Vivaldi", year: 1725, category: "CONCIERTO BARROCO", topic: "Ópera y conciertos" },
+        { id: 102, title: "Donde muere la noche", originalTitle: "Turandot", author: "Giacomo Puccini", year: 1926, category: "ÓPERA", topic: "Ópera y conciertos" },
+        { id: 103, title: "Sinfonía de los jardines reales", originalTitle: "Concierto de Aranjuez", author: "Joaquín Rodrigo", year: 1939, category: "CONCIERTO GUITARRA", topic: "Ópera y conciertos" },
+        { id: 104, title: "El Ave sin jaula", originalTitle: "Carmen", author: "Georges Bizet", year: 1875, category: "ÓPERA", topic: "Ópera y conciertos" },
+        
+        // CINE
+        { id: 13, title: "Tiempospeligrosos", originalTitle: "Pulp Fiction", author: "Quentin Tarantino", year: 1994, category: "CRIMEN", topic: "Cine" },
+        { id: 14, title: "La línea temporal perdida", originalTitle: "El Padrino", author: "Francis Ford Coppola", year: 1972, category: "MAFIA", topic: "Cine" },
+        { id: 15, title: "Biblioteca de horizontes", originalTitle: "Interstellar", author: "Christopher Nolan", year: 2014, category: "CIENCIA FICCIÓN", topic: "Cine" },
+        { id: 16, title: "Alas de libertad", originalTitle: "Cadena perpetua", author: "Frank Darabont", year: 1994, category: "PENITENCIARIO", topic: "Cine" },
+        { id: 19, title: "El Elegido", originalTitle: "Matrix", author: "Lana y Lilly Wachowski", year: 1999, category: "CIENCIA FICCIÓN", topic: "Cine" },
+        { id: 20, title: "El imperio del trueno", originalTitle: "Mad Max: Furia en la carretera", author: "George Miller", year: 2015, category: "ACCIÓN POST-APOCALÍPTICA", topic: "Cine" },
+        { id: 26, title: "Voces entre chapas", originalTitle: "Ciudad de Dios", author: "Fernando Meirelles", year: 2002, category: "DRAMA", topic: "Cine" },
+        { id: 27, title: "Semilla de luz", originalTitle: "E.T., el extraterrestre", author: "Steven Spielberg", year: 1982, category: "CIENCIA FICCIÓN/FAMILIAR", topic: "Cine" },
+        { id: 28, title: "El Destino", originalTitle: "Star Wars: Una Nueva Esperanza", author: "George Lucas", year: 1977, category: "ÓPERA ESPACIAL", topic: "Cine" },
+        { id: 29, title: "El grito en el espacio", originalTitle: "Alien, el octavo pasajero", author: "Ridley Scott", year: 1979, category: "CIENCIA FICCIÓN/TERROR", topic: "Cine" },
+        
+        // ANIMACIÓN
+        { id: 200, title: "Una jungla divertida", originalTitle: "El Rey León", author: "Elton John & Tim Rice", year: 1994, category: "MUSICAL DISNEY", topic: "Animación" },
+        { id: 201, title: "Despierta mi constelación", originalTitle: "Frozen", author: "Kristen Anderson-Lopez & Robert Lopez", year: 2013, category: "MUSICAL DISNEY", topic: "Animación" },
+        { id: 202, title: "La aventura de tu vida", originalTitle: "Moana", author: "Lin-Manuel Miranda", year: 2016, category: "MUSICAL DISNEY", topic: "Animación" },
+        { id: 203, title: "Latidos de papel", originalTitle: "Coco", author: "Kristen Anderson-Lopez & Robert Lopez", year: 2017, category: "MUSICAL DISNEY", topic: "Animación" },
+        { id: 204, title: "¡Qué pasó!, mun mundo es un desmadre genial", originalTitle: "Shrek", author: "Neil Diamond", year: 2001, category: "COMEDIA MUSICAL", topic: "Animación" },
+        { id: 205, title: "Compañeros de juguete", originalTitle: "Toy Story", author: "Randy Newman", year: 1995, category: "MUSICAL PIXAR", topic: "Animación" },
+        { id: 206, title: "La capa interior", originalTitle: "The Incredibles", author: "Michael Giacchino", year: 2004, category: "ACCIÓN FAMILIAR", topic: "Animación" },
+        
+        // TEATRO Y MUSICALES
+        { id: 300, title: "El eco de la libertad", originalTitle: "Les Misérables", author: "Claude-Michel Schönberg", year: 1980, category: "MUSICAL ÉPICO", topic: "Teatro y musicales" },
+        { id: 301, title: "El ángel de la música", originalTitle: "The Phantom of the Opera", author: "Andrew Lloyd Webber", year: 1986, category: "MUSICAL GÓTICO", topic: "Teatro y musicales" },
+        { id: 302, title: "El ladrón de historias", originalTitle: "Hamilton", author: "Lin-Manuel Miranda", year: 2015, category: "MUSICAL HIP-HOP", topic: "Teatro y musicales" },
+        { id: 303, title: "El brillo del pecado", originalTitle: "Chicago", author: "John Kander & Fred Ebb", year: 1975, category: "MUSICAL JAZZ", topic: "Teatro y musicales" },
+        { id: 304, title: "Sin más día que hoy", originalTitle: "Rent", author: "Jonathan Larson", year: 1996, category: "MUSICAL CONTEMPORÁNEO", topic: "Teatro y musicales" },
+        { id: 305, title: "Un verano prohibido", originalTitle: "West Side Story", author: "Leonard Bernstein", year: 1957, category: "MUSICAL CLÁSICO", topic: "Teatro y musicales" },
+        { id: 306, title: "El vuelo de dos mundos", originalTitle: "Cats", author: "Andrew Lloyd Webber", year: 1981, category: "MUSICAL FANTÁSTICO", topic: "Teatro y musicales" },
+        
+        // SERIES
+        { id: 400, title: "Canto de Escarcha", originalTitle: "Game of Thrones", author: "Ramin Djawadi", year: 2011, category: "FANTASÍA ÉPICA", topic: "Series" },
+        { id: 401, title: "El club del faro", originalTitle: "Stranger Things", author: "Kyle Dixon & Michael Stein", year: 2016, category: "SCI-FI HORROR", topic: "Series" },
+        { id: 402, title: "El precio de la tierra", originalTitle: "Breaking Bad", author: "Dave Porter", year: 2008, category: "DRAMA CRIMINAL", topic: "Series" },
+        { id: 403, title: "Albion Heritage", originalTitle: "The Office", author: "Jay Ferguson", year: 2005, category: "COMEDIA", topic: "Series" },
+        { id: 404, title: "El juego ha comenzado", originalTitle: "Sherlock", author: "David Arnold & Michael Price", year: 2010, category: "MISTERIO", topic: "Series" },
+        { id: 405, title: "La fuente de los buenos tiempos", originalTitle: "Friends", author: "The Rembrandts", year: 1994, category: "SITCOM", topic: "Series" },
+        { id: 406, title: "La niña estelar", originalTitle: "The Mandalorian", author: "Ludwig Göransson", year: 2019, category: "SPACE WESTERN", topic: "Series" },
+        
+        // ANIME
+        { id: 500, title: "El juramento de las murallas", originalTitle: "Attack on Titan", author: "Linked Horizon", year: 2013, category: "SHOUNEN", topic: "Anime" },
+        { id: 501, title: "Loto de sangre", originalTitle: "Kimetsu no Yaiba", author: "LiSA", year: 2019, category: "SHOUNEN", topic: "Anime" },
+        { id: 502, title: "Rumbo al amanecer", originalTitle: "One Piece", author: "Hiroshi Kitadani", year: 1999, category: "SHOUNEN", topic: "Anime" },
+        { id: 503, title: "Blue Bird", originalTitle: "Naruto Shippuden", author: "Ikimono Gakari", year: 2008, category: "SHOUNEN", topic: "Anime" },
+        { id: 504, title: "The Day", originalTitle: "Boku no Hero Academia", author: "Porno Graffitti", year: 2016, category: "SUPERHÉROES", topic: "Anime" },
+        { id: 505, title: "La rueda de las sombras", originalTitle: "Jujutsu Kaisen", author: "Eve", year: 2020, category: "SUPERNATURAL", topic: "Anime" },
+        { id: 506, title: "The World", originalTitle: "Death Note", author: "Nightmare", year: 2006, category: "PSYCHOLOGICAL THRILLER", topic: "Anime" },
+        { id: 25, title: "Sin rostro", originalTitle: "El viaje de Chihiro", author: "Hayao Miyazaki", year: 2001, category: "FANTASÍA", topic: "Anime" },
+        
+        // DOCUMENTALES Y USUARIOS
+        { id: 600, title: "Planeta tierra", originalTitle: "Planet Earth", author: "George Fenton", year: 2006, category: "NATURALEZA", topic: "Documentales y usuarios" },
+        { id: 601, title: "El baile de hielo", originalTitle: "La Marche de l'empereur", author: "Émilie Simon", year: 2005, category: "WILDLIFE", topic: "Documentales y usuarios" },
+        { id: 602, title: "La aguja del silencio", originalTitle: "Free Solo", author: "Marco Beltrami", year: 2018, category: "AVENTURA EXTREMA", topic: "Documentales y usuarios" },
+        { id: 603, title: "El jardín de la bondad", originalTitle: "Won't You Be My Neighbor?", author: "Jonathan Kirkscey", year: 2018, category: "BIOGRAFÍA", topic: "Documentales y usuarios" },
+        { id: 604, title: "Sombras en el cristal", originalTitle: "Blackfish", author: "Jeff Beal", year: 2013, category: "ACTIVISMO", topic: "Documentales y usuarios" },
+        { id: 605, title: "El algoritmo silencioso", originalTitle: "The Social Dilemma", author: "Mark Crawford", year: 2020, category: "TECNOLOGÍA", topic: "Documentales y usuarios" }
+    ];
+
+    // Configuraciones de salas (sincronizadas con reproductor.html)
+    const salasConfig = {
+        'literaria': {
+            titulo: 'Inspiraciones Literarias 📚',
+            emoji: '📖',
+            iaNotice: '',
+            voteTitle: 'Califica este título',
+            genreTitle: 'Elige un género musical',
+            genreModalTitle: 'Elige un género musical',
+            genres: ['Rock', 'Pop', 'Jazz', 'Clásica', 'Reggaetón', 'Electrónica', 'Salsa', 'Flamenco'],
+            collection: 'ranking',
+            userCollection: 'weekly_stats',
+            weekPrefix: 'week',
+            topicFilter: 'Literatura',
+            entries: songs.filter(s => s.topic === 'Literatura').map(s => ({ id: s.id.toString(), titulo: s.title, basadoEn: s.originalTitle, category: s.category })).sort((a, b) => a.titulo.localeCompare(b.titulo))
+        },
+        'cine': {
+            titulo: 'Inspiraciones de Cine 🎬',
+            emoji: '🎥',
+            iaNotice: '',
+            voteTitle: 'Califica esta película',
+            genreTitle: 'Elige un estilo para la BSO',
+            genreModalTitle: 'Elige un estilo para la BSO',
+            genres: ['Rock', 'Pop', 'Jazz', 'Épico', 'Electrónica', 'Terror', 'Salsa', 'Flamenco'],
+            collection: 'ranking',
+            userCollection: 'weekly_stats_cine',
+            weekPrefix: 'week-cine',
+            topicFilter: 'Cine',
+            genreIcon: 'fas fa-compact-disc',
+            fallbackGenre: 'Pendiente',
+            entries: songs.filter(s => s.topic === 'Cine').map(s => ({ id: s.id.toString(), titulo: s.title, basadoEn: s.originalTitle, category: s.category })).sort((a, b) => a.titulo.localeCompare(b.titulo))
+        },
+        'animacion': {
+            titulo: 'Inspiraciones de Animación 🧸',
+            emoji: '🧸',
+            iaNotice: '',
+            voteTitle: 'Califica esta obra',
+            genreTitle: 'Estilo musical para la versión IA',
+            genreModalTitle: 'Estilo musical para la versión IA',
+            genres: ['Infantil', 'Aventura', 'Synthwave', 'Orquestal', 'Pop', 'Jazz', 'Rock', 'Electrónica'],
+            collection: 'ranking',
+            userCollection: 'weekly_stats_anim',
+            weekPrefix: 'week-anim',
+            topicFilter: 'Animación',
+            genreIcon: 'fas fa-magic',
+            fallbackGenre: '---',
+            entries: songs.filter(s => s.topic === 'Animación').map(s => ({ id: s.id.toString(), titulo: s.title, basadoEn: s.originalTitle, category: s.category })).sort((a, b) => a.titulo.localeCompare(b.titulo))
+        },
+        'opera': {
+            titulo: 'Inspiraciones de Ópera y Conciertos 🎻',
+            emoji: '🎻',
+            iaNotice: '',
+            voteTitle: 'Califica esta obra',
+            genreTitle: '¿Qué estilo IA prefieres?',
+            genreModalTitle: '¿Qué estilo IA prefieres?',
+            genres: ['Barroco', 'Moderno', 'Épico', 'Ambient'],
+            collection: 'ranking',
+            userCollection: 'weekly_stats_opera',
+            weekPrefix: 'week-opera',
+            topicFilter: 'Ópera y conciertos',
+            entries: songs.filter(s => s.topic === 'Ópera y conciertos').map(s => ({ id: s.id.toString(), titulo: s.title, basadoEn: s.originalTitle, category: s.category })).sort((a, b) => a.titulo.localeCompare(b.titulo))
+        },
+        'teatro': {
+            titulo: 'Inspiraciones de Teatro y Musicales 🎭',
+            emoji: '🎭',
+            iaNotice: '',
+            voteTitle: 'Tu valoración',
+            genreTitle: '¿Estilo musical IA?',
+            genreModalTitle: '¿Estilo musical IA?',
+            genres: ['Broadway', 'Gótico', 'Disney-style', 'Rock-Opera'],
+            collection: 'ranking',
+            userCollection: 'weekly_stats_teatro',
+            weekPrefix: 'week-teatro',
+            topicFilter: 'Teatro y musicales',
+            entries: songs.filter(s => s.topic === 'Teatro y musicales').map(s => ({ id: s.id.toString(), titulo: s.title, basadoEn: s.originalTitle, category: s.category })).sort((a, b) => a.titulo.localeCompare(b.titulo))
+        },
+        'extras': {
+            titulo: 'Inspiraciones de Extra y documentales 📽️',
+            emoji: '📽️',
+            iaNotice: '',
+            voteTitle: 'Califica este documental',
+            genreTitle: 'Elige un estilo para la BSO',
+            genreModalTitle: 'Elige un estilo para la BSO',
+            genres: ['Rock', 'Pop', 'Jazz', 'Épico', 'Electrónica', 'Terror', 'Salsa', 'Flamenco'],
+            collection: 'ranking',
+            userCollection: 'weekly_stats_extras',
+            weekPrefix: 'week-extras',
+            topicFilter: 'Documentales y usuarios',
+            genreIcon: 'fas fa-compact-disc',
+            fallbackGenre: 'Pendiente',
+            entries: songs.filter(s => s.topic === 'Documentales y usuarios').map(s => ({ id: s.id.toString(), titulo: s.title, basadoEn: s.originalTitle, category: s.category })).sort((a, b) => a.titulo.localeCompare(b.titulo))
+        },
+        'anime': {
+            titulo: 'Inspiraciones de Anime 🍥',
+            emoji: '🍥',
+            iaNotice: '',
+            voteTitle: 'Califica esta obra de anime',
+            genreTitle: 'Estilo musical para la versión IA',
+            genreModalTitle: 'Estilo musical para la versión IA',
+            genres: ['J-Pop', 'Synthwave', 'Orquestal', 'Pop', 'Jazz', 'Rock', 'Electrónica', 'Ambient'],
+            collection: 'ranking',
+            userCollection: 'weekly_stats_anime',
+            weekPrefix: 'week-anime',
+            topicFilter: 'Anime',
+            genreIcon: 'fas fa-magic',
+            fallbackGenre: '---',
+            entries: songs.filter(s => s.topic === 'Anime').map(s => ({ id: s.id.toString(), titulo: s.title, basadoEn: s.originalTitle, category: s.category })).sort((a, b) => a.titulo.localeCompare(b.titulo))
+        },
+        'series': {
+            titulo: 'Inspiraciones de Series 📺',
+            emoji: '📺',
+            iaNotice: '',
+            voteTitle: 'Califica esta serie',
+            genreTitle: 'Elige un estilo para la BSO',
+            genreModalTitle: 'Elige un estilo para la BSO',
+            genres: ['Rock', 'Pop', 'Jazz', 'Épico', 'Electrónica', 'Terror', 'Salsa', 'Flamenco'],
+            collection: 'ranking',
+            userCollection: 'weekly_stats_series',
+            weekPrefix: 'week-series',
+            topicFilter: 'Series',
+            genreIcon: 'fas fa-compact-disc',
+            fallbackGenre: 'Pendiente',
+            entries: songs.filter(s => s.topic === 'Series').map(s => ({ id: s.id.toString(), titulo: s.title, basadoEn: s.originalTitle, category: s.category })).sort((a, b) => a.titulo.localeCompare(b.titulo))
+        }
+    };
+
+    // Configuración de salas para el menú de biblioteca
+    const salasConfigMenu = [
+        { nombre: "Inspiraciones Literarias 📚", key: "literaria", archivo: "biblioteca.html?sala=literaria" },
+        { nombre: "Inspiraciones de Cine 🎬", key: "cine", archivo: "biblioteca.html?sala=cine" },
+        { nombre: "Inspiraciones de Animación y Dibujos Animados 🧸", key: "animacion", archivo: "biblioteca.html?sala=animacion" },
+        { nombre: "Inspiraciones de Ópera y Concierto 🎻", key: "opera", archivo: "biblioteca.html?sala=opera" },
+        { nombre: "Inspiraciones de Teatro y Musicales 🎭", key: "teatro", archivo: "biblioteca.html?sala=teatro" },
+        { nombre: "Inspiraciones de Extra y documentales 📽️", key: "extras", archivo: "biblioteca.html?sala=extras" },
+        { nombre: "Inspiraciones de Anime 🍥", key: "anime", archivo: "biblioteca.html?sala=anime" },
+        { nombre: "Inspiraciones de Series 📺", key: "series", archivo: "biblioteca.html?sala=series" }
+    ];
+
+    // Función para obtener parámetros de URL
+    function getURLParameter(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+    // Funciones para cambiar vistas
+    function mostrarBiblioteca() {
+        document.body.className = 'biblioteca-view';
+        document.getElementById('biblioteca-container').classList.remove('hidden');
+        document.getElementById('sala-container').classList.add('hidden');
+    }
+
+    function mostrarSala(sala) {
+        document.body.className = `sala-view sala-${sala}`;
+        document.getElementById('biblioteca-container').classList.add('hidden');
+        document.getElementById('sala-container').classList.remove('hidden');
+    }
+
+    window.volverABiblioteca = () => {
+        history.pushState({}, '', 'biblioteca.html');
+        mostrarBiblioteca();
+        mostrarSalas();
+    };
+
+    // Variable para la suscripción en tiempo real
+    let unsubscribe = null;
+
+    // Función para inicializar la sala (se llama tras autenticación anónima)
+    function initSala() {
+        const sala = getURLParameter('sala');
+
+        // Limpiar suscripción anterior si existe
+        if (unsubscribe) {
+            unsubscribe();
+            unsubscribe = null;
+        }
+
+        if (sala && salasConfig[sala]) {
+            currentSala = sala;
+            salaConfig = salasConfig[sala];
+
+            mostrarSala(sala);
+
+            document.getElementById('titulo-sala').textContent = salaConfig.titulo;
+            document.getElementById('ia-notice-text').textContent = salaConfig.iaNotice;
+
+            // Mostrar indicador de carga
+            document.getElementById('lista-entradas').innerHTML =
+                '<p style="padding:16px;color:#888;text-align:center"><i class="fas fa-spinner fa-spin"></i> Cargando votos desde Firebase...</p>';
+
+            // Suscripción en tiempo real con SDK compat (igual que reproductor.html)
+            // Cada vez que reproductor.html vota, este listener se dispara automáticamente
+            unsubscribe = db.collection('ranking').doc('stars')
+                .onSnapshot(
+                    (docSnapshot) => {
+                        const rankingStars = docSnapshot.exists
+                            ? (docSnapshot.data().rankingStars || {})
+                            : {};
+                        renderList(rankingStars);
+                    },
+                    (error) => {
+                        console.error('Error Firestore onSnapshot:', error.code, error.message);
+                        document.getElementById('lista-entradas').innerHTML =
+                            '<p style="padding:16px;color:red;text-align:center"><i class="fas fa-exclamation-triangle"></i> Error al leer votos: ' + error.message + '</p>';
+                    }
+                );
+        } else {
+            mostrarBiblioteca();
+            mostrarSalas();
+        }
+    }
+
+    // Datos para búsqueda
+    function obtenerDatos() {
+        const datos = [];
+        Object.entries(salasConfig).forEach(([key, config]) => {
+            config.entries.forEach(entry => {
+                datos.push({
+                    t: entry.titulo,
+                    a: entry.basadoEn,
+                    s: `biblioteca.html?sala=${key}`,
+                    sala: key
+                });
+            });
+        });
+        return datos;
+    }
+
+    function mostrarSalas() {
+        const container = document.getElementById('salas-container');
+        const counts = {};
+        
+        // Contar entradas por sala
+        Object.keys(salasConfig).forEach(key => {
+            counts[key] = salasConfig[key].entries.length;
+        });
+
+        const ul = document.createElement('ul');
+        salasConfigMenu.forEach(sala => {
+            const num = counts[sala.key] || 0;
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <a href="${sala.archivo}">
+                    <span>${sala.nombre}</span>
+                    <span class="count">${num} temas</span>
+                </a>
+            `;
+            ul.appendChild(li);
+        });
+        container.innerHTML = '';
+        container.appendChild(ul);
+    }
+
+    window.realizarBusqueda = function() {
+        const term = document.getElementById('search-input').value.toLowerCase();
+        const resCont = document.getElementById('results-container');
+        resCont.innerHTML = '';
+        if (!term) return;
+        
+        const resultados = obtenerDatos().filter(i => 
+            i.t.toLowerCase().includes(term) || 
+            i.a.toLowerCase().includes(term)
+        );
+        
+        if (resultados.length === 0) {
+            resCont.innerHTML = '<p>No se encontraron resultados.</p>';
+            return;
+        }
+
+        resultados.forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'result-item';
+            div.innerHTML = `<b>${r.t}</b> - ${r.a}`;
+            div.onclick = () => window.location.href = r.s;
+            resCont.appendChild(div);
+        });
+    };
+
+    // Renderizar lista de entradas con datos de Firebase en tiempo real
+    function renderList(globalData) {
+        const contenedor = document.getElementById('lista-entradas');
+        globalData = globalData || {};
+
+        if (!salaConfig.entries || salaConfig.entries.length === 0) {
+            contenedor.innerHTML = '<p style="padding:16px;color:#888;text-align:center">No hay entradas en esta sala.</p>';
+            return;
+        }
+
+        contenedor.innerHTML = '';
+
+        // Ordenar por votos (más votados primero), mismo criterio que reproductor.html
+        const sortedEntries = [...salaConfig.entries].sort((a, b) => {
+            // Las claves en Firebase son el id numérico como string, ej: "13"
+            const votesA = globalData[a.id] || globalData[String(parseInt(a.id))] || 0;
+            const votesB = globalData[b.id] || globalData[String(parseInt(b.id))] || 0;
+            return votesB - votesA;
+        });
+
+        sortedEntries.forEach((e) => {
+            // Buscar votos con la clave numérica tal como los guarda reproductor.html
+            const totalStars = globalData[e.id] || globalData[String(parseInt(e.id))] || 0;
+            const hasVotes = totalStars > 0;
+
+            const votedBadge = hasVotes
+                ? '<span class="voted-badge"><i class="fas fa-check-circle"></i> Votada</span>'
+                : '<span class="not-voted-badge"><i class="fas fa-circle"></i> Sin votos</span>';
+
+            const div = document.createElement('div');
+            div.className = 'entrada-item';
+            div.innerHTML = `
+                <div class="titulo-autor">
+                    <span class="titulo-original">${salaConfig.emoji} ${e.titulo}</span><br>
+                    <span class="autor">${e.category}</span>
+                </div>
+                <div class="controles-votacion">
+                    <div class="vote-stats">
+                        <span class="rating-avg"><i class="fas fa-star"></i> ${totalStars} votos</span>
+                        <span class="genre-top">${votedBadge}</span>
+                    </div>
+                </div>
+            `;
+            contenedor.appendChild(div);
+        });
+    }
+
+    // Inicializar: autenticación anónima primero (igual que el flujo de reproductor.html)
+    // Esto es necesario si las reglas de Firestore requieren autenticación para leer
+    document.addEventListener('DOMContentLoaded', () => {
+        mostrarSalas(); // Menú principal no necesita Firebase
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // Ya autenticado (anónimo o normal), inicializar sala
+                initSala();
+            } else {
+                // Sin sesión: iniciar sesión anónima para poder leer Firestore
+                auth.signInAnonymously()
+                    .then(() => {
+                        // onAuthStateChanged volverá a dispararse con el usuario anónimo
+                    })
+                    .catch((error) => {
+                        console.error('Error auth anónima:', error.code, error.message);
+                        // Intentar cargar igualmente (por si las reglas permiten lectura pública)
+                        initSala();
+                    });
+            }
+        });
+    });
+</script>
+</body>
+</html>
