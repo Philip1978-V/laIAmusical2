@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ranking Storycards – La IA Musical</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* ─── FONDO ─── */
+        body {
+            background-image: url('./images/fondostorycards.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: white;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 60px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 12, 28, 0.72);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        header, main, .fixed-footer {
+            position: relative;
+            z-index: 1;
+        }
+
+        ::-webkit-scrollbar { width: 7px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #0d9488; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #14b8a6; }
+
+        /* ─── ANIMACIONES PODIO ─── */
+        @keyframes glow-gold {
+            0%, 100% { box-shadow: 0 0 18px 4px rgba(250,204,21,0.55); border-color: rgba(250,204,21,0.7); }
+            50% { box-shadow: 0 0 42px 12px rgba(250,204,21,0.9); border-color: rgba(250,204,21,1); }
+        }
+        @keyframes glow-silver {
+            0%, 100% { box-shadow: 0 0 16px 3px rgba(209,213,219,0.45); border-color: rgba(209,213,219,0.6); }
+            50% { box-shadow: 0 0 38px 10px rgba(209,213,219,0.85); border-color: rgba(209,213,219,0.95); }
+        }
+        @keyframes glow-bronze {
+            0%, 100% { box-shadow: 0 0 16px 3px rgba(180,120,60,0.5); border-color: rgba(180,120,60,0.65); }
+            50% { box-shadow: 0 0 36px 10px rgba(210,140,70,0.88); border-color: rgba(210,140,70,0.95); }
+        }
+
+        @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-6px); } }
+        @keyframes slideInLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+
+        .podium-card {
+            background: rgba(10, 25, 47, 0.82);
+            backdrop-filter: blur(20px);
+            border-radius: 22px;
+            border: 2px solid transparent;
+            overflow: hidden;
+            transition: transform 0.3s;
+            animation-duration: 1.8s;
+            animation-iteration-count: infinite;
+        }
+        .podium-card:hover { transform: translateY(-6px) scale(1.02); }
+        .podium-card.rank-1 { animation-name: glow-gold; border-color: rgba(250,204,21,0.8); }
+        .podium-card.rank-2 { animation-name: glow-silver; border-color: rgba(209,213,219,0.7); }
+        .podium-card.rank-3 { animation-name: glow-bronze; border-color: rgba(180,120,60,0.7); }
+
+        .rank-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 44px; height: 44px; border-radius: 50%;
+            font-size: 1.15rem; font-weight: 900;
+        }
+        .rank-badge.gold { background: linear-gradient(135deg,#f59e0b,#fbbf24); color:#422006; }
+        .rank-badge.silver { background: linear-gradient(135deg,#9ca3af,#e5e7eb); color:#1f2937; }
+        .rank-badge.bronze { background: linear-gradient(135deg,#b45309,#d97706); color:#fff; }
+
+        .ranking-row {
+            background: rgba(13, 30, 55, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(45, 212, 191, 0.12);
+            border-radius: 14px;
+            transition: all 0.2s;
+            animation: slideInLeft 0.4s ease-out both;
+        }
+        .ranking-row:hover { transform: translateX(6px); background: rgba(13, 45, 70, 0.85); }
+
+        .topic-pill {
+            font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+            text-transform: uppercase; background: rgba(13, 148, 136, 0.22); color: #5eead4;
+        }
+
+        .shimmer-text {
+            background: linear-gradient(90deg, #fde68a, #fbbf24, #fff, #fbbf24, #fde68a);
+            background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: shimmer 2.5s linear infinite;
+        }
+
+        .loader-ring { width: 56px; height: 56px; border: 5px solid rgba(45, 212, 191, 0.2); border-top-color: #2dd4bf; border-radius: 50%; animation: spin 0.9s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .star-bar-bg { height: 5px; border-radius: 999px; background: rgba(45, 212, 191, 0.12); overflow: hidden; }
+        .star-bar-fill { height: 100%; background: linear-gradient(90deg, #fbbf24, #f59e0b); transition: width 1.2s ease; }
+
+        @media (max-width: 767px) {
+            #podiumGrid { grid-template-columns: 1fr !important; }
+            .podium-center { margin-top: 0 !important; }
+        }
+
+        .back-home-btn {
+            display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.7rem 1rem;
+            border-radius: 9999px; background: rgba(20, 184, 166, 0.18);
+            color: #d1fae5; border: 1px solid rgba(20, 184, 166, 0.25); font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+<header class="sticky top-0 z-50 bg-black/50 backdrop-blur-lg border-b border-teal-800/40">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+        <button onclick="window.location.href='index.html'" class="back-home-btn text-xs sm:text-sm">
+            <i class="fas fa-music"></i> <span class="hidden xs:inline">La IA Musical</span>
+        </button>
+
+        <div class="text-center">
+            <h1 class="shimmer-text text-lg md:text-2xl font-black uppercase tracking-tighter" id="pageTitle">Clasificación Storycards</h1>
+            <p id="pageSubtitle" class="text-[10px] sm:text-xs text-gray-500">Todas las salas · Top 30</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button onclick="loadRanking()" class="p-2 text-teal-400 hover:scale-110 transition"><i class="fas fa-sync-alt"></i></button>
+            <button onclick="logout()" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-4 pt-8 pb-10">
+    <div id="infoBar" class="hidden mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4 bg-black/30 p-4 rounded-xl border border-teal-900/40 text-sm">
+        <div class="text-center"><i class="fas fa-layer-group text-teal-400 mr-2"></i><span id="lblTotalCards">Total:</span> <strong id="totalCards" class="text-white">-</strong></div>
+        <div class="text-center"><i class="fas fa-star text-yellow-400 mr-2"></i><span id="lblTotalStars">Estrellas:</span> <strong id="totalStarsGlobal" class="text-white">-</strong></div>
+        <div class="text-center"><i class="fas fa-clock text-teal-400 mr-2"></i><span id="lblUpdated">Hoy:</span> <strong id="lastUpdate" class="text-white">-</strong></div>
+    </div>
+
+    <div id="loader" class="flex flex-col items-center py-20 gap-4">
+        <div class="loader-ring"></div>
+        <p id="loadingText" class="text-teal-300 animate-pulse">Sincronizando con Firebase...</p>
+    </div>
+
+    <div id="podiumSection" class="hidden mb-10">
+        <div id="podiumGrid" class="grid grid-cols-3 gap-4 items-end max-w-3xl mx-auto"></div>
+    </div>
+
+    <div id="divider" class="hidden flex items-center gap-3 mb-6">
+        <div class="h-px flex-1 bg-teal-900/50"></div>
+        <span id="lblPositions" class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Posiciones 4 – 30</span>
+        <div class="h-px flex-1 bg-teal-900/50"></div>
+    </div>
+
+    <div id="rankingList" class="space-y-3"></div>
+
+    <div id="emptyState" class="hidden text-center py-16">
+        <i class="fas fa-star text-gray-700 text-5xl mb-4"></i>
+        <p id="noVotesText" class="text-gray-400">Sin votos registrados.</p>
+    </div>
+</main>
+
+<script>
+// ── SISTEMA DE IDIOMAS (Corregido para coincidir con index.html) ──
+const currentLang = localStorage.getItem('selectedLanguage') || 'es';
+
+const translations = {
+    es: {
+        pageTitle: "Clasificación Storycards",
+        subtitle: "Todas las salas · Top 30",
+        totalCards: "Total storycards:",
+        totalStars: "Total estrellas:",
+        updated: "Actualizado:",
+        loading: "Cargando ranking...",
+        positions: "Posiciones 4 – 30",
+        noVotes: "Aún no hay votos registrados.",
+        topUser: "Top Usuario:"
+    },
+    en: {
+        pageTitle: "Storycards Ranking",
+        subtitle: "All rooms · Top 30",
+        totalCards: "Total storycards:",
+        totalStars: "Total stars:",
+        updated: "Updated:",
+        loading: "Loading ranking...",
+        positions: "Positions 4 – 30",
+        noVotes: "No votes registered yet.",
+        topUser: "Top User:"
+    }
+};
+
+const t = (key) => translations[currentLang][key] || translations['es'][key];
+
+function applyTranslations() {
+    document.getElementById('pageTitle').textContent = t('pageTitle');
+    document.getElementById('pageSubtitle').textContent = t('subtitle');
+    document.getElementById('lblTotalCards').textContent = t('totalCards');
+    document.getElementById('lblTotalStars').textContent = t('totalStars');
+    document.getElementById('lblUpdated').textContent = t('updated');
+    document.getElementById('loadingText').textContent = t('loading');
+    document.getElementById('lblPositions').textContent = t('positions');
+    document.getElementById('noVotesText').textContent = t('noVotes');
+}
+
+// ── FIREBASE ──
+const firebaseConfig = {
+    apiKey: "AIzaSyDW3Yv0AQAVlf3zTuxlqNq6dkZ6kQtpysM",
+    authDomain: "laiamusical-4fba7.firebaseapp.com",
+    projectId: "laiamusical-4fba7",
+    storageBucket: "laiamusical-4fba7.firebasestorage.app",
+    messagingSenderId: "49783369602",
+    appId: "1:49783369602:web:91e287c094a8f2403d699b",
+    measurementId: "G-WC2JT6DRF4"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ── CATALOGO (Resumido para el ejemplo, mantén tu lista completa de 61) ──
+const songs = [
+    { id: 5,   title: "El lenguaje del mundo", titleEn: "The Language of the World", cover: "./imagenportada/lit_lenguajedelmundo.png", topic: "Literatura", topicEn: "Literature", category: "AVENTURA", categoryEn: "ADVENTURE" },
+    { id: 21,  title: "La herencia del olvido", titleEn: "The Inheritance of Forgetting", cover: "./imagenportada/lit_herencia.png", topic: "Literatura", topicEn: "Literature", category: "REALISMO MÁGICO", categoryEn: "MAGICAL REALISM" },
+    { id: 7,   title: "El ojo que todo lo ve", titleEn: "The All-Seeing Eye", cover: "./imagenportada/lit_1984.png", topic: "Literatura", topicEn: "Literature", category: "DISTOPÍA", categoryEn: "DYSTOPIA" },
+    { id: 8,   title: "El ruido de la conciencia", titleEn: "The Noise of Conscience", cover: "./imagenportada/lit_ruidodelaconciencia.png", topic: "Literatura", topicEn: "Literature", category: "PSICOLÓGICA", categoryEn: "PSYCHOLOGICAL" },
+    { id: 17,  title: "La conversión", titleEn: "The Conversion", cover: "./imagenportada/lit_conversion.png", topic: "Literatura", topicEn: "Literature", category: "FICCIÓN FILOSÓFICA", categoryEn: "PHILOSOPHICAL FICTION" },
+    { id: 18,  title: "La cicatriz invisible", titleEn: "The Invisible Scar", cover: "./imagenportada/lit_cicatriz.png", topic: "Literatura", topicEn: "Literature", category: "GÓTICO", categoryEn: "GOTHIC" },
+    { id: 22,  title: "El Señor de los locos y sabios", titleEn: "The Lord of Madmen and Wisemen", cover: "./imagenportada/lit_quijote.png", topic: "Literatura", topicEn: "Literature", category: "SATÍRICA/AVENTURA", categoryEn: "SATIRE/ADVENTURE" },
+    { id: 23,  title: "El largo regreso a Ítaca", titleEn: "The Long Return to Ithaca", cover: "./imagenportada/lit_regresoitaca.png", topic: "Literatura", topicEn: "Literature", category: "ÉPICA", categoryEn: "EPIC" },
+    { id: 24,  title: "Amor y conveniencias", titleEn: "Love and Conveniences", cover: "./imagenportada/lit_amoryconveniencias.png", topic: "Literatura", topicEn: "Literature", category: "ROMANCE/COSTUMBRISTA", categoryEn: "ROMANCE/SLICE OF LIFE" },
+    { id: 1,   title: "La novena sinfonía del mundo", titleEn: "The Ninth Symphony of the World", cover: "./imagenportada/opera_sinfoniamundo.png", topic: "Ópera y conciertos", topicEn: "Opera & Concerts", category: "CLÁSICA", categoryEn: "CLASSIC" },
+    { id: 2,   title: "Amar eternamente", titleEn: "To Love Eternally", cover: "./imagenportada/opera_amareternamente.png", topic: "Ópera y conciertos", topicEn: "Opera & Concerts", category: "ÓPERA", categoryEn: "OPERA" },
+    { id: 100, title: "Vivir en un suspiro", titleEn: "Living in a Sigh", cover: "./imagenportada/opera_vivirenunsuspiro.png", topic: "Ópera y conciertos", topicEn: "Opera & Concerts", category: "ÓPERA", categoryEn: "OPERA" },
+    { id: 101, title: "El reloj de la naturaleza", titleEn: "The Clock of Nature", cover: "./imagenportada/opera_relojdelanaturaleza.png", topic: "Ópera y conciertos", topicEn: "Opera & Concerts", category: "CONCIERTO", categoryEn: "CONCERT" },
+    { id: 102, title: "Donde muere la noche", titleEn: "Where the Night Dies", cover: "./imagenportada/opera_dondemuerelanoche.png", topic: "Ópera y conciertos", topicEn: "Opera & Concerts", category: "ÓPERA", categoryEn: "OPERA" },
+    { id: 103, title: "Sinfonía de los jardines reales", titleEn: "Symphony of the Royal Gardens", cover: "./imagenportada/opera_jardinesreales.png", topic: "Ópera y conciertos", topicEn: "Opera & Concerts", category: "ÓPERA", categoryEn: "OPERA" },
+    { id: 104, title: "El ave sin jaula", titleEn: "The Bird Without a Cage", cover: "./imagenportada/opera_avesinjaula.png", topic: "Ópera y conciertos", topicEn: "Opera & Concerts", category: "ÓPERA", categoryEn: "OPERA" },
+    { id: 13,  title: "Tiempos peligrosos", titleEn: "Dangerous Times", cover: "./imagenportada/cine_tiempospeligrosos.png", topic: "Cine", topicEn: "Cinema", category: "CRIMEN", categoryEn: "CRIME" },
+    { id: 14,  title: "La línea temporal perdida", titleEn: "The Lost Timeline", cover: "./imagenportada/cine_lineatemporal.png", topic: "Cine", topicEn: "Cinema", category: "FICCIÓN/FUTURÍSTICA", categoryEn: "SCI-FI/FUTURISTIC" },
+    { id: 15,  title: "Biblioteca de horizontes", titleEn: "Library of Horizons", cover: "./imagenportada/cine_bibliotecadehorizontes.png", topic: "Cine", topicEn: "Cinema", category: "CIENCIA FICCIÓN", categoryEn: "SCIENCE FICTION" },
+    { id: 16,  title: "Alas de libertad", titleEn: "Wings of Freedom", cover: "./imagenportada/cine_alasdelibertad.png", topic: "Cine", topicEn: "Cinema", category: "PENITENCIARIO", categoryEn: "PRISON" },
+    { id: 19,  title: "El elegido", titleEn: "The Chosen One", cover: "./imagenportada/cine_elegido.png", topic: "Cine", topicEn: "Cinema", category: "CIENCIA FICCIÓN", categoryEn: "SCIENCE FICTION" },
+    { id: 20,  title: "El imperio del trueno", titleEn: "The Empire of Thunder", cover: "./imagenportada/cine_imperiodeltrueno.png", topic: "Cine", topicEn: "Cinema", category: "ACCIÓN POST-APOCALÍPTICA", categoryEn: "POST-APOCALYPTIC ACTION" },
+    { id: 26,  title: "Voces entre chapas", titleEn: "Voices Between the Metal", cover: "./imagenportada/cine_vocesentrechapas.png", topic: "Cine", topicEn: "Cinema", category: "DRAMA SOCIAL", categoryEn: "SOCIAL DRAMA" },
+    { id: 27,  title: "Semilla de luz", titleEn: "Seed of Light", cover: "./imagenportada/cine_semilladeluz.png", topic: "Cine", topicEn: "Cinema", category: "CIENCIA FICCIÓN/FAMILIAR", categoryEn: "SCI-FI/FAMILY" },
+    { id: 28,  title: "El Destino", titleEn: "The Destiny", cover: "./imagenportada/cine_eldestino.png", topic: "Cine", topicEn: "Cinema", category: "ÓPERA ESPACIAL", categoryEn: "SPACE OPERA" },
+    { id: 29,  title: "El grito en el espacio", titleEn: "The Scream in Space", cover: "./imagenportada/cine_grito.png", topic: "Cine", topicEn: "Cinema", category: "CIENCIA FICCIÓN/TERROR", categoryEn: "SCI-FI/HORROR" },
+    { id: 200, title: "Una jungla divertida", titleEn: "A Funny Jungle", cover: "./imagenportada/animacion_jungladivertida.png", topic: "Animación", topicEn: "Animation", category: "MUSICAL", categoryEn: "MUSICAL" },
+    { id: 201, title: "Despierta mi constelación", titleEn: "Awaken My Constellation", cover: "./imagenportada/animacion_miconstelacion.png", topic: "Animación", topicEn: "Animation", category: "MUSICAL", categoryEn: "MUSICAL" },
+    { id: 202, title: "La aventura de tu vida", titleEn: "The Adventure of Your Life", cover: "./imagenportada/animacion_aventuradetuvida.png", topic: "Animación", topicEn: "Animation", category: "MUSICAL", categoryEn: "MUSICAL" },
+    { id: 203, title: "Latidos de papel", titleEn: "Heartbeats of Paper", cover: "./imagenportada/animacion_latidosdepapel.png", topic: "Animación", topicEn: "Animation", category: "MUSICAL", categoryEn: "MUSICAL" }
+];
+
+async function loadRanking() {
+    applyTranslations();
+    document.getElementById('loader').classList.remove('hidden');
+    
+    try {
+        const snap = await db.collection('ranking').doc('stars').get();
+        const rankingStars = snap.data()?.rankingStars || {};
+        
+        let ranked = songs.map(s => ({ ...s, totalStars: rankingStars[s.id] || 0 }));
+        ranked.sort((a, b) => b.totalStars - a.totalStars);
+
+        // ACTUALIZADO: Top 30
+        const top30 = ranked.slice(0, 30);
+        const top3 = top30.slice(0, 3);
+        const rest = top30.slice(3);
+        const max = top30[0]?.totalStars || 1;
+
+        // Render Podio
+        const podiumGrid = document.getElementById('podiumGrid');
+        const pOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
+        podiumGrid.innerHTML = pOrder.map(s => {
+            const rank = ranked.findIndex(x => x.id === s.id) + 1;
+            const dTitle = (currentLang === 'en') ? s.titleEn : s.title;
+            const pct = Math.round((s.totalStars / max) * 100);
+            return `
+                <div class="podium-card rank-${rank} flex flex-col ${rank==1?'podium-center':''}">
+                    <div class="relative h-32 sm:h-48 bg-slate-900">
+                        <img src="${s.cover}" class="w-full h-full object-cover" onerror="this.src='./imagenportada/proximamente.png'">
+                        <div class="absolute top-2 left-2 rank-badge ${rank==1?'gold':rank==2?'silver':'bronze'} scale-75 sm:scale-100">${rank}</div>
+                    </div>
+                    <div class="p-2 sm:p-3 bg-black/40 flex-1 flex flex-col justify-between">
+                        <h3 class="text-[10px] sm:text-xs font-bold truncate">${dTitle}</h3>
+                        <div class="star-bar-bg mt-2"><div class="star-bar-fill" style="width:${pct}%"></div></div>
+                        <span class="text-[10px] text-yellow-500 font-bold mt-1">${s.totalStars} ⭐</span>
+                    </div>
+                </div>`;
+        }).join('');
+
+        // Render Lista 4-30
+        document.getElementById('rankingList').innerHTML = rest.map((s, i) => {
+            const dTitle = (currentLang === 'en') ? s.titleEn : s.title;
+            const pct = Math.round((s.totalStars / max) * 100);
+            return `
+                <div class="ranking-row flex items-center gap-3 p-2">
+                    <div class="w-8 text-center font-black text-gray-500 text-xs">#${i+4}</div>
+                    <img src="${s.cover}" class="w-10 h-10 rounded object-cover">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-bold truncate">${dTitle}</p>
+                        <div class="star-bar-bg w-full mt-1"><div class="star-bar-fill" style="width:${pct}%"></div></div>
+                    </div>
+                    <div class="text-right font-bold text-yellow-500 text-xs">${s.totalStars} <i class="fas fa-star text-[8px]"></i></div>
+                </div>`;
+        }).join('');
+
+        document.getElementById('loader').classList.add('hidden');
+        document.getElementById('podiumSection').classList.remove('hidden');
+        document.getElementById('divider').classList.remove('hidden');
+        document.getElementById('infoBar').classList.remove('hidden');
+        document.getElementById('totalCards').textContent = songs.length;
+        document.getElementById('totalStarsGlobal').textContent = ranked.reduce((a,b)=>a+b.totalStars, 0);
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+
+    } catch (e) {
+        console.error(e);
+        document.getElementById('loader').innerHTML = '<p class="text-red-500">Error de conexión.</p>';
+    }
+}
+
+function logout() { firebase.auth().signOut().then(() => window.location.href='index.html'); }
+
+firebase.auth().onAuthStateChanged(user => {
+    if (user) loadRanking();
+    else window.location.href = 'index.html';
+});
+</script>
+</body>
+</html>
