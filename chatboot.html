@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente Virtual · La IA Musical</title>
+    <!-- Cargamos Tailwind y FontAwesome desde CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background-attachment: fixed;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .chat-container {
+            height: calc(100vh - 280px);
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .message-bot {
+            background: #1e293b;
+            border-left: 4px solid #f59e0b;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .message-user {
+            background: #0369a1;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #f59e0b;
+            border-radius: 50%;
+            animation: bounce 1.5s infinite ease-in-out;
+        }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+        }
+        .suggestion-chip {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .suggestion-chip:hover {
+            background: #f59e0b;
+            color: black;
+            transform: translateY(-2px);
+            border-color: #f59e0b;
+        }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        
+        .message-content ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
+        .message-content ol { list-style-type: decimal; margin-left: 1.5rem; margin-bottom: 1rem; }
+        .message-content code { background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; }
+        .message-content pre { background: rgba(0,0,0,0.5); padding: 1rem; border-radius: 8px; overflow-x: auto; margin-bottom: 1rem; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-white">
+
+    <header class="p-4 flex justify-between items-center bg-black/40 border-b border-white/10 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-black shadow-lg shadow-yellow-500/20">
+                <i class="fas fa-robot text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight">Asistente Gemini IA</h1>
+                <span class="text-xs text-green-400 flex items-center gap-1">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    Sistema Activo
+                </span>
+            </div>
+        </div>
+        <button onclick="window.location.reload()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition flex items-center gap-2">
+            <i class="fas fa-redo-alt text-xs"></i> Reiniciar Chat
+        </button>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-4 md:p-6 h-[calc(100vh-80px)] flex flex-col">
+        <div id="chatBox" class="chat-container rounded-t-2xl p-4 md:p-6 overflow-y-auto custom-scroll flex flex-col gap-4 flex-grow">
+            <div class="message-bot p-4 rounded-r-xl rounded-bl-xl max-w-[85%] self-start animate-fade-in">
+                <div class="message-content">
+                    <p>¡Hola! Soy el asistente inteligente de <b>La IA Musical</b>. 🚀</p>
+                    <p class="mt-2">He sido actualizado para funcionar correctamente en tu navegador. ¿En qué puedo ayudarte hoy?</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="typingIndicator" class="hidden ml-4 my-3 flex gap-1.5 items-center">
+            <span class="text-xs text-slate-400 mr-2">Gemini está pensando</span>
+            <div class="typing-dot" style="animation-delay: 0s"></div>
+            <div class="typing-dot" style="animation-delay: 0.2s"></div>
+            <div class="typing-dot" style="animation-delay: 0.4s"></div>
+        </div>
+
+        <div id="suggestions" class="bg-black/20 p-3 flex gap-2 overflow-x-auto border-t border-white/5 no-scrollbar">
+            <button onclick="sendQuick('¿Qué puedo hacer en esta web?')" class="suggestion-chip px-4 py-2 rounded-full text-xs font-medium">🤔 Guía de inicio</button>
+            <button onclick="sendQuick('Escribe una letra de trap sobre superación')" class="suggestion-chip px-4 py-2 rounded-full text-xs font-medium">🎙️ Escribir canción</button>
+            <button onclick="sendQuick('¿Cómo funciona el Duelo de Cartas?')" class="suggestion-chip px-4 py-2 rounded-full text-xs font-medium">🎴 Reglas del juego</button>
+            <button onclick="sendQuick('Cuéntame un dato curioso sobre la IA')" class="suggestion-chip px-4 py-2 rounded-full text-xs font-medium">💡 Curiosidades</button>
+        </div>
+
+        <div class="bg-slate-900/90 p-4 rounded-b-2xl flex gap-3 border-t border-white/10">
+            <input type="text" id="userInput" placeholder="Escribe tu mensaje aquí..." 
+                class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex-1 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition placeholder:text-slate-500">
+            <button id="sendBtn" onclick="handleChat()" class="bg-yellow-500 hover:bg-yellow-400 active:scale-95 text-black w-12 h-12 rounded-xl flex items-center justify-center transition shadow-lg shadow-yellow-500/20">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </main>
+
+<script>
+    // --- CONFIGURACIÓN ---
+    // IMPORTANTE: Reemplaza con tu propia API Key de Google AI Studio
+    const GEMINI_API_KEY = "AIzaSyB1P6k9hAK1RWJw37E8sVbbDTD7SGdfcoM"; 
+    const MODEL_NAME = "gemini-1.5-flash";
+    const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL_NAME + ":generateContent?key=" + GEMINI_API_KEY;
+
+    const LOCAL_KNOWLEDGE = [
+        { keys: ['ranking', 'puntos', 'ganar'], answer: "Puedes ver quién lidera la competición en la sección de <b>Rankings</b> de nuestra web." },
+        { keys: ['juego', 'cartas', 'duelo'], answer: "El <b>StoryCard Duel</b> es nuestro juego estrella. ¡Combina estrategia y música para ganar!" }
+    ];
+
+    const chatBox = document.getElementById('chatBox');
+    const userInput = document.getElementById('userInput');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const sendBtn = document.getElementById('sendBtn');
+
+    let chatHistory = [];
+
+    async function fetchGemini(prompt) {
+        try {
+            // Preparamos los contenidos para la API
+            const contents = chatHistory.concat([{
+                role: "user",
+                parts: [{ text: "Eres el asistente experto de 'La IA Musical'. Tu tono es moderno, creativo y servicial. Responde de forma clara y estructurada. Usuario pregunta: " + prompt }]
+            }]);
+
+            const response = await fetch(GEMINI_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: contents,
+                    generationConfig: {
+                        temperature: 0.7,
+                        topK: 40,
+                        topP: 0.95,
+                        maxOutputTokens: 1024,
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error ? errorData.error.message : 'Error en la API');
+            }
+
+            const data = await response.json();
+            const botResponse = data.candidates[0].content.parts[0].text;
+            
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            chatHistory.push({ role: "model", parts: [{ text: botResponse }] });
+            
+            if (chatHistory.length > 10) chatHistory = chatHistory.slice(-10);
+
+            return botResponse;
+        } catch (error) {
+            console.error("Error API Gemini:", error);
+            if (GEMINI_API_KEY === "TU_API_KEY_AQUÍ") {
+                return "⚠️ **Falta la API Key**: Por favor, edita el archivo HTML e inserta tu API Key de Gemini en la línea 116 para que el chat funcione.";
+            }
+            return "Lo siento, hubo un problema al conectar con Gemini. Verifica que tu API Key sea válida.";
+        }
+    }
+
+    function formatMarkdown(text) {
+        return text
+            .replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mt-2">$1</h3>')
+            .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-3">$1</h2>')
+            .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-4">$1</h1>')
+            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+            .replace(/\*(.*?)\*/g, '<i>$1</i>')
+            .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+            .replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/\n/g, '<br>');
+    }
+
+    function addMessage(text, isBot) {
+        const div = document.createElement('div');
+        div.className = isBot 
+            ? "message-bot p-4 rounded-r-xl rounded-bl-xl max-w-[85%] self-start animate-fade-in" 
+            : "message-user p-4 rounded-l-xl rounded-br-xl max-w-[85%] self-end animate-fade-in";
+        
+        const formatted = formatMarkdown(text);
+        div.innerHTML = '<div class="message-content">' + formatted + '</div>';
+        
+        chatBox.appendChild(div);
+        chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+    }
+
+    async function handleChat() {
+        const query = userInput.value.trim();
+        if (!query) return;
+
+        addMessage(query, false);
+        userInput.value = '';
+        showTyping(true);
+
+        const lowQuery = query.toLowerCase();
+        const localMatch = LOCAL_KNOWLEDGE.find(function(item) {
+            return item.keys.some(function(k) { return lowQuery.includes(k); });
+        });
+
+        let finalResponse;
+        if (localMatch) {
+            await new Promise(function(r) { setTimeout(r, 800); });
+            finalResponse = localMatch.answer;
+        } else {
+            finalResponse = await fetchGemini(query);
+        }
+
+        showTyping(false);
+        addMessage(finalResponse, true);
+    }
+
+    function showTyping(show) {
+        typingIndicator.classList.toggle('hidden', !show);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    userInput.addEventListener('keypress', function(e) { 
+        if (e.key === 'Enter') handleChat(); 
+    });
+    
+    window.sendQuick = function(text) {
+        userInput.value = text;
+        handleChat();
+    };
+
+</script>
+
+</body>
+</html>
