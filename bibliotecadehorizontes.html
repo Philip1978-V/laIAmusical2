@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Biblioteca de horizontes</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #f8f3ea;
+    --cream-dark: #ede5d4;
+    --ink: #2a1f14;
+    --ink-light: #6b5a47;
+    --gold: #c8a96e;
+    --spine: #8b6e50;
+  }
+
+  html, body {
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body {
+    background: radial-gradient(ellipse at center, #3a2a1a 0%, #1a1008 100%);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    font-family: 'Crimson Text', Georgia, serif;
+    overflow: hidden;
+    position: relative;
+    padding: 0;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── UI WRAPPER ── */
+  .ui-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100dvh;
+    position: relative;
+    z-index: 10;
+    padding: 10px 10px 8px;
+    gap: 8px;
+  }
+
+  /* ── TOP BAR ── */
+  .top-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    max-width: 440px;
+    flex-shrink: 0;
+    gap: 6px;
+  }
+
+  .book-title-header {
+    color: var(--gold);
+    font-family: 'Playfair Display', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.75;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: center;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── AUDIO CONTROLS BAR ── */
+  .audio-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 100%;
+  }
+  .audio-bar.visible { opacity: 1; pointer-events: all; }
+
+  .audio-btn {
+    background: rgba(200,169,110,0.12);
+    border: 1px solid rgba(200,169,110,0.3);
+    border-radius: 50%;
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: var(--gold);
+    padding: 0;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .audio-btn:active { background: rgba(200,169,110,0.25); }
+  .audio-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+  .audio-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.46rem;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: rgba(200,169,110,0.55);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .audio-divider {
+    width: 1px;
+    height: 18px;
+    background: rgba(200,169,110,0.2);
+    flex-shrink: 0;
+    margin: 0 2px;
+  }
+
+  /* Voice indicator */
+  .voice-indicator {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+  .voice-indicator span {
+    display: block;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--gold);
+    opacity: 0;
+    animation: none;
+  }
+  .voice-indicator.playing span { opacity: 0.7; animation: voiceBar 1s ease-in-out infinite; }
+  .voice-indicator.playing span:nth-child(1) { animation-delay: 0s; }
+  .voice-indicator.playing span:nth-child(2) { animation-delay: 0.15s; }
+  .voice-indicator.playing span:nth-child(3) { animation-delay: 0.3s; }
+  .voice-indicator.playing span:nth-child(4) { animation-delay: 0.15s; }
+  @keyframes voiceBar {
+    0%, 100% { height: 4px; }
+    50%       { height: 13px; }
+  }
+
+  #musicVolume {
+    width: 44px;
+    accent-color: var(--gold);
+    cursor: pointer;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+
+  /* ── BOOK WRAPPER ── */
+  .book-wrapper {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* ── OPEN HINT ── */
+  .open-hint-badge {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(200,169,110,0.15);
+    border: 1px solid rgba(200,169,110,0.35);
+    backdrop-filter: blur(6px);
+    border-radius: 30px;
+    padding: 6px 16px;
+    color: var(--gold);
+    font-family: 'Playfair Display', serif;
+    font-size: 0.66rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    animation: pulseHint 2.4s ease-in-out infinite;
+    transition: opacity 0.4s;
+    z-index: 30;
+    white-space: nowrap;
+  }
+  .open-hint-badge.hidden { opacity: 0; pointer-events: none; }
+  .open-hint-badge svg { opacity: 0.7; flex-shrink: 0; }
+  @keyframes pulseHint {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(200,169,110,0); }
+    50%       { box-shadow: 0 0 0 6px rgba(200,169,110,0.12); }
+  }
+
+  /* ── BOOK CARD ── */
+  .book-card {
+    width: 100%;
+    height: 100%;
+    border-radius: 14px;
+    box-shadow:
+      0 8px 32px rgba(0,0,0,0.7),
+      0 0 0 1px rgba(255,255,255,0.05),
+      inset -3px 0 8px rgba(0,0,0,0.15);
+    position: relative;
+    overflow: hidden;
+    background: var(--cream);
+    -webkit-tap-highlight-color: transparent;
+    /* Perspective for 3D page turns */
+    perspective: 1400px;
+  }
+
+  /* Lomo del libro */
+  .book-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 8px;
+    background: linear-gradient(to right, var(--spine), rgba(139,110,80,0.3));
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  /* ── COVER PAGE ── */
+  .cover-page {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .cover-page img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .cover-bg-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(160deg, #4a3520, #1a1008);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 6rem;
+    opacity: 0.5;
+  }
+  .cover-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, transparent 55%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 28px 24px;
+  }
+  .cover-overlay h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    color: #fff;
+    line-height: 1.2;
+    text-shadow: 0 2px 16px rgba(0,0,0,0.8);
+    margin-bottom: 8px;
+  }
+  .cover-overlay .author {
+    font-family: 'Crimson Text', serif;
+    font-size: 1rem;
+    color: rgba(255,255,255,0.75);
+    letter-spacing: 0.1em;
+  }
+
+  .cover-page::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(200,169,110,0);
+    transition: background 0.3s;
+    pointer-events: none;
+  }
+  .cover-page:active::after { background: rgba(200,169,110,0.08); }
+
+  /* ─────────────────────────────────────────────────────────
+     STORY PAGE — imagen completa sin ningún recorte
+  ───────────────────────────────────────────────────────── */
+  .story-page {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    background: var(--cream);
+  }
+
+  /* Contenedor de la ilustración */
+  .page-illustration {
+    width: 100%;
+    flex-shrink: 0;
+    position: relative;
+    background: var(--cream-dark);
+    line-height: 0;
+  }
+
+  .page-illustration img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
+  }
+
+  .img-placeholder {
+    width: 100%;
+    padding: 40px 0;
+    background: var(--cream-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .img-placeholder svg {
+    opacity: 0.15;
+    width: 70px; height: 70px;
+  }
+
+  /* Marco perimetral: cubre marcas de agua en todos los bordes y esquinas */
+  .page-illustration::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    /* Vignette suave desde los 4 bordes con el color del fondo */
+    box-shadow:
+      inset 0    30px 22px -8px var(--cream),   /* top    */
+      inset 0   -42px 28px -8px var(--cream),   /* bottom */
+      inset  28px 0   22px -8px var(--cream),   /* left   */
+      inset -28px 0   22px -8px var(--cream);   /* right  */
+  }
+
+  /* Degradado suave adicional imagen → texto (zona inferior) */
+  .page-illustration::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 55px;
+    z-index: 3;
+    background: linear-gradient(to bottom, transparent, var(--cream));
+    pointer-events: none;
+  }
+
+  /* Sección de texto */
+  .page-text-section {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 22px 20px 26px;
+    position: relative;
+    background: var(--cream);
+  }
+
+  /* Líneas de cuaderno */
+  .page-text-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      transparent, transparent 31px,
+      rgba(180,160,130,0.13) 31px,
+      rgba(180,160,130,0.13) 32px
+    );
+    background-position: 0 52px;
+    pointer-events: none;
+  }
+
+  .chapter-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 14px;
+    opacity: 0.6;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .drop-cap {
+    font-family: 'Playfair Display', serif;
+    font-size: 4.4rem;
+    font-weight: 700;
+    line-height: 0.75;
+    float: left;
+    margin-right: 6px;
+    margin-top: 4px;
+    color: var(--ink);
+  }
+
+  .page-text {
+    font-family: 'Crimson Text', serif;
+    font-size: 1.12rem;
+    line-height: 1.7;
+    color: var(--ink);
+    text-align: justify;
+    position: relative;
+    z-index: 1;
+  }
+  .page-text p { margin-bottom: 0.8em; }
+  .page-text p::after { content: ''; display: table; clear: both; }
+
+  .page-number {
+    margin-top: 10px;
+    text-align: right;
+    font-family: 'Playfair Display', serif;
+    font-size: 0.72rem;
+    color: var(--ink-light);
+    opacity: 0.5;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Indicador "desliza" al final del contenido */
+  .swipe-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 14px 0 16px;
+    color: var(--ink-light);
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-family: 'Playfair Display', serif;
+    opacity: 0.4;
+    flex-shrink: 0;
+    background: var(--cream);
+  }
+
+  /* ── NAVIGATION ARROWS ── */
+  @keyframes arrowPulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(200,169,110,0.55),
+                  0 0 10px 2px rgba(200,169,110,0.25);
+      background: rgba(200,169,110,0.22);
+      border-color: rgba(200,169,110,0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(200,169,110,0),
+                  0 0 18px 4px rgba(200,169,110,0.45);
+      background: rgba(200,169,110,0.42);
+      border-color: var(--gold);
+    }
+  }
+
+  .nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 25;
+    width: 42px; height: 42px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(200,169,110,0.22);
+    border: 1.5px solid rgba(200,169,110,0.7);
+    border-radius: 50%;
+    color: var(--gold);
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.3s;
+    -webkit-tap-highlight-color: transparent;
+    backdrop-filter: blur(6px);
+    animation: arrowPulse 1.5s ease-in-out infinite;
+  }
+  .nav-arrow:active { background: rgba(200,169,110,0.55); }
+  .nav-arrow.hidden { opacity: 0; pointer-events: none; animation: none; }
+  .nav-arrow svg { width: 18px; height: 18px; filter: drop-shadow(0 0 3px rgba(200,169,110,0.6)); }
+  .nav-arrow-left  { left: 6px; }
+  .nav-arrow-right { right: 6px; }
+
+  /* ── END PAGE ── */
+  .end-page {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--cream);
+  }
+  .end-page-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 30px;
+    text-align: center;
+  }
+  .end-page-content .ornament { color: var(--gold); font-size: 1.8rem; opacity: 0.6; }
+  .end-page-content h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    color: var(--ink);
+  }
+  .end-page-content p {
+    font-family: 'Crimson Text', serif;
+    font-size: 0.95rem;
+    color: var(--ink-light);
+    opacity: 0.7;
+    letter-spacing: 0.1em;
+  }
+  .back-btn {
+    margin-top: 6px;
+    padding: 10px 24px;
+    border: 1px solid var(--gold);
+    background: none;
+    color: var(--ink-light);
+    font-family: 'Playfair Display', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .back-btn:active { background: var(--gold); color: var(--cream); }
+
+  /* ── NAV DOTS ── */
+  .nav-dots {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 2px 0;
+    z-index: 10;
+    position: relative;
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(200,169,110,0.3);
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid rgba(200,169,110,0.4);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .dot.active { background: var(--gold); transform: scale(1.3); }
+
+  /* ══════════════════════════════════════════════════════
+     PAGE FLIP ANIMATIONS — Efecto libro real
+     ══════════════════════════════════════════════════════ */
+
+  /* Entrada desde la derecha (avanzar página) */
+  @keyframes pageFlipInForward {
+    0%   {
+      transform: perspective(1400px) rotateY(-88deg);
+      transform-origin: left center;
+      opacity: 0.4;
+      filter: brightness(0.6);
+    }
+    40%  {
+      opacity: 0.85;
+      filter: brightness(0.85);
+    }
+    100% {
+      transform: perspective(1400px) rotateY(0deg);
+      transform-origin: left center;
+      opacity: 1;
+      filter: brightness(1);
+    }
+  }
+
+  /* Entrada desde la izquierda (retroceder página) */
+  @keyframes pageFlipInBackward {
+    0%   {
+      transform: perspective(1400px) rotateY(88deg);
+      transform-origin: right center;
+      opacity: 0.4;
+      filter: brightness(0.6);
+    }
+    40%  {
+      opacity: 0.85;
+      filter: brightness(0.85);
+    }
+    100% {
+      transform: perspective(1400px) rotateY(0deg);
+      transform-origin: right center;
+      opacity: 1;
+      filter: brightness(1);
+    }
+  }
+
+  /* Salida hacia la izquierda (avanzar: página actual se cierra) */
+  @keyframes pageFlipOutForward {
+    0%   {
+      transform: perspective(1400px) rotateY(0deg);
+      transform-origin: left center;
+      opacity: 1;
+      filter: brightness(1);
+    }
+    60%  {
+      opacity: 0.5;
+      filter: brightness(0.7);
+    }
+    100% {
+      transform: perspective(1400px) rotateY(-88deg);
+      transform-origin: left center;
+      opacity: 0;
+      filter: brightness(0.4);
+    }
+  }
+
+  /* Salida hacia la derecha (retroceder: página actual se cierra) */
+  @keyframes pageFlipOutBackward {
+    0%   {
+      transform: perspective(1400px) rotateY(0deg);
+      transform-origin: right center;
+      opacity: 1;
+      filter: brightness(1);
+    }
+    60%  {
+      opacity: 0.5;
+      filter: brightness(0.7);
+    }
+    100% {
+      transform: perspective(1400px) rotateY(88deg);
+      transform-origin: right center;
+      opacity: 0;
+      filter: brightness(0.4);
+    }
+  }
+
+  .anim-in-forward   { animation: pageFlipInForward   0.42s cubic-bezier(0.25,0.46,0.45,0.94) both; }
+  .anim-in-backward  { animation: pageFlipInBackward  0.42s cubic-bezier(0.25,0.46,0.45,0.94) both; }
+  .anim-out-forward  { animation: pageFlipOutForward  0.22s cubic-bezier(0.4,0,1,1) both; }
+  .anim-out-backward { animation: pageFlipOutBackward 0.22s cubic-bezier(0.4,0,1,1) both; }
+
+  /* Sombra de página en movimiento */
+  .page-shadow-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 15;
+    opacity: 0;
+    background: linear-gradient(to right, rgba(0,0,0,0.18) 0%, transparent 40%);
+    animation: shadowSweepForward 0.55s ease-out forwards;
+  }
+  .page-shadow-overlay.backward {
+    background: linear-gradient(to left, rgba(0,0,0,0.18) 0%, transparent 40%);
+    animation: shadowSweepBackward 0.55s ease-out forwards;
+  }
+  @keyframes shadowSweepForward {
+    0%   { opacity: 0.8; }
+    100% { opacity: 0; }
+  }
+  @keyframes shadowSweepBackward {
+    0%   { opacity: 0.8; }
+    100% { opacity: 0; }
+  }
+</style>
+</head>
+<!-- ================================================================== -->
+<!-- BOTÓN POP-UP "VOLVER A LA SALA"                                    -->
+<!-- Pega este bloque completo justo antes de </body> en CADA archivo   -->
+<!-- de audiobook (ej. lenguajedelmundo.html, herenciadelolvido.html…)  -->
+<!-- Lee la sala de origen que reproductor.html guarda en sessionStorage-->
+<!-- justo antes de redirigir, y muestra un botón para regresar a ella. -->
+<!-- ================================================================== -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+    /* Añade el "notch"/safe-area de iOS al viewport si el <meta viewport>
+       de la página no lo incluye todavía. No pasa nada si ya lo tenía. */
+    #backToRoomBtn {
+        position: fixed;
+        z-index: 9999;
+        display: none; /* se muestra solo si venimos de reproductor.html */
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        max-width: calc(100vw - 24px);
+        box-sizing: border-box;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        /* Desktop / tablet */
+        bottom: 24px;
+        right: 24px;
+        padding: 12px 20px;
+        font-size: 0.85rem;
+
+        border-radius: 9999px;
+        background: linear-gradient(135deg, #0d9488, #0891b2);
+        color: #fff;
+        font-weight: 700;
+        border: 1px solid rgba(45, 212, 191, 0.5);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 20px rgba(45,212,191,0.25);
+        cursor: pointer;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        transition: transform .2s ease, box-shadow .2s ease;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #backToRoomBtn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.5), 0 0 28px rgba(45,212,191,0.4);
+    }
+    #backToRoomBtn:active { transform: translateY(-1px) scale(0.97); }
+    #backToRoomBtn i { font-size: 1rem; flex-shrink: 0; }
+    #backToRoomLabel {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* ── Móviles: pegado al borde inferior, respetando el "safe area"
+         del notch/barra de gestos, y sin desbordar horizontalmente ── */
+    @media (max-width: 640px) {
+        #backToRoomBtn {
+            left: 12px;
+            right: 12px;
+            bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+            width: auto;
+            max-width: calc(100vw - 24px);
+            padding: 11px 16px;
+            font-size: 0.78rem;
+            justify-content: center;
+        }
+    }
+
+    /* Pantallas muy pequeñas (≤360px) */
+    @media (max-width: 360px) {
+        #backToRoomBtn {
+            left: 8px;
+            right: 8px;
+            bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+            padding: 10px 12px;
+            font-size: 0.72rem;
+            gap: 6px;
+        }
+    }
+</style>
+
+<button id="backToRoomBtn" onclick="goBackToRoom()">
+    <i class="fas fa-arrow-left"></i>
+    <span id="backToRoomLabel">Volver a la sala</span>
+</button>
+
+<script>
+(function () {
+    // Asegura que el viewport respete el "notch"/barra de gestos en iPhone,
+    // para que env(safe-area-inset-bottom) funcione aunque la página no
+    // tuviera viewport-fit=cover configurado en su <meta viewport>.
+    var vp = document.querySelector('meta[name="viewport"]');
+    if (vp && vp.content.indexOf('viewport-fit') === -1) {
+        vp.content = vp.content + ', viewport-fit=cover';
+    } else if (!vp) {
+        var m = document.createElement('meta');
+        m.name = 'viewport';
+        m.content = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
+        document.head.appendChild(m);
+    }
+
+    var returnUrl   = sessionStorage.getItem('lastRoomUrl');
+    var returnTopic = sessionStorage.getItem('lastRoomTopicLabel') || sessionStorage.getItem('lastRoomTopic');
+    var btn   = document.getElementById('backToRoomBtn');
+    var label = document.getElementById('backToRoomLabel');
+
+    // Solo mostrar el botón si llegamos aquí desde reproductor.html
+    if (returnUrl) {
+        btn.style.display = 'flex';
+        if (returnTopic) {
+            label.textContent = 'Volver a ' + returnTopic;
+        }
+    }
+
+    window.goBackToRoom = function () {
+        window.location.href = returnUrl || 'reproductor.html';
+    };
+})();
+</script>
+<body>
+
+<div class="ui-wrapper">
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <p class="book-title-header">✦ Biblioteca de horizontes ✦</p>
+
+    <!-- Audio controls (visibles al abrir el libro) -->
+    <div class="audio-bar" id="audioBar">
+      <!-- NARRADOR -->
+      <div class="voice-indicator" id="voiceIndicator">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <span class="audio-label">NARRADOR</span>
+      <button class="audio-btn" id="btnVoicePause" title="Pausar/Reanudar narración" onclick="toggleVoicePause()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" id="iconVoicePause">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+      </button>
+      <button class="audio-btn" title="Detener narración" onclick="stopVoice()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <rect x="4" y="4" width="16" height="16" rx="1"/>
+        </svg>
+      </button>
+
+      <div class="audio-divider"></div>
+
+      <!-- MÚSICA -->
+      <span class="audio-label">MÚSICA</span>
+      <button class="audio-btn" id="btnMusicPause" title="Pausar/Reanudar música" onclick="toggleMusicPause()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" id="iconMusicPause">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+      </button>
+      <button class="audio-btn" title="Silenciar música" onclick="toggleMusic()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" id="iconMusic">
+          <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+        </svg>
+      </button>
+      <input type="range" id="musicVolume" min="0" max="1" step="0.05" value="0.4"
+        title="Volumen música" oninput="setMusicVolume(this.value)">
+    </div>
+  </div>
+
+  <!-- BOOK WRAPPER -->
+  <div class="book-wrapper" id="bookWrapper">
+
+    <!-- Pista "Toca para abrir" -->
+    <div class="open-hint-badge" id="openHintBadge">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+      </svg>
+      Toca para abrir
+    </div>
+
+    <!-- Flechas de navegación -->
+    <div class="nav-arrow nav-arrow-left hidden" id="navLeft" onclick="prevPage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    </div>
+    <div class="nav-arrow nav-arrow-right hidden" id="navRight" onclick="nextPage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M9 18l6-6-6-6"/>
+      </svg>
+    </div>
+
+    <!-- Tarjeta libro -->
+    <div class="book-card" id="bookCard"></div>
+  </div>
+
+  <!-- NAV DOTS -->
+  <div class="nav-dots" id="navDots"></div>
+
+</div>
+
+<script>
+/* ============================================================
+   ░░  CONFIGURACIÓN DE AUDIO  ░░
+============================================================ */
+
+const MUSIC_SRC = 'storycard/bibliotecadehorizontes.mp3';
+
+/* ============================================================
+   ░░  CONFIGURACIÓN DEL LIBRO  ░░
+============================================================ */
+
+const pages = [
+
+  // ── PORTADA ──────────────────────────────────────────────
+  {
+    type: 'cover',
+    coverImg: 'storycard/bibliotecadehorizontes/portada.png',
+    coverMobileImg: 'storycard/bibliotecadehorizontes/portadamovil.png',
+    title:    'Biblioteca de horizontes',
+    author:   'De LaIAmusical'
+  },
+
+  // ── PÁGINA 1 ─────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 1,
+    chapterTitle: 'El zumbido de Varna',
+    illustrationSrc: 'storycard/bibliotecadehorizontes/imagen1.png',
+    voiceSrc:        'storycard/bibliotecadehorizontes/voz1.wav',
+    text: `La noche se había tragado las luces de Varna, dejando solo el brillo lejano de las estrellas que se filtraban por la cúpula del Observatorio Milimétrico. Mira Kóvacheva, astrofísica con la piel pálida por las horas frente a las pantallas y una mente que corría a la velocidad de la luz, no notó el silencio. Solo oía el siseo constante del aire acondicionado y, últimamente, un zumbido. No un zumbido cualquiera, sino uno que bailaba en los datos que el telescopio de radio captaba desde la vecindad del agujero negro Acheron-9.
+
+"Otra vez," murmuró, ajustándose las gafas mientras una nueva pauta emergía en el espectrograma. Un patrón gravitacional, una onda sutil que se repetía con una precisión escalofriante cada 13 horas. Había pasado de ser una curiosidad a una obsesión.
+
+Su colega, el doctor Petrov, un hombre más dado a la prudencia que al asombro, se acercó con una taza de café humeante. "Mira, ¿sigues con eso? Los protocolos dicen que es ruido de fondo. Interferencia interestelar, quizás."
+
+Mira ni siquiera le miró. "Petrov, el ruido de fondo no tiene un ciclo de 13 horas. El ruido de fondo no tiene la firma armónica de una melodía gravitacional. Y esto," señaló la pantalla, donde las líneas de datos danzaban con una matemática elegante, "esto no es artificial, pero tampoco es azar. Es... deliberado."
+
+"Deliberado, ¿por quién? ¿Acheron-9? Es un agujero negro supermasivo, no una orquesta cósmica." Petrov sonrió, pero había una tensión en su voz. Sabía que Mira no se rendía fácilmente.
+
+"No sé. Pero si mis cálculos son correctos, no es solo un zumbido. Es un pulso. Un mensaje." Sus ojos, cansados pero brillantes, se clavaron en él. "Y me ha llegado una invitación. A Kármán. Quieren que les cuente sobre mi 'orquesta cósmica'."
+
+Petrov alzó una ceja, la sonrisa se le borró. "La Estación Kármán. La misión Lumen. ¿Estás segura de esto, Mira? Acheron-9 no es precisamente un destino turístico."
+
+"Lo sé. Pero este 'zumbido' es lo más interesante que hemos encontrado en décadas. ¿Y si es más que solo ruido?"`
+  },
+
+  // ── PÁGINA 2 ─────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 2,
+    chapterTitle: 'El legado de las heridas',
+    illustrationSrc: 'storycard/bibliotecadehorizontes/imagen2.png',
+    voiceSrc:        'storycard/bibliotecadehorizontes/voz2.wav',
+    text: `La Estación Orbital Kármán no era el brillante santuario de acero y luz que las películas de ciencia ficción prometían. Era un amasijo pragmático de módulos, antenas y paneles solares, cada cicatriz en su casco una historia de supervivencia en el vacío. Dentro, el aire olía a metal, ozono y café recalentado.
+Mira, sintiéndose como un pez fuera del agua entre los ingenieros y pilotos con sus monos de vuelo impecables, fue presentada a la tripulación de la Lumen. No eran los héroes de portada que uno esperaría de una misión a un agujero negro.
+Renjiro "Ren" Sato, el comandante, era un hombre de pocas palabras y cicatrices apenas visibles en el rostro, restos de un accidente de carguero cislunar que le había arrebatado a su co-piloto, y con él, parte de su alma. Su mirada era penetrante, un pozo oscuro de disciplina y resignación.
+"Doctora Kóvacheva," dijo Ren con un asentimiento breve, su japonés matizado con un acento que a Mira le resultó extrañamente familiar de las viejas grabaciones. "Espero que su zumbido valga la pena el viaje."
+"Comandante Sato," respondió Mira, intentando mantener la compostura. "Espero que mis ecuaciones no les den dolor de cabeza."
+Zawadi Okoro, la ingeniera keniata, tenía los brazos musculosos y el pelo recogido en rastas adornadas con abalorios metálicos. Era una especialista en velas de plasma, capaz de domar los vientos solares para impulsar naves a velocidades impensables. Pero en sus ojos se veía la sombra de un hogar perdido, borrado por las crecidas del mar. "Bienvenida al circo, doctora. Aquí nos jugamos la vida por un poco de ciencia y un montón de chatarra espacial."
+Emilio Riquelme, el médico chileno, era un gigante bonachón con una barba canosa y una sonrisa triste. Un experto en hibernación, había sido testigo de demasiadas pérdidas en el frío abrazo del espacio, incluido un paciente al que no pudo despertar. "No te preocupes, Mira. Si nos congelamos, al menos lo haremos de forma segura."
+Y Aroha Te Whare, la navegante maorí, una mujer pequeña pero con una presencia imponente, cuyo rostro tatuado contaba historias antiguas. Sus habilidades para cartografiar anomalías relativistas eran legendarias, pero el luto por su isla natal, sumergida por el cambio climático, la perseguía como una sombra. "El espacio lo llena todo, menos los vacíos que dejamos atrás," dijo Aroha, sus ojos fijos en Mira. "Pero a veces, encuentras algo nuevo en la oscuridad."
+Mira sintió un escalofrío. Esta tripulación, cada uno con su propio fantasma, dependía de su "zumbido". La misión Lumen no era solo por la ciencia; era una huida, una forma de enfrentar la inmensidad del cosmos para no sentir el vacío de sus propias vidas.`
+  },
+
+  // ── PÁGINA 3 ─────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 3,
+    chapterTitle: 'La lumen',
+    illustrationSrc: 'storycard/bibliotecadehorizontes/imagen3.png',
+    voiceSrc:        'storycard/bibliotecadehorizontes/voz3.wav',
+    text: `La Lumen no era una joya de ingeniería, sino un Frankenstein de módulos, cables expuestos y remiendos de fibra de carbono. Su motor principal era una vela de plasma, un lienzo gigantesco que atrapaba las partículas cargadas del viento estelar. Pero su verdadera magia residía en el anillo de espejos que rodeaban su núcleo, diseñados para recolectar la radiación de Acheron-9 y convertirla en energía para sus sistemas. Era una nave de reciclaje cósmico.
+"No es bonita," dijo Zawadi, golpeando un panel con el nudillo, "pero es robusta. Ha resistido más de lo que parece. Cada módulo es un testimonio de la perseverancia humana. Y de la burocracia, claro." Se rió con una tos seca.
+El objetivo de la Lumen no era colonizar, sino escuchar. Llevarían el Ojo de Kármán, un interferómetro cuántico del tamaño de una pequeña estación, hasta la órbita de Acheron-9. El objetivo de Mira: usarlo para "escuchar" el horizonte de eventos y probar su hipótesis, aquella que decía que ciertos modos cuánticos se filtraban justo antes del punto de no retorno. Como un susurro desde el otro lado del velo.
+En la sala de control, una mesa holográfica proyectaba el modelo de Acheron-9, un vórtice insaciable en el espacio.
+"La teoría de Mira," Ren habló con su voz monótona, señalando el horizonte de eventos. "Sostiene que este 'zumbido' es el eco de algo que cruza el horizonte. Algo que, de alguna forma, deja una huella cuántica."
+"Es un poco más complejo, comandante," interrumpió Mira, acercándose a la proyección. "No es solo un eco. Es una secuencia. Mi modelo sugiere que estos pulsos son información, estados cuánticos de partículas que, aunque no pueden escapar, interactúan con el espacio-tiempo de tal forma que dejan un rastro legible en nuestro lado."
+Emilio se frotó la barbilla. "¿Información? ¿Como un mensaje cifrado?"
+"O como una firma. Un rastro de lo que hay dentro. Un registro," explicó Mira. "Si lo demostramos, cambiaría todo lo que sabemos sobre los agujeros negros. No son solo devoradores de materia, son... bibliotecarios."
+Aroha, que había estado observando la proyección en silencio, levantó la vista. "Bibliotecarios de qué, Mira?"
+Mira sonrió, una sonrisa genuina por primera vez en días. "Eso, mi querida Aroha, es lo que vamos a descubrir."`
+  },
+
+  // ── PÁGINA 4 ─────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 4,
+    chapterTitle: 'La ventana de tarsis',
+    illustrationSrc: 'storycard/bibliotecadehorizontes/imagen4.png',
+    voiceSrc:        'storycard/bibliotecadehorizontes/voz4.wav',
+    text: `La inserción orbital en Tarsis, una delgada exoluna de silicatos que orbitaba muy lejos de Acheron-9, pero lo suficientemente cerca como para que el tiempo comenzara a jugar sus trucos, fue una danza gravitacional de precisión. La Lumen se deslizó como un fantasma, impulsada por la vela de plasma de Zawadi, que pulsaba con una luz azul.
+"Estabilizando órbita," Ren anunció, sus dedos bailando sobre los controles con una destreza que desmentía su aparente frialdad. "Tiempo relativo en el exterior: una hora de nuestro tiempo aquí equivale a once días para la estación Kármán. Nos estamos adentrando en aguas profundas, literalmente."
+Emilio, en la bahía médica, monitoreaba los signos vitales de la tripulación. Las primeras alarmas comenzaron a sonar. "Comandante, tengo microtraumas cognitivos. Pequeñas desviaciones en los patrones cerebrales, lapsos de memoria, irritabilidad. La disincronía circadiana está pasando factura. Es más rápido de lo que esperábamos."
+Zawadi, siempre práctica, se acercó al panel de diagnóstico. "Los ciclos de sueño y vigilia se están desajustando. Nuestros cerebros no están hechos para estas diferencias temporales. Podríamos usar pulsos de luz coherente de baja frecuencia. Sincronizaría los cerebros con un ritmo artificial, estableciendo una especie de 'día de la nave'."
+"¿Una caja de luz de bolsillo?" Ren preguntó, escéptico.
+"No es tan simple, pero sí. Engañaría al hipotálamo, manteniéndonos unificados. Es temporal, pero nos dará la coherencia que necesitamos para operar," respondió Zawadi.
+"Hazlo," Ren ordenó, su voz firme. "No podemos permitir que nuestra percepción del tiempo nos derribe antes de llegar al agujero negro. El espacio ya nos roba suficiente."
+Los pequeños dispositivos de luz se activaron, emitiendo un suave brillo que, aunque artificial, comenzó a anclar a la tripulación a una realidad compartida, luchando contra la vertiginosa dislocación temporal que ya se cernía sobre ellos.`
+  },
+
+  // ── PÁGINA 5 ─────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 5,
+    chapterTitle: 'El canto del horizonte',
+    illustrationSrc: 'storycard/bibliotecadehorizontes/imagen5.png',
+    voiceSrc:        'storycard/bibliotecadehorizontes/voz5.wav',
+    text: `La instalación del Ojo de Kármán fue un ballet mecánico y delicado. Brazos robóticos lo ensamblaron en el exterior de la Lumen, cada conexión un paso más cerca del corazón de Acheron-9. Cuando estuvo listo, la nave se acercó aún más, hasta el borde de la ergosfera, la región del espacio-tiempo donde nada puede permanecer inmóvil y es arrastrado inexorablemente.
+El "zumbido" de Mira dejó de ser un zumbido. Ahora, era una cacofonía orquestada. El Ojo de Kármán capturó una serie de "golpes" gravitacionales, pulsos que se traducían en un patrón complejo en las pantallas.
+"Lo tenemos," susurró Mira, sus manos temblorosas. "El patrón completo. Es... hermoso."
+Aroha, sentada frente a su consola de navegación, frunció el ceño. Sus dedos se movieron sobre el teclado, aplicando sus algoritmos de cartografía de anomalías. "Estoy traduciendo esto como coordenadas. Pero no son coordenadas espaciales, Mira. No es un lugar en el espacio."
+"¿Entonces qué es?" preguntó Emilio, su voz apenas un hilo.
+"Es una trayectoria," Aroha respondió, su rostro pálido. "Una ruta. Dentro de la ergosfera. Una espiral que se acerca peligrosamente al horizonte de eventos."
+Un silencio denso cayó sobre la cabina. Ren fue el primero en romperlo. "Negativo. No hay forma de que crucemos esa línea. Nuestra misión es observar, no suicidarnos. Esto es una advertencia. Una trampa." Su voz era un trueno en la pequeña cabina.
+"No, comandante," Mira se adelantó, sus ojos fijos en la proyección del patrón. "No es una advertencia. Es una invitación. Míralo. Es demasiado complejo para ser un mero fenómeno natural aleatorio. Es una secuencia intencionada. Alguien o algo nos está guiando."
+"¿Guiando a dónde, Mira? ¿A nuestra destrucción?" Ren no cedía, su mandíbula apretada. "Hemos llegado al límite seguro. No arriesgaré a esta tripulación por una hipótesis. Mi deber es traerlos de vuelta."
+"Su deber es obtener el conocimiento, comandante. Y esto, este patrón, es la clave. Es la primera conversación con algo más grande que nosotros," argumentó Mira, su voz subiendo de volumen. "Nos está mostrando el camino a casa, pero no nuestra casa. Su casa. O su memoria."
+La tensión era palpable. La Lumen flotaba al borde de un abismo cósmico, y la tripulación estaba dividida entre la prudencia y la insaciable curiosidad de Mira.
+`
+  },
+
+  // ── PÁGINA 6 ─────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 6,
+    chapterTitle: 'Decisión dividida',
+    illustrationSrc: 'storycard/bibliotecadehorizontes/imagen6.png',
+    voiceSrc:        'storycard/bibliotecadehorizontes/voz6.wav',
+    text: `Un crujido metálico hizo temblar la Lumen. Las alarmas rojas se encendieron, pintando la cabina con una luz siniestra.
+"¡Tormenta de acreción!" gritó Zawadi, sus dedos volando por los controles. "Picos de radiación de sincrotrón. La vela de plasma está recibiendo un castigo severo."
+Los monitores mostraron ráfagas de partículas energéticas golpeando el enorme tejido de la vela. "Daño crítico en los propulsores iónicos auxiliares," informó. "Hemos perdido el 60% de la capacidad de la vela. Las reparaciones externas nos llevarían meses de tiempo relativo aquí, y décadas en Kármán."
+Ren golpeó la consola con el puño. "Maldita sea. Estamos varados. La órbita se está degradando. Si no hacemos algo, Acheron-9 nos devorará lentamente."
+"Hay una opción," dijo Mira, su voz sorprendentemente tranquila. Todos la miraron. "Podríamos usar la ergosfera. Si podemos realizar una maniobra de Penrose inversa, podríamos robar energía del agujero negro. No nos dará propulsión, pero estabilizaría la órbita y nos daría el tiempo necesario para las reparaciones y capturar más datos."
+Emilio la miró con incredulidad. "¿Robar energía a un agujero negro? Eso es una locura, Mira. Es como robarle un caramelo a un dios."
+"Es arriesgado, sí," Mira admitió. "Pero es factible. La nave está diseñada para resistir las fuerzas de marea dentro de ciertos límites. Podríamos usar nuestros propulsores restantes para inyectarnos en una órbita aún más interna, girar, y usar la rotación del espacio-tiempo para acelerar nuestro escape. Sería un 'efecto Penrose mecánico'."
+Ren se quedó en silencio, mirando el mapa de la trayectoria que Aroha había descifrado. "Está hablando de cruzar el límite seguro. Es un suicidio."
+"O es nuestra única oportunidad. Para sobrevivir y para entender," insistió Mira. "Este es el único camino, Comandante. Las reparaciones nos costarían demasiado tiempo. Demasiadas vidas. ¿Qué vale más? ¿Un poco de riesgo o el conocimiento que podría cambiar la historia?"
+La indecisión de Ren era palpable. Finalmente, con un suspiro pesado, asintió. "De acuerdo. Lo haremos. Pero con una condición: nadie baja más allá del límite de seguridad. Nadie. ¿Entendido?"
+Mira asintió con una determinación férrea. "Entendido." Pero en su mirada, había una promesa rota, un secreto que ya había decidido guardar. El patrón en la ergosfera la llamaba con demasiada fuerza.
+`
+  },
+
+  // ── PÁGINA 7 ─────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 7,
+    chapterTitle: 'La caída',
+    illustrationSrc: 'storycard/bibliotecadehorizontes/imagen7.png',
+    voiceSrc:        'storycard/bibliotecadehorizontes/voz7.wav',
+    text: `La Lumen tembló mientras Ren la inyectaba en una órbita aún más audaz, rozando los límites de la ergosfera. Las fuerzas de marea eran un martillo invisible golpeando el casco, estirando y comprimiendo el metal. La gravedad era tan intensa que los monitores de Aroha distorsionaban las estrellas.
+"Necesito ajustar el Ojo," dijo Mira, rompiendo el tenso silencio. "La calibración está fuera de rango. Solo puedo hacerlo manualmente, desde la cápsula de observación."
+Ren la miró, un nudo en el estómago. "Mira, lo prometiste. Nadie cruza el límite."
+"No lo cruzaré, Comandante. Solo me acercaré. Es una calibración fina, y los robots no son lo suficientemente precisos." Mintió, y lo sabía. Y Ren lo sospechaba.
+Emilio, en la bahía médica, apretó los puños. "Es demasiado peligroso. Las lecturas de marea están en su punto más alto."
+"Estaré bien. Será rápido," Mira aseguró, ya dirigiéndose al esclusa.
+Enf enfundada en su traje espacial, el pequeño módulo se desprendió de la Lumen, un punto insignificante contra el telón de fondo de Acheron-9, un disco negro y voraz que distorsionaba la luz de las galaxias lejanas. Mira conectó el Ojo de Kármán, sus manos expertas ajustando los cristales y los campos cuánticos. Los pulsos del agujero negro eran ahora ensordecedores.
+De repente, un pico. Una furia gravitatoria inesperada. "¡Doctora Kóvacheva, vuelva!" gritó Ren por el comunicador, pero su voz se quebró con la estática.
+La cápsula fue arrastrada, no hacia el horizonte de eventos, sino hacia una órbita mucho más interna, más cercana, atrapada en un tirón gravitacional del que no había escape inmediato. Desde la Lumen, vieron cómo el reloj de Mira se desaceleraba drásticamente. Para ella, los minutos pasaban, pero para ellos, las horas se estiraban en días.
+"¡Mira! ¿Me oyes?" Ren gritó, su voz cargada de desesperación.
+"¡Estoy bien, Comandante! Solo... un pequeño problema de órbita," su voz llegó distorsionada, pero calmada. "Estoy capturando todo. ¡Es increíble! ¡Hay mucho más de lo que pensaba! Envío paquete de datos. ¡Ahora!"
+Un último pulso de información, denso y masivo, llegó a la Lumen. Era el patrón completo, amplificado, traducido, decodificado. Después, el silencio, roto solo por el gemido del tiempo distorsionado. La pequeña cápsula de Mira continuó orbitando, cada uno de sus segundos un siglo para aquellos que la observaban desde la distancia.`
+  },
+
+  // ── PÁGINA 8 ─────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 8,
+    chapterTitle: 'Biblioteca de Acheron',
+    illustrationSrc: 'storycard/bibliotecadehorizontes/imagen8.png',
+    voiceSrc:        'storycard/bibliotecadehorizontes/voz8.wav',
+    text: `El paquete de datos que Mira envió fue una revelación. No eran solo números, ni ecuaciones. Era una topología del espacio-tiempo alrededor de Acheron-9, un mapa tridimensional de la curvatura, pero dentro de esa estructura, había algo más. Una "interferencia" persistente, como una señal grabada en la misma tela de la realidad.
+"No es solo un patrón," dijo Aroha, con los ojos bien abiertos mientras analizaba las proyecciones holográficas. "Es una superposición de estados cuánticos. Como si el propio horizonte de eventos estuviera... guardando información."
+"Un archivo," susurró Mira desde su cápsula, su voz ahora una serie de ráfagas casi incomprensibles debido a la dilatación del tiempo, pero el Ojo de Kármán las amplificaba y las traducía. "Una memoria grabada en la curvatura."
+Lo que emergió de los datos era asombroso. Ecos de naves estelares que habían cruzado el horizonte, sus diseños, sus motores, sus matrículas. Sondas de exploración de civilizaciones desconocidas, sus objetivos, sus hallazgos. E incluso, para el horror y el asombro de la tripulación, fragmentos de transmisiones humanas perdidas hace décadas, emisiones de radio y televisión de la Tierra que se habían desvanecido en la vastedad del espacio. Canciones, discursos, incluso chistes. Todo conservado, no como datos informáticos, sino como patrones en el tejido del espacio-tiempo.
+"Esto no es vida," dijo Emilio, su rostro pálido. "No es una civilización viviendo dentro del agujero negro. Es... un cementerio. Una biblioteca de todo lo que ha caído."
+Zawadi miró los ecos de una antigua transmisión de jazz de los años 20. "Es historia. El agujero negro no destruye la información, la conserva. Como un registro akáshico cósmico."
+Mira, a través de su señal distorsionada, añadió una última y crucial pieza. "No es vida... es memoria grabada en curvatura. Una biblioteca de todo el universo que Acheron-9 ha engullido. Y el patrón... el patrón es el índice."
+`
+  },
+
+  // ── PÁGINA 9 ─────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 9,
+    chapterTitle: 'El regreso',
+    illustrationSrc: 'storycard/bibliotecadehorizontes/imagen9.png',
+    voiceSrc:        'storycard/bibliotecadehorizontes/voz9.wav',
+    text: `La decisión fue brutal. Ren, con el corazón destrozado por la situación de Mira, ejecutó la maniobra de extracción. Usando la energía robada a la ergosfera, la Lumen rugió, librándose del abrazo gravitacional de Acheron-9 con una violencia que sacudió cada tuerca y tornillo de la nave. La dilatación temporal fue inversamente proporcional al riesgo: el costo relativista fue horrendo.
+Cuando la Lumen regresó a la Estación Kármán, no la encontraron con la prisa esperada. Un nuevo módulo de acoplamiento, más avanzado, tuvo que activarse. Los técnicos que la recibieron parecían confundidos, sus rostros envejecidos.
+"Bienvenidos a casa," dijo uno de ellos, un joven que no recordaba haber visto antes. "Hemos estado esperándolos."
+Zawadi, al salir de la esclusa, notó algo extraño en la sala de bienvenida. Las pantallas mostraban noticias de hacía años. Se acercó a una terminal y buscó su apellido. Encontró una foto. Una mujer adulta, sonriendo. Debajo, un texto: "La renombrada astrofísica Kendi Okoro, hija de la ingeniera pionera Zawadi Okoro, ha presentado su último paper sobre propulsión de materia oscura..."
+"No puede ser," Zawadi susurró, sus ojos llenos de lágrimas. Su hija, a la que había dejado como una niña, era ahora una mujer adulta, una científica por derecho propio. Habían pasado diecinueve años terrestres.
+Emilio, al buscar noticias de su clínica en Santiago, descubrió que había cerrado hacía una década. Los avances médicos habían dejado sus antiguos tratamientos obsoletos. Su legado había sido reemplazado por el progreso. Recibió mensajes de familiares, ahora ancianos, que lo daban por muerto hacía años.
+Aroha, buscando su isla natal, encontró una imagen satelital desoladora. La Gran Tormenta de 2041 había reorganizado la geografía de su hogar, sumergiendo gran parte de lo que conocía. Los viejos tótems habían sido reemplazados por nuevas estructuras, la gente había migrado. Su isla, su cultura, se había adaptado y evolucionado sin ella.
+Ganaron el conocimiento, sí. Tenían el archivo de Acheron, un tesoro incalculable. Pero perdieron su época, sus vidas, sus conexiones. El precio de la verdad cósmica había sido el desgarro de sus propias realidades.`
+  },
+
+  // ── PÁGINA 10 ─────────────────────────────────────────────
+  {
+    type: 'story',
+    pageNum: 10,
+    chapterTitle: 'El horizonte del evento',
+    illustrationSrc: 'storycard/bibliotecadehorizontes/imagen10.png',
+    voiceSrc:        'storycard/bibliotecadehorizontes/voz10.wav',
+    text: `Mira no regresó. Su cápsula, atrapada en una órbita extrema, rozando el horizonte de eventos de Acheron-9, se había convertido en un faro. Desde allí, en su tiempo ralentizado, continuaba emitiendo. Breves ráfagas de datos que el Ojo de Kármán, ahora de vuelta en la Estación, traducía con precisión.
+El equipo se reunió, viejos y agotados, pero con una nueva comprensión en sus ojos. Las ráfagas no eran un lamento, ni una petición de ayuda. Eran coordenadas. Coordenadas de otros agujeros negros en la galaxia.
+"El archivo no era un mensaje para nosotros," dijo Ren, con una voz que había envejecido tanto como él. "Era un mapa. El índice de una biblioteca mucho más grande."
+"Mira nos está enviando el resto de las sucursales," Zawadi añadió, las lágrimas silenciosas en sus mejillas mientras la imagen de su hija adulta parpadeaba en su mente. "Cada agujero negro, una biblioteca diferente. Un registro de todo lo que ha existido en esa región del espacio-tiempo."
+Aroha señaló la proyección holográfica, donde los puntos de luz de los agujeros negros se conectaban, formando una red cósmica. "El horizonte no era un final, comandante. Era un índice. Mira lo descubrió. Y ahora, nos está mostrando el camino."
+Emilio, sus manos temblorosas, miró a sus compañeros. "Tenemos la Lumen. Tenemos el Ojo. Y tenemos la voluntad de una mujer atrapada en el tiempo."
+La Lumen, reparada y mejorada con la nueva tecnología de Kármán, fue preparada de nuevo. Esta vez, la tripulación no era un grupo de retazos rotos, sino guardianes de un legado. Guardianes de una búsqueda. Con Ren al mando, la Lumen puso rumbo al siguiente punto en el mapa de Mira, una pequeña estrella binaria que moría a miles de años luz. El horizonte del evento ya no era un velo temible, sino la portada de un libro interminable, escrito en el espacio-tiempo por el propio universo. Y ellos eran sus lectores.`
+  },
+
+  // ── PÁGINA FINAL ─────────────────────────────────────────
+  { type: 'end' }
+
+];
+
+/* ============================================================
+   FIN DE LA CONFIGURACIÓN
+============================================================ */
+
+// ── AUDIO ENGINE ────────────────────────────────────────────
+const musicAudio  = new Audio();
+musicAudio.loop   = true;
+musicAudio.volume = 0.4;
+if (MUSIC_SRC) musicAudio.src = MUSIC_SRC;
+
+let voiceAudio   = null;
+let voicePaused  = false;
+let musicMuted   = false;
+let musicPaused  = false;
+let bookOpened   = false;
+
+function startMusic() {
+  if (!MUSIC_SRC || musicMuted) return;
+  musicAudio.currentTime = 0;
+  musicAudio.play().catch(() => {});
+  updateMusicPauseIcon(true);
+}
+
+function stopAllAudio() {
+  if (voiceAudio) { voiceAudio.pause(); voiceAudio.currentTime = 0; }
+  voicePaused = false;
+  setVoiceIndicator(false);
+  updateVoicePauseIcon(false);
+}
+
+function playPageVoice(src) {
+  stopAllAudio();
+  if (!src) return;
+  voiceAudio = new Audio(src);
+  voiceAudio.volume = 1;
+  voiceAudio.play().catch(() => {});
+  voiceAudio.onplay  = () => { setVoiceIndicator(true);  updateVoicePauseIcon(true); };
+  voiceAudio.onended = () => { setVoiceIndicator(false); updateVoicePauseIcon(false); voicePaused = false; };
+  voiceAudio.onpause = () => { setVoiceIndicator(false); };
+}
+
+function setVoiceIndicator(playing) {
+  const el = document.getElementById('voiceIndicator');
+  if (el) el.className = 'voice-indicator' + (playing ? ' playing' : '');
+}
+
+function updateVoicePauseIcon(isPlaying) {
+  const icon = document.getElementById('iconVoicePause');
+  if (!icon) return;
+  icon.innerHTML = isPlaying
+    ? `<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>`
+    : `<polygon points="5 3 19 12 5 21 5 3"/>`;
+}
+
+function toggleVoicePause() {
+  if (!voiceAudio) return;
+  if (voicePaused) {
+    voiceAudio.play().catch(() => {});
+    voicePaused = false;
+    setVoiceIndicator(true);
+    updateVoicePauseIcon(true);
+  } else {
+    voiceAudio.pause();
+    voicePaused = true;
+    setVoiceIndicator(false);
+    updateVoicePauseIcon(false);
+  }
+}
+
+function stopVoice() {
+  if (voiceAudio) {
+    voiceAudio.pause();
+    voiceAudio.currentTime = 0;
+    voicePaused = false;
+    setVoiceIndicator(false);
+    updateVoicePauseIcon(false);
+  }
+}
+
+// ── MÚSICA: pausa dedicada ───────────────────────────────────
+function updateMusicPauseIcon(isPlaying) {
+  const icon = document.getElementById('iconMusicPause');
+  if (!icon) return;
+  icon.innerHTML = isPlaying
+    ? `<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>`
+    : `<polygon points="5 3 19 12 5 21 5 3"/>`;
+}
+
+function toggleMusicPause() {
+  if (musicMuted) return; // si está silenciada no hace nada
+  if (musicPaused) {
+    musicAudio.play().catch(() => {});
+    musicPaused = false;
+    updateMusicPauseIcon(true);
+  } else {
+    musicAudio.pause();
+    musicPaused = true;
+    updateMusicPauseIcon(false);
+  }
+}
+
+function setMusicVolume(val) {
+  musicAudio.volume = parseFloat(val);
+  if (parseFloat(val) === 0) {
+    musicMuted = true;
+    document.getElementById('iconMusic').innerHTML =
+      `<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+       <line x1="1" y1="1" x2="23" y2="23" stroke-width="2"/>`;
+    musicAudio.pause();
+    updateMusicPauseIcon(false);
+  } else if (musicMuted) {
+    musicMuted = false;
+    document.getElementById('iconMusic').innerHTML =
+      `<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>`;
+    musicAudio.play().catch(() => {});
+    updateMusicPauseIcon(true);
+  }
+}
+
+function toggleMusic() {
+  musicMuted = !musicMuted;
+  const icon   = document.getElementById('iconMusic');
+  const slider = document.getElementById('musicVolume');
+  if (musicMuted) {
+    musicAudio.pause();
+    musicPaused = false;
+    icon.innerHTML = `<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+      <line x1="1" y1="1" x2="23" y2="23" stroke-width="2"/>`;
+    if (slider) slider.value = 0;
+    updateMusicPauseIcon(false);
+  } else {
+    musicAudio.volume = 0.4;
+    musicAudio.play().catch(() => {});
+    icon.innerHTML = `<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>`;
+    if (slider) slider.value = 0.4;
+    updateMusicPauseIcon(true);
+  }
+}
+
+// ── STATE ────────────────────────────────────────────────────
+let currentPage = 0;
+let animating   = false;
+
+const bookCard  = document.getElementById('bookCard');
+const navDotsEl = document.getElementById('navDots');
+const navLeft   = document.getElementById('navLeft');
+const navRight  = document.getElementById('navRight');
+
+// Drop cap helper
+function withDropCap(text) {
+  const t = text.trimStart();
+  if (!t.length) return text;
+  return `<span class="drop-cap">${t.charAt(0)}</span>${t.slice(1)}`;
+}
+
+// ── NAV DOTS ────────────────────────────────────────────────
+function buildDots() {
+  navDotsEl.innerHTML = '';
+  pages.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === currentPage ? ' active' : '');
+    d.onclick = () => goToPage(i);
+    navDotsEl.appendChild(d);
+  });
+}
+
+// ── UPDATE NAV ARROWS ────────────────────────────────────────
+function updateArrows() {
+  const p = pages[currentPage];
+  navLeft.classList.toggle('hidden',  !bookOpened || currentPage <= 0);
+  navRight.classList.toggle('hidden', !bookOpened || p.type === 'end' || currentPage >= pages.length - 1);
+}
+
+// ── BUILD PAGE ELEMENT ──────────────────────────────────────
+function buildPageElement(p) {
+  const el = document.createElement('div');
+
+  if (p.type === 'cover') {
+    el.className = 'cover-page';
+    
+    // 2. DETECTAR SI ES MÓVIL (Ancho menor o igual a 767px)
+    const isMobile = window.innerWidth <= 767;
+    const imgSrc = (isMobile && p.coverMobileImg) ? p.coverMobileImg : p.coverImg;
+
+    el.innerHTML = imgSrc
+      ? `<img src="${imgSrc}" alt="Portada: ${p.title}">`
+      : `<div class="cover-bg-placeholder">🌹</div>`;
+    el.innerHTML += `
+      <div class="cover-overlay">
+        <h1>${p.title}</h1>
+        <p class="author">${p.author}</p>
+      </div>`;
+    el.onclick = openBook;
+
+  } else if (p.type === 'end') {
+    el.className = 'end-page';
+    el.innerHTML = `
+      <div class="end-page-content">
+        <div class="ornament">✦ ✦ ✦</div>
+        <h2>Fin de la historia</h2>
+        <p>LaIAmusical</p>
+        <button class="back-btn" onclick="goToPage(0)">Volver al inicio</button>
+      </div>`;
+    stopAllAudio();
+
+  } else {
+    const imgHtml = p.illustrationSrc
+      ? `<img src="${p.illustrationSrc}" alt="Ilustración página ${p.pageNum}">`
+      : `<div class="img-placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M3 15l5-5 4 4 3-3 6 6"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+          </svg>
+         </div>`;
+
+    el.className = 'story-page';
+    el.innerHTML = `
+      <div class="page-illustration">${imgHtml}</div>
+      <div class="page-text-section">
+        <div class="chapter-label">${p.chapterTitle || `Capítulo ${p.pageNum}`}</div>
+        <div class="page-text"><p>${withDropCap(p.text)}</p></div>
+        <div class="page-number">${p.pageNum}</div>
+      </div>
+      <div class="swipe-hint">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+        Desliza para pasar
+      </div>`;
+  }
+
+  return el;
+}
+
+// ── RENDER ──────────────────────────────────────────────────
+function renderBook(direction) {
+  const p = pages[currentPage];
+
+  // Actualizar título en header
+  const headerTitle = p.type === 'cover'
+    ? p.title
+    : p.type === 'end'
+      ? 'Fin de la historia'
+      : (p.chapterTitle || `Capítulo ${p.pageNum}`);
+  const headerEl = document.querySelector('.book-title-header');
+  if (headerEl) headerEl.textContent = headerTitle;
+
+  const newEl = buildPageElement(p);
+
+  if (direction && bookOpened) {
+    // ── Animación de libro real ──
+    const inClass  = direction === 'forward' ? 'anim-in-forward'  : 'anim-in-backward';
+    const outClass = direction === 'forward' ? 'anim-out-forward' : 'anim-out-backward';
+
+    // Preparar nueva página (fuera de pantalla)
+    newEl.style.position = 'absolute';
+    newEl.style.inset    = '0';
+    newEl.style.zIndex   = '2';
+
+    // Animar página actual hacia afuera
+    const oldEl = bookCard.firstElementChild;
+    if (oldEl && !oldEl.classList.contains('page-shadow-overlay')) {
+      oldEl.style.position = 'absolute';
+      oldEl.style.inset    = '0';
+      oldEl.style.zIndex   = '1';
+      oldEl.classList.add(outClass);
+    }
+
+    // Añadir sombra de paso de página
+    const shadow = document.createElement('div');
+    shadow.className = 'page-shadow-overlay' + (direction === 'backward' ? ' backward' : '');
+    shadow.style.zIndex = '5';
+    bookCard.appendChild(shadow);
+
+    // Pequeño retardo para que la salida se inicie antes que la entrada
+    setTimeout(() => {
+      bookCard.appendChild(newEl);
+      newEl.classList.add(inClass);
+    }, 80);
+
+    // Limpieza
+    setTimeout(() => {
+      while (bookCard.children.length > 1) bookCard.removeChild(bookCard.firstChild);
+      newEl.style.position = '';
+      newEl.style.inset    = '';
+      newEl.style.zIndex   = '';
+    }, 520);
+
+  } else {
+    bookCard.innerHTML = '';
+    bookCard.appendChild(newEl);
+  }
+
+  buildDots();
+  updateArrows();
+}
+
+// ── OPEN BOOK ────────────────────────────────────────────────
+function openBook() {
+  if (!bookOpened) {
+    bookOpened = true;
+    document.getElementById('openHintBadge').classList.add('hidden');
+    document.getElementById('audioBar').classList.add('visible');
+    startMusic();
+  }
+  nextPage();
+}
+
+// ── NAVIGATION ──────────────────────────────────────────────
+function nextPage() {
+  if (currentPage < pages.length - 1) goToPage(currentPage + 1, 'forward');
+}
+function prevPage() {
+  if (currentPage > 0) goToPage(currentPage - 1, 'backward');
+}
+
+function goToPage(target, dir) {
+  if (animating || target === currentPage || target < 0 || target >= pages.length) return;
+  const forward = dir ? dir === 'forward' : target > currentPage;
+  animating = true;
+  stopAllAudio();
+  currentPage = target;
+  renderBook(forward ? 'forward' : 'backward');
+  setTimeout(() => {
+    animating = false;
+    const p = pages[currentPage];
+    if (p && p.voiceSrc) playPageVoice(p.voiceSrc);
+  }, 540);
+}
+
+// ── SWIPE GESTURES ───────────────────────────────────────────
+let touchStartX = 0;
+let touchStartY = 0;
+
+bookCard.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+bookCard.addEventListener('touchend', e => {
+  if (!bookOpened) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > 45) {
+    if (dx < 0) nextPage();
+    else        prevPage();
+  }
+}, { passive: true });
+
+// ── KEYBOARD ─────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextPage();
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prevPage();
+});
+
+// ── INIT ─────────────────────────────────────────────────────
+renderBook();
+</script>
+</body>
+</html>
