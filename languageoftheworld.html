@@ -661,6 +661,7 @@ const pages = [
   {
     type: 'cover',
     coverImg: 'storycard/lenguajedelmundo/portada.png',
+    coverMobileImg: 'storycard/lenguajedelmundo/portadamovil.png',
     title:    'The Language of the World',
     author:   'By The Musical AI'
   },
@@ -942,8 +943,13 @@ function buildPageElement(p) {
 
   if (p.type === 'cover') {
     el.className = 'cover-page';
-    el.innerHTML = p.coverImg
-      ? `<img src="${p.coverImg}" alt="Cover: ${p.title}">`
+
+    // DETECT IF MOBILE (Width less than or equal to 767px)
+    const isMobile = window.innerWidth <= 767;
+    const imgSrc = (isMobile && p.coverMobileImg) ? p.coverMobileImg : p.coverImg;
+
+    el.innerHTML = imgSrc
+      ? `<img src="${imgSrc}" alt="Cover: ${p.title}">`
       : `<div class="cover-bg-placeholder">🌹</div>`;
     el.innerHTML += `
       <div class="cover-overlay">
@@ -1104,5 +1110,119 @@ document.addEventListener('keydown', e => {
 
 renderBook();
 </script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+    /* Adds iOS notch/safe-area support to the viewport if the page's
+       <meta viewport> doesn't already include it. Harmless if it did. */
+    #backToRoomBtn {
+        position: fixed;
+        z-index: 9999;
+        display: none; /* only shown if we came from reproductor.html */
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        max-width: calc(100vw - 24px);
+        box-sizing: border-box;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        /* Desktop / tablet */
+        bottom: 24px;
+        right: 24px;
+        padding: 12px 20px;
+        font-size: 0.85rem;
+
+        border-radius: 9999px;
+        background: linear-gradient(135deg, #0d9488, #0891b2);
+        color: #fff;
+        font-weight: 700;
+        border: 1px solid rgba(45, 212, 191, 0.5);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 20px rgba(45,212,191,0.25);
+        cursor: pointer;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        transition: transform .2s ease, box-shadow .2s ease;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #backToRoomBtn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.5), 0 0 28px rgba(45,212,191,0.4);
+    }
+    #backToRoomBtn:active { transform: translateY(-1px) scale(0.97); }
+    #backToRoomBtn i { font-size: 1rem; flex-shrink: 0; }
+    #backToRoomLabel {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* ── Mobile: pinned to the bottom edge, respecting the notch/gesture
+         bar "safe area", without overflowing horizontally ── */
+    @media (max-width: 640px) {
+        #backToRoomBtn {
+            left: 12px;
+            right: 12px;
+            bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+            width: auto;
+            max-width: calc(100vw - 24px);
+            padding: 11px 16px;
+            font-size: 0.78rem;
+            justify-content: center;
+        }
+    }
+
+    /* Very small screens (≤360px) */
+    @media (max-width: 360px) {
+        #backToRoomBtn {
+            left: 8px;
+            right: 8px;
+            bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+            padding: 10px 12px;
+            font-size: 0.72rem;
+            gap: 6px;
+        }
+    }
+</style>
+
+<button id="backToRoomBtn" onclick="goBackToRoom()">
+    <i class="fas fa-arrow-left"></i>
+    <span id="backToRoomLabel">Back to room</span>
+</button>
+
+<script>
+(function () {
+    // Ensures the viewport respects the iPhone notch/gesture bar, so that
+    // env(safe-area-inset-bottom) works even if the page's <meta viewport>
+    // didn't have viewport-fit=cover configured.
+    var vp = document.querySelector('meta[name="viewport"]');
+    if (vp && vp.content.indexOf('viewport-fit') === -1) {
+        vp.content = vp.content + ', viewport-fit=cover';
+    } else if (!vp) {
+        var m = document.createElement('meta');
+        m.name = 'viewport';
+        m.content = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
+        document.head.appendChild(m);
+    }
+
+    var returnUrl   = sessionStorage.getItem('lastRoomUrl');
+    var returnTopic = sessionStorage.getItem('lastRoomTopicLabel') || sessionStorage.getItem('lastRoomTopic');
+    var btn   = document.getElementById('backToRoomBtn');
+    var label = document.getElementById('backToRoomLabel');
+
+    // Only show the button if we arrived here from reproductor.html
+    if (returnUrl) {
+        btn.style.display = 'flex';
+        if (returnTopic) {
+            label.textContent = 'Back to ' + returnTopic;
+        }
+    }
+
+    window.goBackToRoom = function () {
+        window.location.href = returnUrl || 'reproductor.html';
+    };
+})();
+</script>
+
 </body>
 </html>
