@@ -1,0 +1,32 @@
+{
+  "name": "La IA Musical - Storycards",
+  "short_name": "LaIA Musical",
+  "description": "Descubre inspiraciones musicales de LaIAmusical: cartas de historia, quizzes, playlists y mucho más.",
+  "start_url": "https://laiamusical.github.io/Storycards/",
+  "scope": "https://laiamusical.github.io/Storycards/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
