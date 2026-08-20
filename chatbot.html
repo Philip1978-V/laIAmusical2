@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chatbot · La IA Musical / Storycards</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  body{
+    background: radial-gradient(ellipse at top, #0f2027 0%, #050b12 60%, #020407 100%);
+    background-attachment: fixed;
+    min-height:100vh;
+    color:#e6f4f1;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  .panel{
+    background: rgba(2,10,16,0.65);
+    border:1px solid rgba(45,212,191,0.22);
+    backdrop-filter: blur(10px);
+    border-radius: 1.25rem;
+  }
+  .field-input{
+    width:100%; padding:0.65rem 1rem;
+    background: rgba(2,10,16,0.8);
+    border:1px solid rgba(13,148,136,0.4);
+    border-radius: 1rem;
+    color:#fff;
+    outline:none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .field-input:focus{
+    border-color:#2dd4bf;
+    box-shadow: 0 0 0 3px rgba(45,212,191,0.25);
+  }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:0.5rem;
+    padding:0.7rem 1.2rem; border-radius:1rem; font-weight:700; cursor:pointer;
+    transition: transform .12s, filter .12s; border:none; white-space:nowrap;
+  }
+  .btn:active{ transform: scale(0.97); }
+  .btn-primary{ background: linear-gradient(135deg,#2dd4bf,#0891b2); color:#04231f; }
+  .btn-primary:hover{ filter:brightness(1.08); }
+  .btn-ghost{ background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#fff; }
+  .btn-ghost:hover{ background: rgba(255,255,255,0.12); }
+  .btn:disabled{ opacity:0.4; cursor:not-allowed; }
+
+  #chatWindow{ scroll-behavior:smooth; }
+  #chatWindow::-webkit-scrollbar{ width:8px; }
+  #chatWindow::-webkit-scrollbar-thumb{ background:rgba(45,212,191,0.35); border-radius:8px; }
+
+  .msg-row{ display:flex; gap:0.6rem; align-items:flex-end; }
+  .msg-row.user{ justify-content:flex-end; }
+  .avatar{
+    width:2.1rem; height:2.1rem; border-radius:9999px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:0.9rem;
+  }
+  .avatar-bot{ background:linear-gradient(135deg,#2dd4bf,#0891b2); color:#04231f; }
+  .avatar-user{ background: rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; }
+  .bubble{
+    max-width: 78%;
+    padding: 0.75rem 1rem;
+    border-radius: 1.1rem;
+    line-height:1.5;
+    font-size:0.92rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .bubble-bot{
+    background: rgba(255,255,255,0.05);
+    border:1px solid rgba(45,212,191,0.25);
+    border-bottom-left-radius: 0.3rem;
+  }
+  .bubble-user{
+    background: linear-gradient(135deg, rgba(45,212,191,0.9), rgba(8,145,178,0.9));
+    color:#04231f;
+    font-weight:600;
+    border-bottom-right-radius: 0.3rem;
+  }
+  .bubble a{ color:#5eead4; text-decoration:underline; }
+  .bubble-user a{ color:#04231f; text-decoration:underline; }
+
+  .typing-dot{
+    width:6px; height:6px; border-radius:9999px; background:#5eead4;
+    animation: typingBounce 1.2s infinite ease-in-out;
+  }
+  .typing-dot:nth-child(2){ animation-delay:0.15s; }
+  .typing-dot:nth-child(3){ animation-delay:0.3s; }
+  @keyframes typingBounce{
+    0%,60%,100%{ transform:translateY(0); opacity:0.5; }
+    30%{ transform:translateY(-4px); opacity:1; }
+  }
+
+  .chip{
+    padding:0.4rem 0.85rem; border-radius:9999px; font-size:0.78rem; font-weight:600;
+    background: rgba(45,212,191,0.1); border:1px solid rgba(45,212,191,0.35); color:#5eead4;
+    cursor:pointer; transition:.15s; white-space:nowrap;
+  }
+  .chip:hover{ background: rgba(45,212,191,0.22); }
+
+  #toast{
+    position:fixed; top:1rem; left:50%; transform:translateX(-50%) translateY(-140%);
+    z-index:200; background:#111827; border:1px solid rgba(45,212,191,0.5);
+    color:#fff; padding:0.85rem 1.4rem; border-radius:1rem; font-weight:600;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5); transition: transform .3s ease; max-width:90vw; text-align:center;
+  }
+  #toast.show{ transform:translateX(-50%) translateY(0); }
+  #toast.error{ border-color:#f87171; }
+
+  /* Botón de regreso */
+  .back-btn{
+    position:fixed; top:1rem; left:1rem; z-index:150;
+    display:inline-flex; align-items:center; gap:0.5rem;
+    padding:0.55rem 1.1rem; border-radius:9999px;
+    background: linear-gradient(135deg,#2dd4bf,#0891b2);
+    color:#04231f; font-weight:800; font-size:0.85rem;
+    text-decoration:none; white-space:nowrap;
+    box-shadow: 0 8px 20px rgba(45,212,191,0.35);
+    border:1px solid rgba(255,255,255,0.25);
+    transition: transform .15s ease, filter .15s ease;
+    max-width: calc(100vw - 2rem);
+    overflow:hidden; text-overflow:ellipsis;
+  }
+  .back-btn:hover{ filter:brightness(1.08); transform:translateY(-2px); }
+  .back-btn:active{ transform:translateY(0) scale(0.97); }
+  .back-btn i{ font-size:0.85rem; }
+
+  @media (min-width:640px){
+    .back-btn{ top:1.25rem; left:1.25rem; padding:0.6rem 1.3rem; font-size:0.95rem; }
+  }
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-3 sm:p-6">
+
+  <div id="toast"></div>
+
+  <a href="index.html" class="back-btn" title="Volver a La IA Musical">
+    <i class="fas fa-arrow-left"></i>
+    <span>La IA Musical</span>
+  </a>
+
+  <div class="w-full max-w-2xl panel flex flex-col overflow-hidden" style="height:88vh;">
+
+    <!-- Cabecera -->
+    <div class="flex items-center justify-between gap-3 px-5 py-4 border-b border-teal-500/20">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-400 to-cyan-700 flex items-center justify-center text-xl flex-shrink-0">
+          <i class="fas fa-robot text-[#04231f]"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="font-bold text-teal-200 leading-tight truncate">Asistente Storycards</h1>
+          <p class="text-xs text-teal-100/50 truncate">La IA Musical · laiamusical.github.io/Storycards</p>
+        </div>
+      </div>
+      <button type="button" class="btn btn-ghost !px-3 !py-2 text-sm" onclick="toggleConfig()">
+        <i class="fas fa-key"></i><span class="hidden sm:inline">API Key</span>
+      </button>
+    </div>
+
+    <!-- Configuración de API Key (colapsable) -->
+    <div id="configPanel" class="hidden px-5 py-4 border-b border-teal-500/20 bg-black/20">
+      <label class="block text-sm font-bold text-emerald-300 mb-2">
+        <i class="fas fa-key mr-1"></i>Clave API de Google Gemini
+      </label>
+      <div class="flex gap-2">
+        <input type="password" id="geminiApiKey" placeholder="AIza... pega tu API Key de Google AI Studio"
+               class="field-input border-emerald-500/40 focus:border-emerald-400 flex-1">
+        <button type="button" class="btn btn-primary !px-4" onclick="guardarApiKey()">
+          <i class="fas fa-save"></i>
+        </button>
+      </div>
+      <p class="text-xs text-teal-100/40 mt-2">
+        Consigue tu clave gratis en <a href="https://aistudio.google.com/apikey" target="_blank" class="text-emerald-400 underline">Google AI Studio</a>.
+        Se guarda solo en tu navegador (localStorage), nunca se envía a ningún otro sitio.
+      </p>
+      <div id="apiStatus" class="text-xs mt-2 hidden px-3 py-2 rounded-lg font-medium"></div>
+    </div>
+
+    <!-- Ventana de chat -->
+    <div id="chatWindow" class="flex-1 overflow-y-auto px-4 sm:px-5 py-4 space-y-4"></div>
+
+    <!-- Chips de preguntas rápidas -->
+    <div id="quickChips" class="px-4 sm:px-5 pb-2 flex gap-2 overflow-x-auto"></div>
+
+    <!-- Input -->
+    <div class="px-4 sm:px-5 py-3 border-t border-teal-500/20 flex items-end gap-2">
+      <textarea id="chatInput" rows="1"
+        class="field-input resize-none flex-1"
+        placeholder="Escribe tu pregunta sobre Storycards..."
+        onkeydown="handleKeydown(event)" oninput="autoGrow(this)"></textarea>
+      <button type="button" id="sendBtn" class="btn btn-primary !px-4 !py-3" onclick="enviarMensaje()">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+
+<script>
+/* ==========================================================================
+   CONTEXTO DE LA WEB (para que el chatbot responda con conocimiento real)
+   ========================================================================== */
+const SITE_CONTEXT = `
+Eres el asistente virtual oficial de "La IA Musical" y su plataforma "Storycards"
+(https://laiamusical.github.io/Storycards/). Tu única función es ayudar a los
+visitantes a entender y usar la web. Responde SIEMPRE en el idioma en el que te
+escriba el usuario (por defecto español), de forma breve, clara y amable.
+
+INFORMACIÓN SOBRE LA WEB:
+
+- Nombre del proyecto: "La IA Musical" — su misión es crear una biblioteca de
+  storycards (cartas de historia), motivar la exploración cultural, usar la
+  música como hilo conductor, rejuvenecer la apreciación de obras clásicas y
+  modernas, ofrecer una experiencia sensorial e inmersiva, y fomentar una
+  comunidad activa de votación y descubrimiento.
+
+- "Cartas de historia" / "Storycards": son fichas interactivas de inspiración
+  cultural y musical, organizadas por categorías temáticas ("Salas de Temas"):
+  · Literatura — inspiraciones en grandes autores y novelas
+  · Cine — todo el género cinematográfico
+  · Animación — clásicos y modernos
+  · Ópera y conciertos — obras y funciones de arte
+  · Teatro y Musicales — Broadway y espectáculos
+  · Series — temas inspirados en series clásicas y modernas
+  · Anime — openings y bandas sonoras (OST) japonesas
+  · Extra y documentales — naturaleza e historia
+  · Videojuegos — historias inspiradas en videojuegos
+  · Religión — temas relacionados con la fe y la inspiración espiritual
+  · Usuarios — contenido creado a partir de las ideas de la comunidad
+  · Selección de cartas de historia — contenido exclusivo y playlists curadas
+
+- Sistema gaming ("Cartas de historia" / "Worldcards"): es un mundo interactivo
+  donde el usuario puede:
+  1. Realizar Quizzes relacionados con cada carta.
+  2. Tomar decisiones y votar en la comunidad.
+  3. Sumergirse en las "storybooks" (historias ampliadas).
+  4. Consultar el Ranking del top 3 de cartas más votadas.
+  Además existen misiones semanales, con estas recompensas/mecánicas:
+  · Votos: se reciben votos gratuitos periódicamente.
+  · Estrellas: se consiguen completando Quizzes.
+  · Diamantes: se obtienen con el 100% de acierto en un Quiz.
+  · Monedas: se consiguen intercambiando estrellas.
+  · Rango: muestra el nivel del usuario según su progreso.
+  · Combos: se usan diamantes para activarlos.
+  · Bonos: desbloquean storycards especiales.
+
+- Secciones del menú principal: Mi Perfil (rango y estrellas), Clasificación de
+  Cartas de historia, Usuarios, Mis cartas de historia, Premios, Mercado,
+  Objetivos semanales, Biblioteca, Estadísticas, Revista, Podcast IA, Spotify,
+  TikTok, Canal de YouTube, Sistema gaming, Duelo de Cartas de historia, Misión
+  de la IA y acceso a un Servidor / Foro de la comunidad.
+
+- Idiomas: la web está disponible en Español (ES) e Inglés (EN), con selector
+  de idioma y de servidor (España/Inglés/servidor privado).
+
+- Contacto y redes: correo de contacto contact@hotmail.com; presencia en
+  Facebook, X (Twitter) y un canal de YouTube ("Cartas de historia").
+
+- Existe una herramienta interna llamada "Creador de Cartas de Historia" que el
+  equipo usa para generar los archivos HTML de cada storycard (portadas,
+  capítulos, secretos, audio, etc.), pero esto es una herramienta de backend
+  para el equipo creador, no una función pública de la web para visitantes.
+
+INSTRUCCIONES DE COMPORTAMIENTO:
+- Responde solo sobre la web Storycards / La IA Musical: su contenido,
+  categorías, sistema de juego (quizzes, votos, estrellas, diamantes, monedas,
+  rangos, combos, bonos), navegación y misión del proyecto.
+- Si te preguntan algo totalmente ajeno a la web, indícalo con amabilidad y
+  redirige la conversación hacia cómo puedes ayudar con Storycards.
+- Si no tienes información suficiente sobre un detalle muy concreto (precios
+  exactos, fechas, normativa interna, etc.), dilo con honestidad en vez de
+  inventar datos, y sugiere contactar en contact@hotmail.com o visitar el Foro.
+- Sé conciso: usa frases cortas y, si ayuda, listas breves. Evita párrafos muy
+  largos.
+`.trim();
+
+/* ==========================================================================
+   MODELOS GEMINI (con fallback en cadena, igual que en creador_cartas.html)
+   ========================================================================== */
+const GEMINI_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-3.6-flash',
+  'gemini-flash-latest',
+  'gemini-2.0-flash'
+];
+
+async function fetchGeminiWithModel(apiKey, model, contents) {
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(apiKey);
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: contents,
+      systemInstruction: { parts: [{ text: SITE_CONTEXT }] },
+      generationConfig: { temperature: 0.6 }
+    })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const msg = (data.error && data.error.message) ? data.error.message : ('HTTP ' + res.status);
+    const err = new Error(msg);
+    err.status = res.status;
+    throw err;
+  }
+  const text = data.candidates && data.candidates[0] && data.candidates[0].content &&
+    data.candidates[0].content.parts && data.candidates[0].content.parts.map(function(p){ return p.text || ''; }).join('');
+  return text || null;
+}
+
+/**
+ * Envía todo el historial de la conversación a Gemini, probando modelos en
+ * cadena si alguno falla por cuota / no encontrado.
+ */
+async function fetchGemini(contents) {
+  const apiKey = ($('geminiApiKey') && $('geminiApiKey').value.trim()) || '';
+  if (!apiKey) return null;
+  let lastErr = null;
+  for (let i = 0; i < GEMINI_MODELS.length; i++) {
+    const model = GEMINI_MODELS[i];
+    try {
+      const text = await fetchGeminiWithModel(apiKey, model, contents);
+      if (text) {
+        console.log('Gemini OK con modelo:', model);
+        return text;
+      }
+    } catch (e) {
+      lastErr = e;
+      console.warn('Gemini modelo', model, 'falló:', e.message);
+      const m = (e.message || '').toLowerCase();
+      if (m.indexOf('quota') >= 0 || m.indexOf('limit: 0') >= 0 || m.indexOf('not found') >= 0 || m.indexOf('404') >= 0 || e.status === 404 || e.status === 429) {
+        continue;
+      }
+      break;
+    }
+  }
+  if (lastErr) throw lastErr;
+  return null;
+}
+
+/* ==========================================================================
+   ESTADO Y UTILIDADES
+   ========================================================================== */
+function $(id){ return document.getElementById(id); }
+
+let history = []; // [{role:'user'|'model', parts:[{text}]}]
+let waitingForReply = false;
+
+function toast(msg, isError){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.toggle('error', !!isError);
+  t.classList.add('show');
+  clearTimeout(toast._tid);
+  toast._tid = setTimeout(function(){ t.classList.remove('show'); }, 3200);
+}
+
+function toggleConfig(){
+  $('configPanel').classList.toggle('hidden');
+}
+
+function guardarApiKey(){
+  const key = $('geminiApiKey').value.trim();
+  if (!key){
+    toast('Introduce una clave API de Gemini (AIza...)', true);
+    return;
+  }
+  localStorage.setItem('storycards_gemini_key', key);
+  toast('Clave guardada en este navegador');
+  $('configPanel').classList.add('hidden');
+}
+
+function cargarApiKeyGuardada(){
+  const saved = localStorage.getItem('storycards_gemini_key');
+  if (saved) $('geminiApiKey').value = saved;
+  if (!saved) $('configPanel').classList.remove('hidden');
+}
+
+function autoGrow(el){
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+}
+
+function handleKeydown(e){
+  if (e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    enviarMensaje();
+  }
+}
+
+/* Convierte **negrita**, *cursiva* y saltos de línea básicos a HTML seguro */
+function formatBotText(text){
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  return escaped
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>')
+    .replace(/\n/g, '<br>');
+}
+
+function addMessage(role, text){
+  const win = $('chatWindow');
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + (role === 'user' ? 'user' : 'bot');
+
+  if (role === 'user'){
+    row.innerHTML =
+      '<div class="bubble bubble-user">' + formatBotText(text) + '</div>' +
+      '<div class="avatar avatar-user"><i class="fas fa-user"></i></div>';
+  } else {
+    row.innerHTML =
+      '<div class="avatar avatar-bot"><i class="fas fa-robot"></i></div>' +
+      '<div class="bubble bubble-bot">' + formatBotText(text) + '</div>';
+  }
+  win.appendChild(row);
+  win.scrollTop = win.scrollHeight;
+}
+
+function addTypingIndicator(){
+  const win = $('chatWindow');
+  const row = document.createElement('div');
+  row.className = 'msg-row bot';
+  row.id = 'typingRow';
+  row.innerHTML =
+    '<div class="avatar avatar-bot"><i class="fas fa-robot"></i></div>' +
+    '<div class="bubble bubble-bot flex items-center gap-1.5">' +
+      '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>' +
+    '</div>';
+  win.appendChild(row);
+  win.scrollTop = win.scrollHeight;
+}
+
+function removeTypingIndicator(){
+  const row = $('typingRow');
+  if (row) row.remove();
+}
+
+/* ==========================================================================
+   ENVÍO DE MENSAJES
+   ========================================================================== */
+async function enviarMensaje(textoForzado){
+  if (waitingForReply) return;
+
+  const input = $('chatInput');
+  const texto = (textoForzado !== undefined ? textoForzado : input.value).trim();
+  if (!texto) return;
+
+  const apiKey = $('geminiApiKey').value.trim();
+  if (!apiKey){
+    toast('Introduce tu clave API de Gemini para poder chatear', true);
+    $('configPanel').classList.remove('hidden');
+    return;
+  }
+
+  input.value = '';
+  autoGrow(input);
+  addMessage('user', texto);
+  history.push({ role: 'user', parts: [{ text: texto }] });
+
+  waitingForReply = true;
+  $('sendBtn').disabled = true;
+  addTypingIndicator();
+
+  try {
+    const respuesta = await fetchGemini(history);
+    removeTypingIndicator();
+    if (respuesta){
+      addMessage('model', respuesta);
+      history.push({ role: 'model', parts: [{ text: respuesta }] });
+    } else {
+      addMessage('model', 'No he podido generar una respuesta ahora mismo. Revisa tu clave API o inténtalo de nuevo en unos segundos.');
+    }
+  } catch (e) {
+    removeTypingIndicator();
+    console.error(e);
+    addMessage('model', 'Ha ocurrido un error al conectar con Gemini: ' + (e.message || 'error desconocido') + '. Comprueba tu clave API en el botón de arriba.');
+    toast('Error al conectar con Gemini', true);
+  } finally {
+    waitingForReply = false;
+    $('sendBtn').disabled = false;
+    input.focus();
+  }
+}
+
+/* ==========================================================================
+   PREGUNTAS RÁPIDAS
+   ========================================================================== */
+const QUICK_QUESTIONS = [
+  '¿Qué son las cartas de historia?',
+  '¿Cómo funciona el sistema gaming?',
+  '¿Qué categorías hay?',
+  '¿Cómo consigo estrellas y diamantes?',
+  '¿Cuál es la misión de La IA Musical?'
+];
+
+function renderQuickChips(){
+  const box = $('quickChips');
+  box.innerHTML = QUICK_QUESTIONS.map(function(q){
+    return '<button type="button" class="chip" onclick="enviarMensaje(' + JSON.stringify(q) + ')">' + q + '</button>';
+  }).join('');
+}
+
+/* ==========================================================================
+   INICIALIZACIÓN
+   ========================================================================== */
+document.addEventListener('DOMContentLoaded', function(){
+  cargarApiKeyGuardada();
+  renderQuickChips();
+  addMessage('model', '¡Hola! 👋 Soy el asistente de **Storycards** (La IA Musical). Puedo ayudarte a resolver dudas sobre las cartas de historia, las categorías, el sistema de juego (quizzes, estrellas, diamantes...) y cómo moverte por la web. ¿En qué te ayudo?');
+});
+</script>
+</body>
+</html>
